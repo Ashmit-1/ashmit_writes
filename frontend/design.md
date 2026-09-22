@@ -114,21 +114,26 @@ Gradient rules:
 
 ### Hero constellation
 
-The right side of the hero carries the **Thought Constellation**: a loose field of nodes representing ideas, some connected by hairlines, which drift slowly and respond gently to the cursor.
+The right side of the hero carries the **Thought Constellation**: a field of nodes representing ideas, grouped into loose clusters, some connected by hairlines. It drifts slowly on its own and responds to the cursor.
 
-It exists to make the hero feel like a quiet field of ideas waiting to be explored. It is ambient, not informative, and must never compete with the tagline or search field.
+It exists to make the hero read as *a field of ideas waiting to be explored*. It is a major supporting element, not a small decoration — the hero should read as **typography + search ←→ constellation**.
 
-* **Composition** — nodes are distributed organically. Never a rigid grid, never perfectly uniform in size or spacing. Roughly 15–20 nodes with a handful of hairline connections.
-* **Labels** — a few nodes may carry a very short, quiet label (a topic or concept). Keep these sparse; most nodes are unlabelled. Labels are metadata-styled (`text-tertiary`, small) and must not read as navigation or interactive controls.
-* **Connections** — thin, low-opacity hairlines suggesting relationships between ideas. Avoid dense webs, hubs, or anything resembling a technical graph or network diagram.
-* **Motion** — continuous drift is very slow and small (a few pixels at most). Motion must never pulse in unison or attract attention. No bouncing, no parallax, no particle effects.
-* **Cursor response** — nodes near the cursor brighten slightly and shift a small distance; connections near the cursor become slightly more visible. The effect should feel like the cursor disturbing a field of ideas. Keep displacement tiny (a few pixels) and never let the field appear to chase the pointer.
+**It must look intentionally designed at rest.** Do not make it so subtle that the area appears empty. Interaction is additive, never the thing that makes the visual legible.
+
+* **Space** — occupies roughly 40–45% of the hero width, vertically centred against the hero content. Desktop size is approximately 450–550px wide by 350–450px tall. The composition fills its box; do not letterbox it into a fraction of the available area.
+* **Nodes** — around 12–18, varying in size (roughly a 2–2.5x range), arranged organically. Never a grid, never uniform. Include roughly 3–5 noticeably larger "anchor" nodes for the important ideas.
+* **Composition** — a few loose clusters rather than a uniform field. Most nodes connect to one or two others; only a small number of edges cross between clusters. It should read as a map of ideas, not a mesh.
+* **Labels** — a handful of very short, quiet labels (`AI`, `Learning`, `Systems`, `React`, `LLMs`, `Data`, …). Sparse: most nodes are unlabelled. Labels use the metadata tone (`text-tertiary`), must stay inside the viewBox, and must not collide with other nodes or labels. They are not navigation or controls.
+* **Connections** — thin hairlines (about 1–2px on screen) at low resting opacity, suggesting relationships. Avoid dense webs, hubs, or anything resembling a technical graph, neural network, or blockchain diagram.
+* **Resting state** — nodes and connections must be clearly visible before any interaction. Opacity is not the thing that carries the whole visual.
+* **Motion** — very slow ambient drift (a few pixels at most), with per-node phase so the field never pulses in unison. No bouncing, no parallax, no particle effects.
+* **Cursor response** — a *local* effect: within roughly 100–110px of the cursor, nodes shift slightly away, brighten, and grow, and connections become more visible. Outside that radius the field stays calm. Keep displacement restrained (tens of pixels at most, not a chase). Connections should respond along their length, not only near their midpoint.
 * **Palette** — neutral (`secondary` / `tertiary` / `border-strong`). This is not a place for the accent color, gradients, or neon.
-* **Hierarchy** — visually secondary to the hero text. It appears only where there is room for it (large screens) and is hidden rather than shrunk on smaller screens.
-* **Reduced motion** — `prefers-reduced-motion` disables the drift loop while preserving the visual in its resting state.
-* **Accessibility** — purely decorative: `aria-hidden`, not focusable, and must not intercept pointer events or interfere with the search field.
+* **Hierarchy** — typography stays primary. The constellation must never compete with the tagline or the search field.
+* **Reduced motion** — `prefers-reduced-motion` disables drift while preserving the visual in its resting state.
+* **Accessibility** — purely decorative: `aria-hidden`, not focusable, and it must not interfere with the search field.
 
-This visual must not become a generic "AI" graphic. No brains, sparks, neural-network icons, glowing orbs, or animated particles.
+This visual must not become a generic "AI" graphic. No brains, sparks, glowing orbs, neural-network icons, or animated particles.
 
 ### Shadows
 

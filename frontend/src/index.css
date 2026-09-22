@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens for "Ashmit and AI Writes".
+ * These values are the single source of truth for the visual system and are
+ * taken directly from frontend/design.md. Change them here, not in components.
+ *
+ * Tailwind v4 reads this @theme block and generates utilities such as
+ * bg-page, text-primary, border-border, font-serif, etc.
+ */
+@theme {
+  /* Base palette — design.md > Theme > Base palette */
+  --color-page: #fafaf8;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f5f5f2;
+  --color-primary: #171717;
+  --color-secondary: #525252;
+  --color-tertiary: #737373;
+  --color-border: #e5e5e0;
+  --color-border-strong: #d4d4cf;
+  --color-accent: #4f46e5;
+  --color-accent-soft: #eef2ff;
+
+  /* Type stacks — design.md > Implementation */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+@layer base {
+  html {
+    /* Restrained 8px spacing rhythm; keep default 16px root for readability. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-page);
+    color: var(--color-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Visible, consistent keyboard focus everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* design.md > Motion — respect reduced-motion preferences. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

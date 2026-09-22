@@ -1,0 +1,3 @@
+# Generated at build time by frontend/scripts/build-manifest.mjs
+# and regenerated on every `npm run dev` / `npm run build`. Not source.
+index.json

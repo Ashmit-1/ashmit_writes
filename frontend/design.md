@@ -25,16 +25,21 @@ Read this document before touching UI code. The visual system is authoritative f
 
 ### Content discovery
 
-The gateway should not depend on a backend API or runtime directory browsing.
+The gateway must not depend on a backend API or runtime directory browsing.
 
-The preferred architecture is:
+The implemented architecture is:
 
-1. Lessons live under a repository directory such as `blogs/`.
-2. Each lesson folder contains its interactive HTML page and metadata.
-3. A build-time step scans lesson folders and produces a static manifest such as `blogs/index.json`.
-4. The React gateway reads that manifest and renders the home page.
+1. Lessons live under `blogs/<folder>/`, each with a `metadata.json` and one or more HTML files.
+2. `frontend/scripts/build-manifest.mjs` scans `blogs/`, validates each `metadata.json`, and writes `blogs/index.json`.
+3. The scan runs automatically before `dev` and `build` (via npm `predev` / `prebuild` scripts).
+4. The React gateway fetches `/blogs/index.json` at runtime and renders from it.
+5. The build copies `blogs/` into the output so the manifest and every lesson HTML resolve when deployed.
 
-The gateway must therefore remain a static site. Adding/removing a lesson should require no frontend code change beyond the content/build step.
+Responsibilities stay separate: the build script is the only thing that knows the repository layout; the manifest is the browser's only source of blog data; the frontend never touches the filesystem.
+
+Metadata validation is defensive. An entry is skipped with a build-time warning if `title` is not a non-empty string, `authors` or `topic` is not an array of strings, or `filename` is not a non-empty string. A malformed entry must never break the gateway. If every folder is invalid, the build fails loudly rather than emitting an empty manifest.
+
+The gateway must therefore remain a static site. Adding or removing a lesson requires no frontend code change — only the content folder.
 
 ---
 
@@ -277,8 +282,11 @@ The search field lives in the **article section**, not the hero:
 
 At minimum, search should match against:
 
-* article name/title;
-* author names.
+* article title;
+* author names;
+* topics.
+
+The lesson `filename` and folder name are not part of the search model.
 
 Search should update results immediately as the user types. There is no need for a server-side search API.
 
@@ -295,11 +303,24 @@ Cards are the main content component on the gateway.
 Each card should contain exactly the useful basics:
 
 1. **Article title** — strongest text on the card.
-2. **Authors** — show all authors from metadata.
-3. **Date** — formatted as a readable date.
+2. **Authors** — show all authors from metadata, joined with a middot (`Ashmit Das · Deepseek AI`).
+3. **Topics** — show every topic from metadata as small quiet chips.
 4. **Small affordance** — a subtle `Open` / arrow treatment, or simply make the full card clickable.
 
 Do not add fake metadata such as reading time, category, views, likes, progress, or difficulty unless those fields are actually introduced later.
+
+Never display the lesson `filename` or the folder name — they are implementation detail, not content.
+
+### Topic treatment
+
+Topics are the one place a card may use the `accent-soft` surface. Keep them quiet:
+
+* small text (`text-xs`) in a `rounded-md` chip;
+* `accent-soft` background with a `border` outline;
+* they wrap naturally and never overflow the card;
+* they are labels, not controls — do not wire up click behavior for them in the first version.
+
+Do not let chips multiply into a badge wall: the title stays the dominant element, and authors stay plain text rather than chips.
 
 ### Card styling
 
@@ -331,32 +352,32 @@ The lesson page itself should remain independent from the React gateway.
 
 # Metadata
 
-The initial metadata model is intentionally small.
-
-Conceptually:
+The metadata model is intentionally small and lives beside each lesson as
+`blogs/<folder>/metadata.json`:
 
 ```text
-name: string
+title: string
 authors: string[]
-date: string
+filename: string
+topic: string[]
 ```
+
+A build-time discovery step reads these files and generates a static manifest
+(see Content discovery). The browser consumes the manifest and never inspects
+the repository.
 
 The UI must gracefully handle:
 
 * multiple authors;
 * an empty authors array;
-* malformed/missing dates;
+* an empty topic array;
 * unexpectedly long titles.
 
 Do not invent additional required metadata fields.
 
-Dates should be formatted for humans while retaining the source value internally.
-
-For example, an ISO date may display as:
-
-`22 September 2026`
-
-rather than exposing the raw machine format.
+`filename` selects which HTML file to open. It is used only to construct the
+lesson URL (`/blogs/<folder>/<filename>`) and must never be displayed on a card
+or matched by search — the folder name is likewise internal.
 
 ---
 
@@ -489,7 +510,7 @@ The gateway must work comfortably on phones, tablets, laptops, and large desktop
 * Keep the palette mostly neutral.
 * Use one restrained accent color.
 * Make search obvious and easy to use.
-* Keep cards focused on title, authors, and date.
+* Keep cards focused on title, authors, and topics.
 * Make the full card or a clear link open the interactive lesson.
 * Keep the gateway independent from the lesson HTML.
 * Make the layout responsive from the beginning.
@@ -500,7 +521,7 @@ The gateway must work comfortably on phones, tablets, laptops, and large desktop
 * Do not introduce a backend.
 * Do not add authentication.
 * Do not create a dashboard/sidebar layout.
-* Do not add categories, tags, likes, views, comments, or reading progress unless the content model later gains those fields.
+* Do not add categories, tags, likes, views, comments, or reading progress unless the content model later gains those fields. (Topics are part of the content model and are shown as quiet chips — they are not category chrome.)
 * Do not introduce multiple accent colors.
 * Do not use gradients except the sanctioned ambient background washes described in Theme > Ambient background.
 * Do not add gradient text, multi-hue gradients, or colored shadows.

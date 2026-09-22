@@ -161,23 +161,76 @@ export function HeroConstellation({ className }: HeroConstellationProps) {
   const edgeRefs = useRef<(SVGLineElement | null)[]>([])
   /** Pointer position in authoring coordinates, or null when away. */
   const pointer = useRef<{ x: number; y: number } | null>(null)
+  /** True while a mouse button or finger is down over the SVG. */
+  const isDragging = useRef(false)
+  /** 0–1 pulse that decays after a tap/swipe, adding a brief local highlight. */
+  const pulse = useRef(0)
 
-  /** Track the cursor relative to the SVG box. */
+  /** Track the cursor / finger relative to the SVG box. */
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<SVGSVGElement>) => {
       const svg = svgRef.current
       if (!svg) return
       const rect = svg.getBoundingClientRect()
       if (rect.width === 0 || rect.height === 0) return
+
+      // Mouse: follow hover movement, and mark an active drag while a button
+      // is held. Touch: only tracked while the finger is down, which is
+      // exactly when move events fire.
+      if (event.pointerType === 'mouse' && event.buttons === 0) {
+        pointer.current = {
+          x: ((event.clientX - rect.left) / rect.width) * BOX_W,
+          y: ((event.clientY - rect.top) / rect.height) * BOX_H,
+        }
+        return
+      }
+
       pointer.current = {
         x: ((event.clientX - rect.left) / rect.width) * BOX_W,
         y: ((event.clientY - rect.top) / rect.height) * BOX_H,
+      }
+      // Keep a gentle trail while dragging/swiping.
+      if (isDragging.current) {
+        pulse.current = Math.max(pulse.current, 0.55)
       }
     },
     [],
   )
 
+  /** Begin a drag/swipe. Also used for a tap highlight. */
+  const handlePointerDown = useCallback(
+    (event: React.PointerEvent<SVGSVGElement>) => {
+      const svg = svgRef.current
+      if (!svg) return
+      const rect = svg.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) return
+
+      isDragging.current = true
+      pointer.current = {
+        x: ((event.clientX - rect.left) / rect.width) * BOX_W,
+        y: ((event.clientY - rect.top) / rect.height) * BOX_H,
+      }
+      // A tap (or the start of a swipe) briefly lights up the local area.
+      pulse.current = 1
+
+      // Capture so a swipe that leaves the SVG still releases cleanly.
+      try {
+        svg.setPointerCapture(event.pointerId)
+      } catch {
+        // Some browsers throw if the pointer is already gone; harmless.
+      }
+    },
+    [],
+  )
+
+  const endInteraction = useCallback(() => {
+    isDragging.current = false
+  }, [])
+
   const handlePointerLeave = useCallback(() => {
+    // Touch pointers "leave" as part of normal dragging; the explicit
+    // up/cancel handlers are what actually end a touch interaction.
+    if (isDragging.current) return
     pointer.current = null
   }, [])
 
@@ -196,6 +249,13 @@ export function HeroConstellation({ className }: HeroConstellationProps) {
       if (start === null && time !== null) start = time
       const t = time === null || start === null ? 0 : (time - start) / 1000
       const p = pointer.current
+
+      // Decay the tap/swipe pulse. It fades over roughly a second so a tap
+      // leaves a visible but brief trace rather than a flash.
+      if (pulse.current > 0) {
+        pulse.current = Math.max(0, pulse.current - (reduceMotion ? 0.08 : 0.016))
+      }
+      const pulseAmount = pulse.current
 
       // --- Nodes ---------------------------------------------------------
       NODES.forEach((node, index) => {
@@ -225,6 +285,18 @@ export function HeroConstellation({ className }: HeroConstellationProps) {
             const safe = Math.max(dist, 0.0001)
             pushX = (dx / safe) * MAX_PUSH * falloff
             pushY = (dy / safe) * MAX_PUSH * falloff
+          }
+        }
+
+        // A lingering tap/swipe highlight decays in place around the last
+        // touched point, so touch input leaves a visible trace.
+        if (pulseAmount > 0 && p) {
+          const dist = Math.hypot(node.x - p.x, node.y - p.y)
+          if (dist < INFLUENCE_RADIUS) {
+            proximity = Math.max(
+              proximity,
+              (1 - dist / INFLUENCE_RADIUS) * pulseAmount,
+            )
           }
         }
 
@@ -288,6 +360,29 @@ export function HeroConstellation({ className }: HeroConstellationProps) {
             proximity = 1 - dist / INFLUENCE_RADIUS
           }
         }
+
+        // Add the decaying tap/swipe highlight so connections reveal
+        // themselves briefly after a touch, not only under a held cursor.
+        if (pulseAmount > 0 && p) {
+          const vx2 = to.x - from.x
+          const vy2 = to.y - from.y
+          const lenSq2 = vx2 * vx2 + vy2 * vy2
+          let tProj2 = 0
+          if (lenSq2 > 0) {
+            tProj2 = ((p.x - from.x) * vx2 + (p.y - from.y) * vy2) / lenSq2
+            tProj2 = Math.max(0, Math.min(1, tProj2))
+          }
+          const d2 = Math.hypot(
+            p.x - (from.x + vx2 * tProj2),
+            p.y - (from.y + vy2 * tProj2),
+          )
+          if (d2 < INFLUENCE_RADIUS) {
+            proximity = Math.max(
+              proximity,
+              (1 - d2 / INFLUENCE_RADIUS) * pulseAmount,
+            )
+          }
+        }
         line.setAttribute(
           'stroke-opacity',
           String(BASE_EDGE_OPACITY + proximity * INFLUENCE_EDGE_BOOST),
@@ -320,7 +415,16 @@ export function HeroConstellation({ className }: HeroConstellationProps) {
       aria-hidden="true"
       focusable="false"
       className={className}
+      /*
+       * `pan-y` lets the page scroll vertically when a finger swipes over the
+       * constellation, while still delivering the horizontal component to our
+       * pointer handlers. `none` would trap the page scroll on mobile.
+       */
+      style={{ touchAction: 'pan-y' }}
       onPointerMove={handlePointerMove}
+      onPointerDown={handlePointerDown}
+      onPointerUp={endInteraction}
+      onPointerCancel={endInteraction}
       onPointerLeave={handlePointerLeave}
     >
       {/* Connections */}

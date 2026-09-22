@@ -83,8 +83,10 @@
   }
 
   /*
-   * A very faint accent glow anchored behind the search area. Kept low-contrast
-   * on purpose: accent stays an accent, it does not become a background color.
+   * A soft accent glow anchored behind the search area. It stays low-contrast
+   * so `accent` remains an accent rather than a background color, but it is
+   * clearly perceptible and brightens slightly when the user interacts with
+   * the hero (see HeroConstellation / design.md > Hero constellation).
    */
   .accent-glow {
     position: relative;
@@ -97,14 +99,17 @@
   .accent-glow::before {
     content: "";
     position: absolute;
-    inset: -35% -10% -45% -10%;
+    inset: -55% -18% -65% -18%;
     z-index: -1;
     pointer-events: none;
+    opacity: 0.9;
     background: radial-gradient(
-      60% 70% at 50% 55%,
-      color-mix(in srgb, var(--color-accent) 9%, transparent) 0%,
-      transparent 72%
+      58% 66% at 48% 52%,
+      color-mix(in srgb, var(--color-accent) 20%, transparent) 0%,
+      color-mix(in srgb, var(--color-accent) 9%, transparent) 42%,
+      transparent 76%
     );
+    transition: opacity 400ms ease-out;
   }
 
   /*
@@ -119,7 +124,7 @@
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.035;
+    opacity: 0.075;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 

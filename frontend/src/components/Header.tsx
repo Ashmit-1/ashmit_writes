@@ -9,8 +9,8 @@ import { BrandMark } from './BrandMark'
  */
 export function Header() {
   return (
-    <header className="border-b border-border">
-      <div className="mx-auto flex max-w-[1140px] items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
+    <header className="relative">
+      <div className="mx-auto flex max-w-[1140px] items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
         <a
           href="./"
           className="rounded-sm transition-colors duration-150 hover:text-accent"

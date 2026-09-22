@@ -24,7 +24,7 @@ export default function App() {
         {/* Hero renders its own full-width band; inner content is constrained there. */}
         <Hero query={query} onQueryChange={setQuery} />
 
-        <div className="mx-auto w-full max-w-[1140px] px-4 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+        <div className="mx-auto w-full max-w-[1140px] px-4 pt-8 sm:px-6 sm:pt-10 lg:px-8">
           {/*
             Foundation-step notice. This banner is tied to the placeholder
             fixtures and disappears automatically once demo data is removed

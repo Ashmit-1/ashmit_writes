@@ -37,7 +37,7 @@ export function ArticleLibrary({
   const isSearching = query.trim() !== ''
 
   return (
-    <section aria-labelledby="library-heading" className="pb-24 sm:pb-32">
+    <section aria-labelledby="library-heading" className="pb-16 sm:pb-20">
       <h2
         id="library-heading"
         className="text-xl font-semibold text-primary sm:text-2xl"

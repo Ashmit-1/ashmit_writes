@@ -100,7 +100,7 @@ The page uses a restrained ambient background rather than a flat fill. This is t
 
 * **Page wash** — a warm-neutral gradient behind the whole page, running from `page-warm` into the flat `page` color. It must fade fully to `page` before the article grid so cards sit on a clean, flat surface.
 * **Hero band** — the hero renders as its own distinct band with a warm gradient background (`hero-from` → `hero-to`), separated from the flat card area below.
-* **Accent glow** — a single soft radial accent glow sits behind the search field. It stays low-contrast so `accent` remains an accent rather than a background color, but it should be clearly perceptible.
+* **Accent glow** — a single soft radial accent glow sits behind the search field in the article section. It stays low-contrast so `accent` remains an accent rather than a background color, but it should be clearly perceptible.
 * **Paper grain** — a subtle noise texture (opacity ≈ 0.06–0.08) is layered over the washes so the gradients do not band or look synthetic.
 * Ambient tones are additive tokens: `page-warm`, `hero-from`, `hero-to`. They must stay close to `page` in value so the effect reads as depth rather than a color change.
 
@@ -122,7 +122,7 @@ It exists to make the hero read as *a field of ideas waiting to be explored*. It
 
 * **Space** — on desktop it occupies roughly 40–45% of the hero width, vertically centred against the hero content, at approximately 450–550px wide by 350–450px tall. The composition fills its box; do not letterbox it into a fraction of the available area.
 * **Responsive behaviour** — the constellation is present at **every** breakpoint; it is never hidden. It scales down and repositions rather than disappearing:
-  * **Mobile** — sits in the hero's single column between the tagline and the search field, at a reduced height (~240px) so it does not push the search bar far down the page. Order is: tagline → constellation → search.
+  * **Mobile** — sits in the hero's single column below the tagline at a reduced height (~240px), staying visible without crowding the hero or causing overflow.
   * **Tablet** — same placement, taller (~320px).
   * **Desktop** — moves into the right-hand column beside the typography, at full size.
   * Box dimensions track the viewBox aspect ratio at each breakpoint so the drawing fills its box, with no empty side margins and no horizontal overflow.
@@ -135,10 +135,10 @@ It exists to make the hero read as *a field of ideas waiting to be explored*. It
 * **Motion** — very slow ambient drift (a few pixels at most), with per-node phase so the field never pulses in unison. No bouncing, no parallax, no particle effects.
 * **Cursor response** — a *local* effect: within roughly 100–110px of the pointer, nodes shift slightly away, brighten, and grow, and connections become more visible. Outside that radius the field stays calm. Keep displacement restrained (tens of pixels at most, not a chase). Connections should respond along their length, not only near their midpoint.
 * **Palette** — neutral (`secondary` / `tertiary` / `border-strong`). This is not a place for the accent color, gradients, or neon.
-* **Hierarchy** — typography stays primary. The constellation must never compete with the tagline or the search field.
+* **Hierarchy** — typography stays primary. The constellation must never compete with the tagline.
 * **Reduced motion** — `prefers-reduced-motion` disables drift while preserving the visual in its resting state.
 * **Performance** — the animation must stay cheap on mobile: one animation loop, direct attribute updates, no libraries.
-* **Accessibility** — purely decorative: `aria-hidden`, not focusable, and it must not interfere with the search field.
+* **Accessibility** — purely decorative: `aria-hidden`, not focusable, and it must not interfere with surrounding content.
 
 This visual must not become a generic "AI" graphic. No brains, sparks, glowing orbs, neural-network icons, or animated particles.
 
@@ -211,14 +211,15 @@ The site should have one main gateway page and then the static lesson pages.
    * renders as its own full-width band with a warm gradient background (see Theme > Ambient background);
    * brand heading: `Ashmit and AI Writes`;
    * one short supporting sentence explaining that this is a collection of interactive learning pages;
-   * prominent search field, with the soft accent glow behind it;
-   * the **Thought Constellation** occupies the right side on desktop and moves between the tagline and search on smaller screens (see Theme > Hero constellation);
+   * the **Thought Constellation** occupies the right side on desktop and sits below the tagline on smaller screens (see Theme > Hero constellation);
    * a subtle hairline rule closing the bottom of the band;
-   * the hero carries the largest vertical spacing on the page, but the gap between the hero and the article library stays tight: the cards should begin soon after the search field, with only a reasonable section gap. Avoid stacked padding and margins that push the first row of cards below the fold.
-3. **Article library**
+   * the hero contains no search field — it is purely identity and orientation.
+3. **Article section**
    * sits on the flat `page` color below the band;
+   * a **centered search field** above the grid, with the soft accent glow behind it. The search belongs to this section because it filters these articles;
    * section heading such as `Explore` or `Learn`;
-   * responsive card grid.
+   * responsive card grid immediately below the search, with only a reasonable gap.
+   * Keep this section compact: on desktop the search field and the first row of cards should both be visible within a normal viewport where practical. Avoid stacked padding and margins that push the first row of cards below the fold.
 4. **Empty/search state**
    * calm message when no article matches the search.
 
@@ -245,13 +246,22 @@ Common values:
 
 `8, 12, 16, 24, 32, 48, 64, 80`
 
-The hero should have the largest spacing. Cards should have comfortable internal padding without becoming oversized.
+The hero should carry generous spacing, but the article section below it must stay compact enough that the search field and the first row of cards are reachable without a large scroll. Cards should have comfortable internal padding without becoming oversized.
 
 ---
 
 # Search
 
 Search is a first-class interaction because the library is expected to grow.
+
+### Placement
+
+The search field lives in the **article section**, not the hero:
+
+* horizontally centered above the article grid, within the content container;
+* full width on phones (the content area is narrower than any sensible cap there) and capped at roughly `max-w-2xl` from tablet up, where centering becomes visible;
+* it belongs to the section it filters — the hero stays identity-only;
+* only a small gap separates it from the first row of cards.
 
 ### Search field
 
@@ -442,8 +452,8 @@ The gateway must work comfortably on phones, tablets, laptops, and large desktop
 
 * one-column article list;
 * hero heading scales down gracefully;
-* search remains full width;
-* the hero constellation is scaled down and placed between the tagline and the search bar, so it stays visible without crowding the hero or causing overflow;
+* the search field sits at the top of the article section, full width on phones and centered from tablet up;
+* the hero constellation is scaled down and placed below the tagline, so it stays visible without crowding the hero or causing overflow;
 * cards retain comfortable padding;
 * no horizontal scrolling;
 * top navigation remains minimal.

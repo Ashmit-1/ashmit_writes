@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "manifest": "node scripts/build-manifest.mjs",
+    "predev": "npm run manifest",
     "dev": "vite",
+    "prebuild": "npm run manifest",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b"

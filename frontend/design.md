@@ -100,8 +100,8 @@ The page uses a restrained ambient background rather than a flat fill. This is t
 
 * **Page wash** — a warm-neutral gradient behind the whole page, running from `page-warm` into the flat `page` color. It must fade fully to `page` before the article grid so cards sit on a clean, flat surface.
 * **Hero band** — the hero renders as its own distinct band with a warm gradient background (`hero-from` → `hero-to`), separated from the flat card area below.
-* **Accent glow** — a single, very faint radial accent glow may sit behind the search field. It must stay low-contrast (roughly 8–10% accent); `accent` remains an accent and must never read as a background color.
-* **Paper grain** — a very subtle noise texture (opacity ≈ 0.03) may be layered over the washes so the gradients do not band or look synthetic.
+* **Accent glow** — a single soft radial accent glow sits behind the search field. It stays low-contrast so `accent` remains an accent rather than a background color, but it should be clearly perceptible.
+* **Paper grain** — a subtle noise texture (opacity ≈ 0.06–0.08) is layered over the washes so the gradients do not band or look synthetic.
 * Ambient tones are additive tokens: `page-warm`, `hero-from`, `hero-to`. They must stay close to `page` in value so the effect reads as depth rather than a color change.
 
 Gradient rules:
@@ -111,6 +111,24 @@ Gradient rules:
 * No gradient text.
 * Gradients must never reduce text contrast; all text must keep the contrast defined below.
 * Decorative layers (glow, grain) are non-interactive and must not intercept pointer events.
+
+### Hero constellation
+
+The right side of the hero carries the **Thought Constellation**: a loose field of nodes representing ideas, some connected by hairlines, which drift slowly and respond gently to the cursor.
+
+It exists to make the hero feel like a quiet field of ideas waiting to be explored. It is ambient, not informative, and must never compete with the tagline or search field.
+
+* **Composition** — nodes are distributed organically. Never a rigid grid, never perfectly uniform in size or spacing. Roughly 15–20 nodes with a handful of hairline connections.
+* **Labels** — a few nodes may carry a very short, quiet label (a topic or concept). Keep these sparse; most nodes are unlabelled. Labels are metadata-styled (`text-tertiary`, small) and must not read as navigation or interactive controls.
+* **Connections** — thin, low-opacity hairlines suggesting relationships between ideas. Avoid dense webs, hubs, or anything resembling a technical graph or network diagram.
+* **Motion** — continuous drift is very slow and small (a few pixels at most). Motion must never pulse in unison or attract attention. No bouncing, no parallax, no particle effects.
+* **Cursor response** — nodes near the cursor brighten slightly and shift a small distance; connections near the cursor become slightly more visible. The effect should feel like the cursor disturbing a field of ideas. Keep displacement tiny (a few pixels) and never let the field appear to chase the pointer.
+* **Palette** — neutral (`secondary` / `tertiary` / `border-strong`). This is not a place for the accent color, gradients, or neon.
+* **Hierarchy** — visually secondary to the hero text. It appears only where there is room for it (large screens) and is hidden rather than shrunk on smaller screens.
+* **Reduced motion** — `prefers-reduced-motion` disables the drift loop while preserving the visual in its resting state.
+* **Accessibility** — purely decorative: `aria-hidden`, not focusable, and must not intercept pointer events or interfere with the search field.
+
+This visual must not become a generic "AI" graphic. No brains, sparks, neural-network icons, glowing orbs, or animated particles.
 
 ### Shadows
 
@@ -181,7 +199,8 @@ The site should have one main gateway page and then the static lesson pages.
    * renders as its own full-width band with a warm gradient background (see Theme > Ambient background);
    * brand heading: `Ashmit and AI Writes`;
    * one short supporting sentence explaining that this is a collection of interactive learning pages;
-   * prominent search field, with the single faint accent glow behind it;
+   * prominent search field, with the soft accent glow behind it;
+   * the **Thought Constellation** occupies the right side on large screens (see Theme > Hero constellation);
    * a subtle hairline rule closing the bottom of the band;
    * the hero carries the largest vertical spacing on the page.
 3. **Article library**
@@ -399,6 +418,7 @@ Motion should reinforce interaction rather than attract attention.
 * No bouncing.
 * No parallax.
 * Respect `prefers-reduced-motion`.
+* The hero constellation is the one place continuous ambient motion is allowed, and it must stay slow and small (see Theme > Hero constellation).
 
 ---
 
@@ -411,6 +431,7 @@ The gateway must work comfortably on phones, tablets, laptops, and large desktop
 * one-column article list;
 * hero heading scales down gracefully;
 * search remains full width;
+* the hero constellation is hidden rather than shrunk, so it never crowds the hero or causes overflow;
 * cards retain comfortable padding;
 * no horizontal scrolling;
 * top navigation remains minimal.

@@ -1,35 +1,48 @@
 /**
  * Core content types for the gateway.
  *
- * The metadata model is intentionally minimal and mirrors frontend/design.md:
- * the gateway is built around title, authors, and date only. Do not add
- * required fields until the content model actually gains them.
+ * The metadata model is intentionally minimal and mirrors the `metadata.json`
+ * files under `blogs/`:
+ *
+ *   title:    string
+ *   authors:  string[]
+ *   filename: string   -> which HTML file to open (never displayed)
+ *   topic:    string[]
+ *
+ * Do not add required fields until the content model actually gains them.
  */
 
 /**
- * A single interactive learning article, as described by its metadata.
+ * A single interactive learning article, as produced by the build-time
+ * discovery step and written to `blogs/index.json`.
  *
- * `date` stays a raw source string here (metadata may be ISO, loose, or
- * malformed). Formatting for humans happens at render time via
- * `formatArticleDate`, so the original value is never lost.
+ * The frontend never reads the repository layout: the folder name and filename
+ * have already been resolved into `url` by the discovery script.
  */
 export interface Article {
-  /** Display title, e.g. "How Transformers Learn". */
-  name: string
+  /** Display title, e.g. "Attention and KV Caching". */
+  title: string
   /** All authors. May be empty. */
   authors: string[]
-  /** Raw source date string. May be missing or malformed. */
-  date: string
-  /** URL to the article's static HTML page (e.g. /blogs/<folder>/index.html). */
-  href: string
-  /** Stable identity, used as a React key. */
+  /** All topics. May be empty. */
+  topic: string[]
+  /** Ready-to-use lesson URL, e.g. "/blogs/attention_llm/attention.html". */
+  url: string
+  /** Stable identity from the folder name, used as a React key. */
   id: string
+}
+
+/** Shape of the generated `blogs/index.json` manifest. */
+export interface BlogManifest {
+  version: number
+  generatedAt: string
+  articles: Article[]
 }
 
 /**
  * How the article library was resolved.
  *
  * The UI renders the same layout for every state; only the message differs.
- * `ready` is the normal case once a manifest has been loaded.
+ * `ready` is the normal case once the manifest has been loaded.
  */
 export type LibraryStatus = 'loading' | 'ready' | 'error'

@@ -1,43 +1,47 @@
 import type { Article } from '../types'
 
 /**
- * Date formatting for article metadata.
- *
- * The source value is kept raw on the `Article`; this helper only produces the
- * human-readable form. It must never throw: metadata can be missing, malformed,
- * or an unexpected format, and the UI should degrade quietly.
- *
- * Example: "2026-01-12" -> "12 January 2026"
- */
-export function formatArticleDate(value: string | null | undefined): string | null {
-  if (!value || typeof value !== 'string') return null
-
-  const trimmed = value.trim()
-  if (trimmed === '') return null
-
-  const parsed = new Date(trimmed)
-
-  // An Invalid Date means we could not understand the source value. Rather
-  // than hide it or crash, fall back to showing the original text.
-  if (Number.isNaN(parsed.getTime())) return trimmed
-
-  return parsed.toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-}
-
-/**
  * Case-insensitive match used by search.
  *
- * Matches against the article title and all author names, per design.md.
- * Kept deliberately simple — no fuzzy-search dependency.
+ * Matches against the article title, all author names, and all topics. The
+ * lesson filename/URL is deliberately excluded — it is an implementation
+ * detail, not part of the user-facing model.
+ *
+ * Kept intentionally simple: no fuzzy-search dependency.
  */
-export function articleMatchesQuery(article: Article, rawQuery: string): boolean {
+export function articleMatchesQuery(
+  article: Article,
+  rawQuery: string,
+): boolean {
   const query = rawQuery.trim().toLowerCase()
   if (query === '') return true
 
-  const haystack = [article.name, ...article.authors].join(' ').toLowerCase()
+  const haystack = [article.title, ...article.authors, ...article.topic]
+    .join(' ')
+    .toLowerCase()
+
   return haystack.includes(query)
+}
+
+/**
+ * Validate one entry from the generated manifest.
+ *
+ * The manifest is produced by our own build step, so this is a light
+ * defence-in-depth check rather than strict validation (the discovery script
+ * already rejects malformed metadata). A malformed entry is skipped by the
+ * caller rather than breaking the whole library.
+ */
+export function isArticle(value: unknown): value is Article {
+  if (value === null || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+
+  return (
+    typeof candidate.title === 'string' &&
+    Array.isArray(candidate.authors) &&
+    candidate.authors.every((author) => typeof author === 'string') &&
+    Array.isArray(candidate.topic) &&
+    candidate.topic.every((topic) => typeof topic === 'string') &&
+    typeof candidate.url === 'string' &&
+    typeof candidate.id === 'string'
+  )
 }

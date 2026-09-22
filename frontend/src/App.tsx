@@ -8,9 +8,9 @@ import { isUsingDemoData, useArticleLibrary } from './hooks/useArticleLibrary'
 /**
  * Application shell for the gateway.
  *
- * Composition only: header, hero + search, then the article library. All state
- * (search query, library status) lives here or in hooks, so the child
- * components stay presentational and easy to test.
+ * Composition only: header, hero, then the article library (which owns the
+ * search field). All state (search query, library status) lives here or in
+ * hooks, so the child components stay presentational and easy to test.
  */
 export default function App() {
   const { articles, status, error } = useArticleLibrary()
@@ -22,30 +22,17 @@ export default function App() {
 
       <main className="flex-1">
         {/* Hero renders its own full-width band; inner content is constrained there. */}
-        <Hero query={query} onQueryChange={setQuery} />
+        <Hero />
 
         <div className="mx-auto w-full max-w-[1140px] px-4 pt-8 sm:px-6 sm:pt-10 lg:px-8">
-          {/*
-            Foundation-step notice. This banner is tied to the placeholder
-            fixtures and disappears automatically once demo data is removed
-            (see src/hooks/useArticleLibrary.ts).
-          */}
-          {isUsingDemoData && (
-            <p className="mb-8 rounded-lg border border-border bg-accent-soft px-4 py-3 text-xs text-secondary">
-              <span className="font-medium text-primary">
-                Placeholder content.
-              </span>{' '}
-              The cards below are temporary demo data used to preview the
-              layout. Real articles will appear here once discovery is added.
-            </p>
-          )}
-
           <ArticleLibrary
             articles={articles}
             status={status}
             error={error}
             query={query}
+            onQueryChange={setQuery}
             onClearQuery={() => setQuery('')}
+            showDemoNotice={isUsingDemoData}
           />
         </div>
       </main>

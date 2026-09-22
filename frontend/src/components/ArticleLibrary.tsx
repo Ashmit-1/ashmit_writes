@@ -14,8 +14,6 @@ interface ArticleLibraryProps {
   query: string
   onQueryChange: (value: string) => void
   onClearQuery: () => void
-  /** Shows the temporary placeholder-data notice. Remove with the demo fixtures. */
-  showDemoNotice?: boolean
 }
 
 /**
@@ -36,7 +34,6 @@ export function ArticleLibrary({
   query,
   onQueryChange,
   onClearQuery,
-  showDemoNotice = false,
 }: ArticleLibraryProps) {
   const visibleArticles = useMemo(
     () => articles.filter((article) => articleMatchesQuery(article, query)),
@@ -70,20 +67,6 @@ export function ArticleLibrary({
           placeholder="Search by title or author"
         />
       </div>
-
-      {/*
-        Foundation-step notice. Sits below the search so the section header and
-        search read as one unit. Tied to the placeholder fixtures and
-        disappears automatically once demo data is removed
-        (see src/hooks/useArticleLibrary.ts).
-      */}
-      {showDemoNotice && (
-        <p className="mt-5 rounded-lg border border-border bg-accent-soft px-4 py-3 text-xs text-secondary">
-          <span className="font-medium text-primary">Placeholder content.</span>{' '}
-          The cards below are temporary demo data used to preview the layout.
-          Real articles will appear here once discovery is added.
-        </p>
-      )}
 
       <div className="mt-6 sm:mt-8">
         {status === 'loading' && (

@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { ArticleLibrary } from './components/ArticleLibrary'
 import { Header } from './components/Header'
 import { Hero } from './components/Hero'
-import { isUsingDemoData, useArticleLibrary } from './hooks/useArticleLibrary'
+import { useArticleLibrary } from './hooks/useArticleLibrary'
 
 /**
  * Application shell for the gateway.
@@ -32,7 +32,6 @@ export default function App() {
             query={query}
             onQueryChange={setQuery}
             onClearQuery={() => setQuery('')}
-            showDemoNotice={isUsingDemoData}
           />
         </div>
       </main>

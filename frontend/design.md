@@ -120,17 +120,24 @@ It exists to make the hero read as *a field of ideas waiting to be explored*. It
 
 **It must look intentionally designed at rest.** Do not make it so subtle that the area appears empty. Interaction is additive, never the thing that makes the visual legible.
 
-* **Space** — occupies roughly 40–45% of the hero width, vertically centred against the hero content. Desktop size is approximately 450–550px wide by 350–450px tall. The composition fills its box; do not letterbox it into a fraction of the available area.
+* **Space** — on desktop it occupies roughly 40–45% of the hero width, vertically centred against the hero content, at approximately 450–550px wide by 350–450px tall. The composition fills its box; do not letterbox it into a fraction of the available area.
+* **Responsive behaviour** — the constellation is present at **every** breakpoint; it is never hidden. It scales down and repositions rather than disappearing:
+  * **Mobile** — sits in the hero's single column between the tagline and the search field, at a reduced height (~240px) so it does not push the search bar far down the page. Order is: tagline → constellation → search.
+  * **Tablet** — same placement, taller (~320px).
+  * **Desktop** — moves into the right-hand column beside the typography, at full size.
+  * Box dimensions track the viewBox aspect ratio at each breakpoint so the drawing fills its box, with no empty side margins and no horizontal overflow.
+* **Touch** — interaction must not be mouse-only. On touch devices, dragging/swiping disturbs the nodes locally along the finger's path, and a tap leaves a brief highlight that fades. Vertical page scrolling must still work when a gesture starts on the constellation. Prefer a single pointer-event code path for both mouse and touch.
 * **Nodes** — around 12–18, varying in size (roughly a 2–2.5x range), arranged organically. Never a grid, never uniform. Include roughly 3–5 noticeably larger "anchor" nodes for the important ideas.
 * **Composition** — a few loose clusters rather than a uniform field. Most nodes connect to one or two others; only a small number of edges cross between clusters. It should read as a map of ideas, not a mesh.
 * **Labels** — a handful of very short, quiet labels (`AI`, `Learning`, `Systems`, `React`, `LLMs`, `Data`, …). Sparse: most nodes are unlabelled. Labels use the metadata tone (`text-tertiary`), must stay inside the viewBox, and must not collide with other nodes or labels. They are not navigation or controls.
 * **Connections** — thin hairlines (about 1–2px on screen) at low resting opacity, suggesting relationships. Avoid dense webs, hubs, or anything resembling a technical graph, neural network, or blockchain diagram.
 * **Resting state** — nodes and connections must be clearly visible before any interaction. Opacity is not the thing that carries the whole visual.
 * **Motion** — very slow ambient drift (a few pixels at most), with per-node phase so the field never pulses in unison. No bouncing, no parallax, no particle effects.
-* **Cursor response** — a *local* effect: within roughly 100–110px of the cursor, nodes shift slightly away, brighten, and grow, and connections become more visible. Outside that radius the field stays calm. Keep displacement restrained (tens of pixels at most, not a chase). Connections should respond along their length, not only near their midpoint.
+* **Cursor response** — a *local* effect: within roughly 100–110px of the pointer, nodes shift slightly away, brighten, and grow, and connections become more visible. Outside that radius the field stays calm. Keep displacement restrained (tens of pixels at most, not a chase). Connections should respond along their length, not only near their midpoint.
 * **Palette** — neutral (`secondary` / `tertiary` / `border-strong`). This is not a place for the accent color, gradients, or neon.
 * **Hierarchy** — typography stays primary. The constellation must never compete with the tagline or the search field.
 * **Reduced motion** — `prefers-reduced-motion` disables drift while preserving the visual in its resting state.
+* **Performance** — the animation must stay cheap on mobile: one animation loop, direct attribute updates, no libraries.
 * **Accessibility** — purely decorative: `aria-hidden`, not focusable, and it must not interfere with the search field.
 
 This visual must not become a generic "AI" graphic. No brains, sparks, glowing orbs, neural-network icons, or animated particles.
@@ -205,9 +212,9 @@ The site should have one main gateway page and then the static lesson pages.
    * brand heading: `Ashmit and AI Writes`;
    * one short supporting sentence explaining that this is a collection of interactive learning pages;
    * prominent search field, with the soft accent glow behind it;
-   * the **Thought Constellation** occupies the right side on large screens (see Theme > Hero constellation);
+   * the **Thought Constellation** occupies the right side on desktop and moves between the tagline and search on smaller screens (see Theme > Hero constellation);
    * a subtle hairline rule closing the bottom of the band;
-   * the hero carries the largest vertical spacing on the page.
+   * the hero carries the largest vertical spacing on the page, but the gap between the hero and the article library stays tight: the cards should begin soon after the search field, with only a reasonable section gap. Avoid stacked padding and margins that push the first row of cards below the fold.
 3. **Article library**
    * sits on the flat `page` color below the band;
    * section heading such as `Explore` or `Learn`;
@@ -436,7 +443,7 @@ The gateway must work comfortably on phones, tablets, laptops, and large desktop
 * one-column article list;
 * hero heading scales down gracefully;
 * search remains full width;
-* the hero constellation is hidden rather than shrunk, so it never crowds the hero or causes overflow;
+* the hero constellation is scaled down and placed between the tagline and the search bar, so it stays visible without crowding the hero or causing overflow;
 * cards retain comfortable padding;
 * no horizontal scrolling;
 * top navigation remains minimal.

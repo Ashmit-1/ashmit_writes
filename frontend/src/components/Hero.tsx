@@ -22,8 +22,16 @@ interface HeroProps {
 export function Hero({ query, onQueryChange }: HeroProps) {
   return (
     <section className="hero-band paper-grain relative isolate overflow-hidden">
-      <div className="mx-auto w-full max-w-[1140px] px-4 pt-20 pb-14 sm:px-6 sm:pt-28 sm:pb-20 lg:px-8 lg:pt-36 lg:pb-24">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-16">
+      <div className="mx-auto w-full max-w-[1140px] px-4 pt-20 pb-14 sm:px-6 sm:pt-28 sm:pb-20 lg:px-8 lg:pt-32 lg:pb-24">
+        {/*
+          Two-column hero: typography + search on the left, constellation on
+          the right. The right column takes ~42% of the width on desktop, and
+          both columns are vertically centred against each other.
+
+          Below `lg` the constellation is dropped rather than shrunk, so it
+          never crowds the tagline or causes horizontal overflow on phones.
+        */}
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.72fr)] lg:gap-10 xl:gap-14">
           <div className="max-w-2xl">
             <h1 className="text-balance">
               <BrandMark size="hero" />
@@ -46,10 +54,11 @@ export function Hero({ query, onQueryChange }: HeroProps) {
           </div>
 
           {/*
-            Ambient constellation. Hidden below `lg` so it never crowds the
-            hero or causes overflow on small screens.
+            Interactive Thought Constellation.
+            Desktop sizing: ~450-550px wide, ~350-450px tall, vertically
+            centred against the hero content by the grid's `items-center`.
           */}
-          <HeroConstellation className="pointer-events-auto hidden h-[320px] w-full select-none lg:block lg:h-[380px]" />
+          <HeroConstellation className="hidden h-[400px] w-full max-w-[550px] select-none lg:block lg:justify-self-end xl:h-[450px]" />
         </div>
 
         {/* Subtle editorial hairline closing the band. */}

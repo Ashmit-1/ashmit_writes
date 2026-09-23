@@ -1,0 +1,6 @@
+{
+  "title" : "Fine-tuning and Post-training LLMs",
+  "authors" : ["Ashmit Das", "Deepseek AI"],
+  "filename" : "finetuning.html",
+  "topic" : ["LLM", "AI", "LoRA", "QLoRA"]
+}

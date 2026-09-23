@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fine-Tuning & Post-Training LLMs — Interactive Course</title>
+<style>
+  :root {
+    --bg: #fdfdfc;
+    --surface: #ffffff;
+    --border: #e4e4e0;
+    --text: #1c1c1a;
+    --text-secondary: #5a5a56;
+    --accent: #2a6f6a;
+    --accent-light: #e8f2f1;
+    --accent-dark: #1d4f4b;
+    --warn: #b45309;
+    --warn-light: #fef3c7;
+    --success: #166534;
+    --success-light: #dcfce7;
+    --error: #991b1b;
+    --error-light: #fee2e2;
+    --code-bg: #f4f4f1;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  /* ---- Progress bar ---- */
+  .progress-bar-wrap {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 4px; background: var(--border);
+  }
+  .progress-bar {
+    height: 100%; width: 0%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+
+  /* ---- Nav ---- */
+  .top-nav {
+    position: sticky; top: 0; z-index: 90;
+    background: rgba(253,253,252,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    display: flex; gap: 0.25rem; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .top-nav::-webkit-scrollbar { display: none; }
+  .top-nav a {
+    flex-shrink: 0;
+    font-size: 0.8rem; font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+  }
+  .top-nav a:hover, .top-nav a:focus-visible { background: var(--accent-light); color: var(--accent-dark); }
+  .top-nav a.active { background: var(--accent); color: #fff; }
+
+  /* ---- Layout ---- */
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 1.25rem 4rem;
+  }
+
+  /* ---- Hero ---- */
+  .hero {
+    padding: 2.5rem 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  .hero h1 {
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin-bottom: 0.75rem;
+  }
+  .hero p {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 600px;
+  }
+
+  /* ---- Section ---- */
+  section { margin-bottom: 3rem; scroll-margin-top: 4rem; }
+  section > h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  section > h3 {
+    font-size: 1.1rem;
+    font-weight: 650;
+    margin: 1.5rem 0 0.6rem;
+  }
+
+  p { margin-bottom: 0.9rem; }
+  p:last-child { margin-bottom: 0; }
+
+  ul, ol { margin: 0.5rem 0 1rem 1.4rem; }
+  li { margin-bottom: 0.35rem; }
+
+  strong { font-weight: 650; }
+
+  /* ---- Cards ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.4rem;
+    margin: 1rem 0;
+    box-shadow: var(--shadow);
+  }
+  .card-accent { border-left: 3px solid var(--accent); }
+  .card-warn { border-left: 3px solid var(--warn); background: var(--warn-light); }
+  .card-ok { border-left: 3px solid var(--success); background: var(--success-light); }
+
+  /* ---- Code ---- */
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+  }
+  pre {
+    background: #1e1e1c;
+    color: #e0e0dc;
+    padding: 1rem 1.2rem;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin: 1rem 0;
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+
+  /* ---- Buttons ---- */
+  button, .btn {
+    font-family: var(--font);
+    font-size: 0.88rem;
+    font-weight: 550;
+    padding: 0.5rem 1rem;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  button:hover, .btn:hover { background: var(--accent-light); border-color: var(--accent); }
+  button:focus-visible, .btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  button.primary:hover { background: var(--accent-dark); }
+
+  /* ---- Tabs ---- */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; flex-wrap: wrap; }
+  .tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 550;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    border-radius: 0;
+  }
+  .tab:hover { color: var(--text); background: var(--accent-light); }
+  .tab.active { color: var(--accent-dark); border-bottom-color: var(--accent); font-weight: 650; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ---- Slider ---- */
+  .slider-row {
+    display: flex; align-items: center; gap: 0.75rem; margin: 0.6rem 0;
+  }
+  .slider-row label {
+    font-size: 0.85rem; font-weight: 550; min-width: 110px;
+    color: var(--text-secondary);
+  }
+  input[type="range"] {
+    flex: 1; accent-color: var(--accent); height: 1.2rem;
+  }
+  .slider-val {
+    font-family: var(--mono); font-size: 0.82rem; font-weight: 600;
+    min-width: 50px; text-align: right; color: var(--accent-dark);
+  }
+
+  /* ---- Quiz ---- */
+  .quiz-q {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.3rem;
+    margin: 1rem 0;
+  }
+  .quiz-q p { font-weight: 600; margin-bottom: 0.7rem; }
+  .quiz-options { display: flex; flex-direction: column; gap: 0.4rem; }
+  .quiz-options button {
+    text-align: left;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    border-radius: 6px;
+  }
+  .quiz-options button.correct {
+    background: var(--success-light);
+    border-color: var(--success);
+    color: var(--success);
+    font-weight: 600;
+  }
+  .quiz-options button.incorrect {
+    background: var(--error-light);
+    border-color: var(--error);
+    color: var(--error);
+  }
+  .quiz-options button:disabled { cursor: default; opacity: 0.85; }
+  .quiz-feedback {
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    padding: 0.6rem 0.8rem;
+    border-radius: 6px;
+    display: none;
+  }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { background: var(--success-light); color: var(--success); }
+  .quiz-feedback.no { background: var(--error-light); color: var(--error); }
+
+  /* ---- Prediction box ---- */
+  .predict-box {
+    background: var(--accent-light);
+    border: 1px solid #c5dedb;
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    margin: 1rem 0;
+  }
+  .predict-box .pb-label {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--accent-dark); margin-bottom: 0.4rem;
+  }
+  .predict-box p { font-size: 0.92rem; }
+  .reveal-content {
+    display: none;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed #c5dedb;
+    font-size: 0.88rem;
+  }
+  .reveal-content.show { display: block; }
+
+  /* ---- Comparison table ---- */
+  .cmp-table {
+    width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0;
+  }
+  .cmp-table th, .cmp-table td {
+    padding: 0.55rem 0.7rem; text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .cmp-table th {
+    font-weight: 650; background: var(--code-bg);
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--text-secondary);
+  }
+  .cmp-table tr:last-child td { border-bottom: none; }
+
+  /* ---- Visualization canvas ---- */
+  .viz-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin: 1rem 0;
+    overflow: hidden;
+  }
+  .viz-wrap canvas { display: block; width: 100%; height: auto; border-radius: 6px; }
+
+  /* ---- Memory calculator ---- */
+  .mem-result {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;
+    margin: 0.8rem 0;
+  }
+  .mem-item {
+    background: var(--code-bg); border-radius: 8px; padding: 0.6rem 0.8rem;
+  }
+  .mem-item .ml { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em; }
+  .mem-item .mv { font-size: 1.15rem; font-weight: 700; color: var(--accent-dark); font-family: var(--mono); }
+
+  /* ---- Step list ---- */
+  .step-list { list-style: none; margin-left: 0; }
+  .step-list li {
+    position: relative;
+    padding: 0.6rem 0 0.6rem 2.2rem;
+    border-left: 2px solid var(--border);
+    margin-left: 0.6rem;
+  }
+  .step-list li::before {
+    content: attr(data-step);
+    position: absolute; left: -0.75rem; top: 0.6rem;
+    width: 1.4rem; height: 1.4rem;
+    background: var(--accent); color: #fff;
+    border-radius: 50%; font-size: 0.7rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-list li:last-child { border-left-color: transparent; }
+
+  /* ---- Takeaway list ---- */
+  .takeaway-grid { display: grid; gap: 0.6rem; margin: 1rem 0; }
+  .takeaway-item {
+    display: flex; gap: 0.7rem; align-items: flex-start;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.7rem 0.9rem;
+  }
+  .takeaway-num {
+    flex-shrink: 0;
+    width: 1.5rem; height: 1.5rem;
+    background: var(--accent); color: #fff;
+    border-radius: 50%; font-size: 0.75rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 0.15rem;
+  }
+  .takeaway-item p { margin: 0; font-size: 0.9rem; }
+
+  /* ---- Glossary ---- */
+  .glossary dt { font-weight: 650; margin-top: 0.8rem; font-size: 0.92rem; }
+  .glossary dd { margin-left: 0; font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.3rem; }
+
+  /* ---- Sources ---- */
+  .sources ol { font-size: 0.85rem; color: var(--text-secondary); }
+  .sources li { margin-bottom: 0.5rem; }
+  .sources a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+  .sources a:hover { color: var(--accent-dark); }
+
+  /* ---- Badge ---- */
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem; font-weight: 650;
+    padding: 0.15em 0.55em;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+  }
+  .badge-essential { background: var(--accent-light); color: var(--accent-dark); }
+  .badge-advanced { background: #f3e8ff; color: #6b21a8; }
+  .badge-nice { background: #fef3c7; color: #92400e; }
+
+  /* ---- Footer ---- */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem 0 1rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  /* ---- Mobile ---- */
+  @media (max-width: 600px) {
+    .container { padding: 0 0.9rem 3rem; }
+    .card { padding: 1rem 1.1rem; }
+    .mem-result { grid-template-columns: 1fr; }
+    .slider-row label { min-width: 80px; font-size: 0.8rem; }
+  }
+
+  /* ---- Print ---- */
+  @media print {
+    .top-nav, .progress-bar-wrap, button { display: none; }
+    .card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+<nav class="top-nav" id="topNav" aria-label="Course sections">
+  <a href="#objectives">Objectives</a>
+  <a href="#big-picture">Big Picture</a>
+  <a href="#core">Core Concepts</a>
+  <a href="#lora">LoRA &amp; QLoRA</a>
+  <a href="#quant">Quantization</a>
+  <a href="#preference">Preference Learning</a>
+  <a href="#practical">Practical Workflow</a>
+  <a href="#pitfalls">Pitfalls</a>
+  <a href="#evaluation">Evaluation</a>
+  <a href="#quiz">Quiz</a>
+  <a href="#mental-model">Mental Model</a>
+  <a href="#glossary">Glossary</a>
+  <a href="#sources">Sources</a>
+</nav>
+
+<div class="container">
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+  <h1>Fine-Tuning &amp; Post-Training LLMs</h1>
+  <p>From beginner fundamentals to practical implementation — an interactive course on how modern language models are adapted, aligned, and deployed.</p>
+</header>
+
+<!-- ==================== OBJECTIVES ==================== -->
+<section id="objectives">
+  <h2>Learning Objectives</h2>
+  <p>By the end of this course, you should understand:</p>
+  <ul>
+    <li>What fine-tuning is and how it differs from pretraining</li>
+    <li>How LoRA and QLoRA work — including the underlying intuition and mathematics</li>
+    <li>How quantization reduces memory requirements for training and inference</li>
+    <li>The modern post-training pipeline: SFT, preference learning (DPO, RLHF), and reasoning-focused RL (GRPO)</li>
+    <li>How to prepare datasets, apply chat templates, and avoid common failure modes</li>
+    <li>The practical ecosystem: Hugging Face Transformers, PEFT, Datasets, TRL, and Unsloth</li>
+    <li>How to evaluate, distill, merge, and deploy fine-tuned models</li>
+  </ul>
+  <div class="card card-accent">
+    <p style="margin:0; font-size:0.9rem;"><strong>How to use this page:</strong> Work through it top to bottom. Interactive elements are marked with <span class="badge badge-essential">interactive</span>. Prediction questions ask you to pause and think before revealing the answer. Quizzes appear throughout and at the end.</p>
+  </div>
+</section>
+
+<!-- ==================== BIG PICTURE ==================== -->
+<section id="big-picture">
+  <h2>1. The Big Picture</h2>
+
+  <h3>What is fine-tuning?</h3>
+  <p>Imagine you have a brilliant new employee who has read the entire internet but has never worked at your company. They know <em>everything</em> in general terms, but they don't know your style, your products, or your specific procedures. <strong>Fine-tuning</strong> is the training period where you teach that employee your specific job.</p>
+  <p>More technically: a <strong>pretrained language model</strong> has learned general language patterns from massive text corpora. Fine-tuning adapts that model to a narrower domain, task, or behavioural style using a much smaller, targeted dataset.</p>
+
+  <h3>The modern LLM lifecycle</h3>
+  <p>Most modern LLMs go through roughly these stages:</p>
+  <ol class="step-list">
+    <li data-step="1"><strong>Pretraining</strong> — Learn language and world knowledge from trillions of tokens. Extremely expensive (millions of dollars). Produces a "base model."</li>
+    <li data-step="2"><strong>Continued pretraining</strong> — Further pretraining on a domain-specific corpus (e.g., medical, legal, code). Still next-token prediction, but on specialised data.</li>
+    <li data-step="3"><strong>Supervised Fine-Tuning (SFT)</strong> — Train on instruction–response pairs so the model learns to follow instructions and adopt a helpful assistant persona.</li>
+    <li data-step="4"><strong>Preference learning</strong> — Align the model with human preferences using techniques like DPO, RLHF, or GRPO. Teaches the model to prefer better responses over worse ones.</li>
+    <li data-step="5"><strong>Evaluation &amp; deployment</strong> — Benchmark, quantise, possibly distil or merge, then deploy.</li>
+  </ol>
+
+  <div class="viz-wrap">
+    <canvas id="pipelineCanvas" width="760" height="120" role="img" aria-label="Pipeline diagram showing Pretraining, Continued Pretraining, SFT, Preference Learning, and Deployment as five sequential stages."></canvas>
+  </div>
+
+  <div class="predict-box">
+    <div class="pb-label">Prediction</div>
+    <p>Before reading on: if fine-tuning uses a dataset of only 10,000 examples, how can it meaningfully change a model with billions of parameters?</p>
+    <button onclick="toggleReveal('reveal-predict-1')" aria-expanded="false" aria-controls="reveal-predict-1">Reveal answer</button>
+    <div class="reveal-content" id="reveal-predict-1">
+      <p>The key insight is that <strong>not all parameters need to change</strong>. The pretrained model already contains most of the knowledge needed. Fine-tuning makes small, targeted adjustments — often to a tiny fraction of parameters (via LoRA) — that steer existing capabilities toward the desired behaviour. Think of it as adjusting the steering, not rebuilding the engine.</p>
+    </div>
+  </div>
+
+  <h3>Why it matters</h3>
+  <ul>
+    <li><strong>Customisation:</strong> Off-the-shelf models are generalists. Fine-tuning makes them specialists.</li>
+    <li><strong>Cost:</strong> Fine-tuning a small model can outperform a much larger general model on a narrow task at a fraction of the inference cost.</li>
+    <li><strong>Control:</strong> You can shape tone, format, safety behaviour, and domain expertise.</li>
+    <li><strong>Privacy:</strong> Fine-tuned small models can run locally, keeping data on-device.</li>
+  </ul>
+</section>
+
+<!-- ==================== CORE CONCEPTS ==================== -->
+<section id="core">
+  <h2>2. Core Concepts</h2>
+
+  <h3>Pretraining vs continued pretraining vs SFT</h3>
+  <div class="card">
+    <table class="cmp-table">
+      <thead>
+        <tr><th>Stage</th><th>Objective</th><th>Data</th><th>Cost</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Pretraining</strong></td>
+          <td>Predict the next token</td>
+          <td>Trillions of tokens of raw text</td>
+          <td>Very high (millions $)</td>
+        </tr>
+        <tr>
+          <td><strong>Continued pretraining</strong></td>
+          <td>Predict the next token on domain data</td>
+          <td>Billions of tokens of domain text</td>
+          <td>Medium–high</td>
+        </tr>
+        <tr>
+          <td><strong>SFT</strong></td>
+          <td>Follow instructions / imitate good responses</td>
+          <td>Thousands–millions of instruction–response pairs</td>
+          <td>Low–medium</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>LLMs vs SLMs (Small Language Models)</h3>
+  <p>The boundary between "large" and "small" is fuzzy and shifts over time. The more useful distinction is <strong>general-purpose vs specialised</strong>. A well-fine-tuned 3B parameter model can outperform a 70B general model on a narrow classification or extraction task — while running on a laptop.</p>
+  <div class="card card-ok">
+    <p style="margin:0; font-size:0.9rem;"><strong>Key insight:</strong> Specialised small models often win on <em>cost per unit of quality</em> for well-defined tasks. Large general models win when you need broad reasoning or knowledge across many domains.</p>
+  </div>
+
+  <h3>Chat templates</h3>
+  <p>A <strong>chat template</strong> is the exact text format a model expects for multi-turn conversations. Different model families use different templates (ChatML, Llama, Qwen, etc.). If you train with the wrong template, the model may still learn, but performance degrades — sometimes silently.</p>
+  <p>Most modern tokenizers include a <code>chat_template</code> attribute that the tokenizer applies for you. The safest workflow is:</p>
+  <ol>
+    <li>Load the tokenizer.</li>
+    <li>Check <code>tokenizer.chat_template</code>.</li>
+    <li>Format your dataset using <code>tokenizer.apply_chat_template()</code>.</li>
+    <li>If you must set a custom template, do it <em>before</em> training and document it.</li>
+  </ol>
+  <div class="card card-warn">
+    <p style="margin:0; font-size:0.88rem;"><strong>Common mistake:</strong> Using a generic instruction format (like Alpaca) when the base model was trained with a different template. The model can still learn, but you lose the benefit of the template it already understands.</p>
+  </div>
+
+  <h3>Dataset quality</h3>
+  <p>In instruction tuning, <strong>quality beats quantity</strong> by a wide margin. A few thousand carefully curated examples often outperform hundreds of thousands of noisy ones. Key principles:</p>
+  <ul>
+    <li><strong>Diversity:</strong> Cover the range of inputs the model will see.</li>
+    <li><strong>Consistency:</strong> Use the same format, tone, and style across examples.</li>
+    <li><strong>Correctness:</strong> Verify factual claims in your training data.</li>
+    <li><strong>Balance:</strong> Avoid over-representing one class or category.</li>
+    <li><strong>Deduplication:</strong> Remove near-duplicates to prevent memorisation.</li>
+  </ul>
+
+  <div class="quiz-q" data-quiz="core-1">
+    <p>You have 50,000 instruction examples collected from the web, but they are inconsistently formatted, some are factually wrong, and many are near-duplicates. You also have 2,000 manually curated, high-quality examples. Which strategy is likely to produce the better fine-tuned model?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('core-1', this, false)">Train on all 50,000 — more data always helps</button>
+      <button onclick="answerQuiz('core-1', this, true)">Start with the 2,000 high-quality examples and evaluate, then selectively add more</button>
+      <button onclick="answerQuiz('core-1', this, false)">Mix them 50/50 without filtering</button>
+    </div>
+    <div class="quiz-feedback" id="fb-core-1"></div>
+  </div>
+</section>
+
+<!-- ==================== LoRA & QLoRA ==================== -->
+<section id="lora">
+  <h2>3. LoRA &amp; QLoRA — The Core Techniques</h2>
+
+  <h3>The problem: full fine-tuning is expensive</h3>
+  <p>A 7-billion parameter model in 16-bit precision requires roughly 14 GB just to store the weights. During training, you also need gradients, optimizer states (Adam stores two momentum estimates per parameter), and activations. Full fine-tuning of a 7B model can easily exceed 60–80 GB of GPU memory.</p>
+
+  <h3>LoRA: Low-Rank Adaptation</h3>
+  <p><strong>The core intuition:</strong> When you fine-tune a model, the <em>change</em> in weights doesn't need to be full-rank. It lives in a much lower-dimensional subspace. LoRA exploits this by freezing the original weights and learning a low-rank update.</p>
+
+  <div class="card">
+    <p><strong>Mathematical formulation:</strong></p>
+    <p>For a pretrained weight matrix \(W_0 \in \mathbb{R}^{d \times k}\), LoRA models the update as:</p>
+    <p style="text-align:center; font-family: var(--mono); font-size: 1rem; margin: 0.8rem 0;">\(W = W_0 + \Delta W = W_0 + BA\)</p>
+    <p>where \(B \in \mathbb{R}^{d \times r}\), \(A \in \mathbb{R}^{r \times k}\), and the rank \(r \ll \min(d, k)\). Only \(A\) and \(B\) are trained; \(W_0\) is frozen.</p>
+    <p>During training, the forward pass becomes:</p>
+    <p style="text-align:center; font-family: var(--mono); font-size: 1rem; margin: 0.8rem 0;">\(h = W_0 x + \frac{\alpha}{r} BAx\)</p>
+    <p>where \(\alpha\) is a scaling constant. At initialisation, \(A\) is random Gaussian and \(B = 0\), so \(\Delta W = 0\).</p>
+  </div>
+
+  <div class="viz-wrap">
+    <h4 style="font-size:0.9rem; margin-bottom:0.5rem;">Interactive: LoRA rank vs trainable parameters</h4>
+    <div class="slider-row">
+      <label for="loraRank">Rank (r)</label>
+      <input type="range" id="loraRank" min="1" max="128" value="16" step="1" aria-label="LoRA rank slider">
+      <span class="slider-val" id="loraRankVal">16</span>
+    </div>
+    <div class="slider-row">
+      <label for="loraDim">Model dimension (d)</label>
+      <input type="range" id="loraDim" min="256" max="8192" value="4096" step="256" aria-label="Model dimension slider">
+      <span class="slider-val" id="loraDimVal">4096</span>
+    </div>
+    <div class="mem-result">
+      <div class="mem-item">
+        <div class="ml">Full fine-tuning (d×d)</div>
+        <div class="mv" id="fullParams">16.8M</div>
+      </div>
+      <div class="mem-item">
+        <div class="ml">LoRA parameters (2×d×r)</div>
+        <div class="mv" id="loraParams">131K</div>
+      </div>
+      <div class="mem-item">
+        <div class="ml">Reduction</div>
+        <div class="mv" id="loraReduction">99.2%</div>
+      </div>
+      <div class="mem-item">
+        <div class="ml">LoRA / full ratio</div>
+        <div class="mv" id="loraRatio">0.78%</div>
+      </div>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.5rem;">This shows the parameter count for a single weight matrix. Real models have many such matrices (one per attention and MLP projection).</p>
+  </div>
+
+  <h3>QLoRA: Quantised LoRA</h3>
+  <p>QLoRA takes LoRA further by quantising the frozen base model to 4-bit precision while keeping the LoRA adapters in higher precision. This dramatically reduces memory without significant quality loss.</p>
+
+  <div class="card">
+    <p><strong>Three key innovations in QLoRA:</strong></p>
+    <ol style="margin-bottom:0;">
+      <li><strong>4-bit NormalFloat (NF4):</strong> A data type designed to be information-theoretically optimal for normally distributed weights. Neural network weights tend to follow a roughly normal distribution, so NF4 allocates more representational capacity to values near zero.</li>
+      <li><strong>Double Quantization:</strong> Quantises the quantization constants themselves, saving an additional ~0.37 bits per parameter (about 3 GB for a 65B model).</li>
+      <li><strong>Paged Optimizers:</strong> Uses NVIDIA unified memory to page optimizer states to CPU RAM during memory spikes, preventing out-of-memory errors.</li>
+    </ol>
+  </div>
+
+  <div class="predict-box">
+    <div class="pb-label">Prediction</div>
+    <p>QLoRA quantises the base model to 4-bit. Does this mean the model's weights are stored as 4-bit integers permanently, and inference uses only 4-bit arithmetic?</p>
+    <button onclick="toggleReveal('reveal-qlora')" aria-expanded="false" aria-controls="reveal-qlora">Reveal answer</button>
+    <div class="reveal-content" id="reveal-qlora">
+      <p>Not quite. QLoRA stores the base weights in 4-bit NF4 format, but when a forward pass happens, those weights are <strong>dequantised on the fly</strong> to 16-bit BrainFloat (BF16) for computation. The 4-bit format is a storage optimisation, not a compute optimisation. This is why QLoRA matches 16-bit full fine-tuning performance on academic benchmarks.</p>
+    </div>
+  </div>
+
+  <h3>Full fine-tuning vs PEFT</h3>
+  <table class="cmp-table">
+    <thead>
+      <tr><th></th><th>Full Fine-Tuning</th><th>LoRA / QLoRA (PEFT)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Trainable parameters</td><td>100%</td><td>0.01% – 1%</td></tr>
+      <tr><td>GPU memory (7B model)</td><td>~60–80 GB</td><td>~6–12 GB</td></tr>
+      <tr><td>Risk of catastrophic forgetting</td><td>Higher</td><td>Lower (base frozen)</td></tr>
+      <tr><td>Quality ceiling</td><td>Highest potential</td><td>Very close in practice</td></tr>
+      <tr><td>Multiple adapters</td><td>No</td><td>Yes (swap or merge)</td></tr>
+      <tr><td>Inference cost</td><td>Same as base</td><td>Same as base (after merge)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="quiz-q" data-quiz="lora-1">
+    <p>You fine-tune a model with LoRA at rank r=8. You then merge the LoRA weights into the base model. What is the inference cost compared to the original base model?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('lora-1', this, false)">Higher, because the model now has extra LoRA parameters</button>
+      <button onclick="answerQuiz('lora-1', this, true)">Essentially the same, because the merged weights have the same shape as the base model</button>
+      <button onclick="answerQuiz('lora-1', this, false)">Lower, because LoRA compresses the model</button>
+    </div>
+    <div class="quiz-feedback" id="fb-lora-1"></div>
+  </div>
+</section>
+
+<!-- ==================== QUANTIZATION ==================== -->
+<section id="quant">
+  <h2>4. Quantization &amp; Memory Optimization</h2>
+
+  <h3>What is quantization?</h3>
+  <p>Quantization reduces the numerical precision of a model's weights and/or activations. Instead of storing each weight as a 16-bit float, you might store it as an 8-bit or 4-bit integer. This reduces memory and can speed up inference on hardware with integer arithmetic support.</p>
+
+  <h3>Common precision levels</h3>
+  <table class="cmp-table">
+    <thead><tr><th>Format</th><th>Bits/param</th><th>Memory (7B)</th><th>Typical use</th></tr></thead>
+    <tbody>
+      <tr><td>FP32</td><td>32</td><td>28 GB</td><td>Legacy training</td></tr>
+      <tr><td>BF16 / FP16</td><td>16</td><td>14 GB</td><td>Standard training</td></tr>
+      <tr><td>INT8 / FP8</td><td>8</td><td>7 GB</td><td>Inference, some training</td></tr>
+      <tr><td>NF4 (QLoRA)</td><td>~4</td><td>3.5 GB</td><td>Memory-efficient fine-tuning</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Quantization methods in practice</h3>
+  <ul>
+    <li><strong>bitsandbytes:</strong> The library used by QLoRA. Provides 8-bit and 4-bit linear layers and 8-bit optimizers. Integrates directly with Hugging Face Transformers.</li>
+    <li><strong>GPTQ:</strong> Post-training quantization using layer-wise reconstruction. Excellent for inference on GPUs.</li>
+    <li><strong>AWQ (Activation-aware Weight Quantization):</strong> Protects salient weights based on activation magnitude. Strong quality retention at 4-bit.</li>
+  </ul>
+
+  <div class="card card-accent">
+    <p style="margin:0; font-size:0.9rem;"><strong>Rule of thumb:</strong> For fine-tuning, QLoRA (4-bit base + 16-bit LoRA) is the most accessible starting point. For inference-only deployment, GPTQ or AWQ at 4-bit often gives the best quality-per-byte.</p>
+  </div>
+
+  <h3>GPU memory calculator</h3>
+  <p>Approximate memory requirements for training a model with LoRA or QLoRA:</p>
+  <div class="viz-wrap">
+    <div class="slider-row">
+      <label for="memParams">Model size (B params)</label>
+      <input type="range" id="memParams" min="0.5" max="70" value="7" step="0.5" aria-label="Model size slider">
+      <span class="slider-val" id="memParamsVal">7B</span>
+    </div>
+    <div class="slider-row">
+      <label for="memMethod">Method</label>
+      <select id="memMethod" style="flex:1; padding:0.35rem; border-radius:6px; border:1px solid var(--border); font-size:0.85rem;">
+        <option value="qlora">QLoRA (4-bit base)</option>
+        <option value="lora">LoRA (16-bit base)</option>
+        <option value="full">Full fine-tuning (16-bit)</option>
+      </select>
+    </div>
+    <div class="mem-result">
+      <div class="mem-item"><div class="ml">Model weights</div><div class="mv" id="memWeights">3.5 GB</div></div>
+      <div class="mem-item"><div class="ml">Optimizer &amp; gradients</div><div class="mv" id="memOpt">0.4 GB</div></div>
+      <div class="mem-item"><div class="ml">Activations (approx)</div><div class="mv" id="memActiv">2.0 GB</div></div>
+      <div class="mem-item"><div class="ml">Estimated total</div><div class="mv" id="memTotal">~6 GB</div></div>
+    </div>
+    <p style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.4rem;">Estimates only. Actual memory depends on batch size, sequence length, gradient checkpointing, and other factors.</p>
+  </div>
+</section>
+
+<!-- ==================== PREFERENCE LEARNING ==================== -->
+<section id="preference">
+  <h2>5. Preference Learning &amp; RLHF</h2>
+
+  <p>Supervised fine-tuning teaches a model to imitate good responses. <strong>Preference learning</strong> goes further: it teaches the model to <em>prefer</em> better responses over worse ones, using human (or AI) judgements.</p>
+
+  <h3>RLHF: The classic pipeline</h3>
+  <ol class="step-list">
+    <li data-step="1"><strong>SFT:</strong> Fine-tune on demonstrations.</li>
+    <li data-step="2"><strong>Reward model:</strong> Train a model to predict human preference scores from pairwise comparisons.</li>
+    <li data-step="3"><strong>PPO:</strong> Use reinforcement learning (Proximal Policy Optimization) to optimise the policy against the reward model, with a KL penalty to stay close to the reference model.</li>
+  </ol>
+  <p>RLHF works, but it is engineering-heavy: it requires maintaining four models in memory (policy, reference, reward, value), is sensitive to hyperparameters, and can be unstable.</p>
+
+  <h3>DPO: Direct Preference Optimization</h3>
+  <p>DPO collapses the RLHF pipeline into a single supervised objective. The key mathematical insight is that the RLHF objective has a closed-form optimal policy, which can be inverted to express the reward directly in terms of the policy and a reference model. Substituting this into the preference likelihood yields a simple loss over preference pairs.</p>
+  <div class="card">
+    <p><strong>DPO loss (intuition):</strong> For a prompt \(x\), a preferred response \(y^+\), and a dispreferred response \(y^-\), DPO increases the log-probability ratio of \(y^+\) relative to \(y^-\), measured against a frozen reference model. A temperature parameter \(\beta\) controls how strongly the model deviates from the reference.</p>
+  </div>
+  <p>DPO is now a default first choice for post-training because of its simplicity and stability, though it has known issues with distribution shift, length bias, and reward over-optimisation.</p>
+
+  <h3>GRPO: Group Relative Policy Optimization</h3>
+  <p>GRPO was popularised by DeepSeek-R1 for training reasoning capabilities. Instead of a value network (as in PPO), GRPO samples a <em>group</em> of outputs for each prompt and computes advantages by comparing each output to the group mean and standard deviation.</p>
+  <div class="card">
+    <p><strong>GRPO advantage:</strong></p>
+    <p style="text-align:center; font-family: var(--mono); font-size: 0.95rem; margin: 0.6rem 0;">\(A_i = \frac{r_i - \text{mean}(r_1, \dots, r_G)}{\text{std}(r_1, \dots, r_G)}\)</p>
+    <p>This removes the need for a separate value network, reducing memory and complexity. For reasoning tasks, rewards can be <strong>rule-based and verifiable</strong> — e.g., checking if a math answer is correct, or whether code passes tests. DeepSeek-R1-Zero used GRPO with only rule-based rewards and no supervised fine-tuning, yet reached contest-level math performance.</p>
+  </div>
+
+  <div class="viz-wrap">
+    <h4 style="font-size:0.9rem; margin-bottom:0.5rem;">Interactive: RLHF vs DPO vs GRPO</h4>
+    <div class="tabs" role="tablist">
+      <button class="tab active" role="tab" onclick="switchTab(event, 'tab-rlhf')" aria-selected="true">RLHF (PPO)</button>
+      <button class="tab" role="tab" onclick="switchTab(event, 'tab-dpo')" aria-selected="false">DPO</button>
+      <button class="tab" role="tab" onclick="switchTab(event, 'tab-grpo')" aria-selected="false">GRPO</button>
+    </div>
+    <div class="tab-panel active" id="tab-rlhf" role="tabpanel">
+      <table class="cmp-table">
+        <tr><td><strong>Models in memory</strong></td><td>4 (policy, reference, reward, value)</td></tr>
+        <tr><td><strong>Training signal</strong></td><td>Learned reward model</td></tr>
+        <tr><td><strong>Stability</strong></td><td>Sensitive to hyperparameters</td></tr>
+        <tr><td><strong>Best for</strong></td><td>Complex alignment, safety</td></tr>
+      </table>
+    </div>
+    <div class="tab-panel" id="tab-dpo" role="tabpanel">
+      <table class="cmp-table">
+        <tr><td><strong>Models in memory</strong></td><td>2 (policy, reference)</td></tr>
+        <tr><td><strong>Training signal</strong></td><td>Static preference pairs</td></tr>
+        <tr><td><strong>Stability</strong></td><td>Stable, supervised-style</td></tr>
+        <tr><td><strong>Best for</strong></td><td>Default alignment, tone control</td></tr>
+      </table>
+    </div>
+    <div class="tab-panel" id="tab-grpo" role="tabpanel">
+      <table class="cmp-table">
+        <tr><td><strong>Models in memory</strong></td><td>2–3 (policy, reference, no value net)</td></tr>
+        <tr><td><strong>Training signal</strong></td><td>Group-relative advantages</td></tr>
+        <tr><td><strong>Stability</strong></td><td>Robust with verifiable rewards</td></tr>
+        <tr><td><strong>Best for</strong></td><td>Reasoning (math, code, logic)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="quiz-q" data-quiz="pref-1">
+    <p>You want to improve a model's mathematical reasoning. You have access to a dataset of problems with verifiable final answers. Which approach is most directly suited to this setting?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('pref-1', this, false)">DPO with human preference pairs</button>
+      <button onclick="answerQuiz('pref-1', this, true)">GRPO with rule-based accuracy rewards</button>
+      <button onclick="answerQuiz('pref-1', this, false)">Full fine-tuning on more pretraining data</button>
+    </div>
+    <div class="quiz-feedback" id="fb-pref-1"></div>
+  </div>
+</section>
+
+<!-- ==================== PRACTICAL WORKFLOW ==================== -->
+<section id="practical">
+  <h2>6. Practical Workflow</h2>
+
+  <h3>The tooling stack</h3>
+  <table class="cmp-table">
+    <thead><tr><th>Library</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Transformers</strong></td><td>Model loading, tokenization, inference</td></tr>
+      <tr><td><strong>Datasets</strong></td><td>Data loading, processing, formatting</td></tr>
+      <tr><td><strong>PEFT</strong></td><td>LoRA, QLoRA, and other parameter-efficient methods</td></tr>
+      <tr><td><strong>TRL</strong></td><td>Trainers for SFT, DPO, GRPO, reward modelling</td></tr>
+      <tr><td><strong>bitsandbytes</strong></td><td>4-bit and 8-bit quantization</td></tr>
+      <tr><td><strong>Unsloth</strong></td><td>Optimised kernels for 2× faster training with ~70% less memory</td></tr>
+      <tr><td><strong>mergekit</strong></td><td>Model merging (TIES, DARE, SLERP, linear)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>End-to-end fine-tuning example</h3>
+  <pre><code>from datasets import load_dataset
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
+from peft import LoraConfig, get_peft_model
+from trl import SFTTrainer
+
+# 1. Load model and tokenizer
+model_id = "Qwen/Qwen2.5-0.5B"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
+
+# 2. Configure LoRA
+lora_config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM",
+)
+model = get_peft_model(model, lora_config)
+
+# 3. Load and format dataset
+dataset = load_dataset("tatsu-lab/alpaca", split="train[:5000]")
+
+def format_prompt(example):
+    return {
+        "text": f"### Instruction:\n{example['instruction']}\n\n### Response:\n{example['output']}"
+    }
+dataset = dataset.map(format_prompt)
+
+# 4. Train
+trainer = SFTTrainer(
+    model=model,
+    train_dataset=dataset,
+    args=TrainingArguments(
+        output_dir="./lora-output",
+        per_device_train_batch_size=4,
+        gradient_accumulation_steps=4,
+        num_train_epochs=2,
+        learning_rate=2e-4,
+        logging_steps=10,
+        save_strategy="epoch",
+        bf16=True,
+    ),
+)
+trainer.train()
+
+# 5. Save the adapter
+model.save_pretrained("./lora-adapter")</code></pre>
+
+  <h3>Key hyperparameters</h3>
+  <table class="cmp-table">
+    <thead><tr><th>Parameter</th><th>Typical range</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Learning rate</strong></td><td>1e-4 to 3e-4 (LoRA); 1e-5 to 5e-5 (full)</td><td>Too high → instability; too low → slow convergence</td></tr>
+      <tr><td><strong>LoRA rank (r)</strong></td><td>8–64</td><td>Higher → more capacity, more parameters</td></tr>
+      <tr><td><strong>LoRA alpha</strong></td><td>Often 2× rank</td><td>Scaling of the LoRA update</td></tr>
+      <tr><td><strong>Batch size</strong></td><td>As large as memory allows</td><td>Larger → more stable gradients</td></tr>
+      <tr><td><strong>Epochs</strong></td><td>1–3 for SFT</td><td>More → risk of overfitting</td></tr>
+      <tr><td><strong>Dropout</strong></td><td>0.0–0.1</td><td>Regularisation</td></tr>
+    </tbody>
+  </table>
+
+  <div class="predict-box">
+    <div class="pb-label">Prediction</div>
+    <p>You set LoRA rank to 128 and train for 5 epochs on 2,000 examples. Training loss drops to near zero. What do you expect to happen on a held-out test set?</p>
+    <button onclick="toggleReveal('reveal-overfit')" aria-expanded="false" aria-controls="reveal-overfit">Reveal answer</button>
+    <div class="reveal-content" id="reveal-overfit">
+      <p>Very likely <strong>overfitting</strong>. A high rank gives the adapter enough capacity to memorise the training data, and 5 epochs on only 2,000 examples is plenty of time to do so. Training loss near zero is a warning sign, not a success metric. You should evaluate on a held-out set and use early stopping.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PITFALLS ==================== -->
+<section id="pitfalls">
+  <h2>7. Overfitting, Catastrophic Forgetting &amp; Failure Modes</h2>
+
+  <h3>Catastrophic forgetting</h3>
+  <p>When you fine-tune a model on domain-specific data, it can lose some of its general capabilities. This is called catastrophic forgetting.</p>
+  <p><strong>Why it happens:</strong> Gradient descent on the new task modifies weights that were important for the original task. If the new data distribution is narrow, the model drifts away from its general knowledge.</p>
+  <p><strong>How to mitigate it:</strong></p>
+  <ul>
+    <li><strong>Use LoRA/QLoRA:</strong> Freezing the base model dramatically reduces forgetting.</li>
+    <li><strong>Replay buffers:</strong> Mix in a small percentage of general-domain data during fine-tuning.</li>
+    <li><strong>Lower learning rate:</strong> Gentler updates preserve more of the original weights.</li>
+    <li><strong>Regularisation:</strong> Methods like LfU (Learning-from-the-Undesirable) enforce representation-level consistency between the original and fine-tuned models.</li>
+  </ul>
+
+  <h3>Other common failure modes</h3>
+  <div class="card card-warn">
+    <ul style="margin-bottom:0;">
+      <li><strong>Wrong chat template:</strong> The model learns, but performance is silently degraded.</li>
+      <li><strong>Data leakage:</strong> Training examples appear in the test set, giving falsely optimistic metrics.</li>
+      <li><strong>Length bias:</strong> DPO can learn to prefer longer responses regardless of quality.</li>
+      <li><strong>Reward hacking:</strong> The model exploits imperfections in the reward signal rather than genuinely improving.</li>
+      <li><strong>Format collapse:</strong> The model outputs correct content but in the wrong format, failing downstream parsers.</li>
+      <li><strong>Catastrophic forgetting of safety behaviour:</strong> Fine-tuning on unfiltered data can remove safety guardrails.</li>
+    </ul>
+  </div>
+
+  <div class="quiz-q" data-quiz="pitfall-1">
+    <p>You fine-tune a model on medical question-answering data. After fine-tuning, it answers medical questions well but performs poorly on general knowledge questions. What is the most likely cause?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('pitfall-1', this, false)">The learning rate was too low</button>
+      <button onclick="answerQuiz('pitfall-1', this, true)">Catastrophic forgetting — the model drifted away from its general knowledge</button>
+      <button onclick="answerQuiz('pitfall-1', this, false)">The LoRA rank was too low</button>
+    </div>
+    <div class="quiz-feedback" id="fb-pitfall-1"></div>
+  </div>
+</section>
+
+<!-- ==================== EVALUATION ==================== -->
+<section id="evaluation">
+  <h2>8. Evaluation &amp; Benchmarking</h2>
+
+  <h3>Why evaluation is hard</h3>
+  <p>Language model evaluation is an open problem. Static benchmarks saturate, test data leaks into training sets, and automated metrics often fail to capture what humans actually care about.</p>
+
+  <h3>Common benchmarks</h3>
+  <table class="cmp-table">
+    <thead><tr><th>Benchmark</th><th>Measures</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>MMLU</strong></td><td>Knowledge across 57 subjects</td><td>Widely used, now heavily saturated</td></tr>
+      <tr><td><strong>GSM8K</strong></td><td>Grade-school math word problems</td><td>Tests multi-step reasoning</td></tr>
+      <tr><td><strong>HumanEval</strong></td><td>Code generation (pass@1)</td><td>164 problems; widely contaminated</td></tr>
+      <tr><td><strong>MT-Bench</strong></td><td>Multi-turn conversation quality</td><td>Uses an LLM as judge</td></tr>
+      <tr><td><strong>Chatbot Arena</strong></td><td>Human preference (pairwise)</td><td>Based on real user votes</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card card-warn">
+    <p style="margin:0; font-size:0.88rem;"><strong>Important caveat:</strong> Benchmark scores should be treated as rough guides, not absolute truths. A model that scores higher on MMLU may perform worse on your specific task. Always evaluate on a held-out set drawn from your actual use case.</p>
+  </div>
+
+  <h3>Evaluation strategies for fine-tuning</h3>
+  <ul>
+    <li><strong>Held-out test set:</strong> Split your data before training. Never train on the test set.</li>
+    <li><strong>Task-specific metrics:</strong> Exact match, F1, BLEU, ROUGE, pass@k, or custom parsers.</li>
+    <li><strong>Human evaluation:</strong> The gold standard for subjective qualities like helpfulness and tone.</li>
+    <li><strong>LLM-as-judge:</strong> Use a strong model to score outputs. Cheap and scalable, but biased toward certain styles.</li>
+    <li><strong>Regression testing:</strong> Check that general capabilities haven't degraded after fine-tuning.</li>
+  </ul>
+</section>
+
+<!-- ==================== DISTILLATION & DEPLOYMENT ==================== -->
+<section id="deployment">
+  <h2>9. Distillation, Merging &amp; Deployment</h2>
+
+  <h3>Knowledge distillation</h3>
+  <p>Distillation transfers knowledge from a large <strong>teacher</strong> model to a smaller <strong>student</strong> model. The student is trained to match the teacher's output distribution (soft labels) rather than just the ground-truth labels (hard labels). This often produces a smaller model that retains much of the teacher's capability.</p>
+  <p>DeepSeek-R1 demonstrated a prominent distillation approach: using curated reasoning datasets generated by the large model to fine-tune smaller open-source models like Qwen and Llama.</p>
+
+  <h3>Model merging</h3>
+  <p>Model merging combines the weights of multiple fine-tuned models into a single model — without additional training. This is possible because fine-tuned models often live in the same "weight space" as the base model.</p>
+  <table class="cmp-table">
+    <thead><tr><th>Method</th><th>Idea</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Linear</strong></td><td>Weighted average of model weights</td></tr>
+      <tr><td><strong>SLERP</strong></td><td>Spherical linear interpolation between two models</td></tr>
+      <tr><td><strong>TIES-Merging</strong></td><td>Trim redundant parameters, elect signs, then merge</td></tr>
+      <tr><td><strong>DARE</strong></td><td>Drop and rescale delta parameters to reduce interference</td></tr>
+    </tbody>
+  </table>
+  <p><code>mergekit</code> is the standard open-source tool for these methods.</p>
+
+  <h3>Deployment checklist</h3>
+  <ol class="step-list">
+    <li data-step="1">Quantise the model (GPTQ, AWQ, or GGUF) for your target hardware.</li>
+    <li data-step="2">Merge LoRA adapters if you want a single deployable artifact.</li>
+    <li data-step="3">Run a final evaluation on quantised weights — quality can shift.</li>
+    <li data-step="4">Serve with vLLM, TGI, llama.cpp, or Ollama depending on your infrastructure.</li>
+    <li data-step="5">Monitor for drift, format failures, and safety regressions.</li>
+  </ol>
+</section>
+
+<!-- ==================== FINAL QUIZ ==================== -->
+<section id="quiz">
+  <h2>10. Final Quiz</h2>
+  <p>Test your cumulative understanding. Each answer includes an explanation.</p>
+
+  <div class="quiz-q" data-quiz="final-1">
+    <p><strong>1.</strong> What is the key difference between pretraining and supervised fine-tuning (SFT)?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('final-1', this, false)">Pretraining uses GPUs; SFT uses CPUs</button>
+      <button onclick="answerQuiz('final-1', this, true)">Pretraining learns next-token prediction from raw text; SFT learns to imitate instruction–response pairs</button>
+      <button onclick="answerQuiz('final-1', this, false)">They are the same thing with different names</button>
+    </div>
+    <div class="quiz-feedback" id="fb-final-1"></div>
+  </div>
+
+  <div class="quiz-q" data-quiz="final-2">
+    <p><strong>2.</strong> In LoRA, what is the role of the matrices A and B?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('final-2', this, false)">They replace the original weight matrix entirely</button>
+      <button onclick="answerQuiz('final-2', this, true)">They form a low-rank update ΔW = BA that is added to the frozen base weights</button>
+      <button onclick="answerQuiz('final-2', this, false)">They store the optimizer states</button>
+    </div>
+    <div class="quiz-feedback" id="fb-final-2"></div>
+  </div>
+
+  <div class="quiz-q" data-quiz="final-3">
+    <p><strong>3.</strong> What does QLoRA's 4-bit NormalFloat (NF4) data type exploit about neural network weights?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('final-3', this, false)">That all weights are exactly zero</button>
+      <button onclick="answerQuiz('final-3', this, true)">That weights are approximately normally distributed, so quantization bins can be optimised for that distribution</button>
+      <button onclick="answerQuiz('final-3', this, false)">That weights are uniformly distributed</button>
+    </div>
+    <div class="quiz-feedback" id="fb-final-3"></div>
+  </div>
+
+  <div class="quiz-q" data-quiz="final-4">
+    <p><strong>4.</strong> How does DPO differ from RLHF with PPO?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('final-4', this, false)">DPO requires more models in memory</button>
+      <button onclick="answerQuiz('final-4', this, true)">DPO collapses the reward-model + RL loop into a single supervised objective over preference pairs</button>
+      <button onclick="answerQuiz('final-4', this, false)">DPO only works for code generation</button>
+    </div>
+    <div class="quiz-feedback" id="fb-final-4"></div>
+  </div>
+
+  <div class="quiz-q" data-quiz="final-5">
+    <p><strong>5.</strong> What is the main advantage of GRPO over PPO for reasoning tasks?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('final-5', this, false)">It requires no reward signal at all</button>
+      <button onclick="answerQuiz('final-5', this, true)">It removes the value network by computing advantages relative to a group of sampled outputs</button>
+      <button onclick="answerQuiz('final-5', this, false)">It only works with human feedback</button>
+    </div>
+    <div class="quiz-feedback" id="fb-final-5"></div>
+  </div>
+
+  <div class="quiz-q" data-quiz="final-6">
+    <p><strong>6.</strong> Why is catastrophic forgetting less of a concern with LoRA than with full fine-tuning?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('final-6', this, false)">Because LoRA uses a higher learning rate</button>
+      <button onclick="answerQuiz('final-6', this, true)">Because the base model weights are frozen — only a small low-rank update is trained</button>
+      <button onclick="answerQuiz('final-6', this, false)">Because LoRA always uses more data</button>
+    </div>
+    <div class="quiz-feedback" id="fb-final-6"></div>
+  </div>
+
+  <div class="quiz-q" data-quiz="final-7">
+    <p><strong>7.</strong> What does a chat template do?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('final-7', this, false)">It generates training data automatically</button>
+      <button onclick="answerQuiz('final-7', this, true)">It defines the exact text format the model expects for multi-turn conversations</button>
+      <button onclick="answerQuiz('final-7', this, false)">It selects the best hyperparameters</button>
+    </div>
+    <div class="quiz-feedback" id="fb-final-7"></div>
+  </div>
+
+  <div class="quiz-q" data-quiz="final-8">
+    <p><strong>8.</strong> Model merging combines fine-tuned models by:</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('final-8', this, false)">Running additional training on a combined dataset</button>
+      <button onclick="answerQuiz('final-8', this, true)">Combining their weights directly, without additional training</button>
+      <button onclick="answerQuiz('final-8', this, false)">Concatenating their outputs at inference time</button>
+    </div>
+    <div class="quiz-feedback" id="fb-final-8"></div>
+  </div>
+
+  <div class="quiz-q" data-quiz="final-9">
+    <p><strong>9.</strong> After merging LoRA weights into a base model, what is the inference cost?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('final-9', this, false)">Higher than the base model</button>
+      <button onclick="answerQuiz('final-9', this, true)">Essentially the same as the base model</button>
+      <button onclick="answerQuiz('final-9', this, false)">Lower than the base model</button>
+    </div>
+    <div class="quiz-feedback" id="fb-final-9"></div>
+  </div>
+
+  <div class="quiz-q" data-quiz="final-10">
+    <p><strong>10.</strong> What is the most reliable way to evaluate a fine-tuned model for your specific use case?</p>
+    <div class="quiz-options">
+      <button onclick="answerQuiz('final-10', this, false)">Rely solely on MMLU scores</button>
+      <button onclick="answerQuiz('final-10', this, true)">Evaluate on a held-out set drawn from your actual use case, supplemented by task-specific metrics</button>
+      <button onclick="answerQuiz('final-10', this, false)">Trust the training loss curve</button>
+    </div>
+    <div class="quiz-feedback" id="fb-final-10"></div>
+  </div>
+
+  <div class="card card-accent" style="margin-top:1.5rem;">
+    <p style="margin:0; font-size:0.9rem;"><strong>Quiz complete.</strong> Review any explanations you found surprising. The goal is understanding, not a perfect score.</p>
+  </div>
+</section>
+
+<!-- ==================== MENTAL MODEL ==================== -->
+<section id="mental-model">
+  <h2>11. The Mental Model</h2>
+
+  <div class="card card-accent">
+    <p><strong>How to think about fine-tuning and post-training:</strong></p>
+    <p style="margin-bottom:0.5rem;">A pretrained LLM is a vast repository of language and world knowledge. Fine-tuning is the process of <strong>steering</strong> that knowledge toward specific behaviours, domains, or formats.</p>
+    <p style="margin-bottom:0.5rem;">The modern pipeline has three main adaptation stages:</p>
+    <ol style="margin-bottom:0.5rem;">
+      <li><strong>SFT</strong> teaches the model <em>what to say</em> (imitation).</li>
+      <li><strong>Preference learning</strong> (DPO, RLHF) teaches the model <em>what to prefer</em> (alignment).</li>
+      <li><strong>Reasoning RL</strong> (GRPO) teaches the model <em>how to think</em> (verifiable reasoning).</li>
+    </ol>
+    <p style="margin-bottom:0;">LoRA and QLoRA make all of this affordable by training a tiny fraction of parameters on top of a frozen (often quantised) base model.</p>
+  </div>
+
+  <h3>5–10 Things to Remember</h3>
+  <div class="takeaway-grid">
+    <div class="takeaway-item"><span class="takeaway-num">1</span><p><strong>Fine-tuning is adaptation, not creation.</strong> The base model already knows language; you're steering it.</p></div>
+    <div class="takeaway-item"><span class="takeaway-num">2</span><p><strong>LoRA works because weight changes are low-rank.</strong> Freeze the base, learn a small update ΔW = BA.</p></div>
+    <div class="takeaway-item"><span class="takeaway-num">3</span><p><strong>QLoRA makes large models trainable on small GPUs.</strong> 4-bit base + 16-bit LoRA ≈ 16-bit full fine-tuning quality.</p></div>
+    <div class="takeaway-item"><span class="takeaway-num">4</span><p><strong>Chat templates matter.</strong> Always match the format the base model expects.</p></div>
+    <div class="takeaway-item"><span class="takeaway-num">5</span><p><strong>Data quality beats data quantity.</strong> A few thousand clean examples often beat hundreds of thousands of noisy ones.</p></div>
+    <div class="takeaway-item"><span class="takeaway-num">6</span><p><strong>DPO is the default preference-learning method.</strong> Simpler and more stable than PPO, with comparable quality in practice.</p></div>
+    <div class="takeaway-item"><span class="takeaway-num">7</span><p><strong>GRPO removes the value network</strong> by comparing outputs within a sampled group — ideal for verifiable reasoning tasks.</p></div>
+    <div class="takeaway-item"><span class="takeaway-num">8</span><p><strong>Evaluate on your own data.</strong> Benchmarks are guides, not ground truth.</p></div>
+    <div class="takeaway-item"><span class="takeaway-num">9</span><p><strong>Merge, distill, and quantise for deployment.</strong> Training and serving are different optimisation problems.</p></div>
+    <div class="takeaway-item"><span class="takeaway-num">10</span><p><strong>Watch for catastrophic forgetting.</strong> Frozen bases, replay buffers, and gentle learning rates help.</p></div>
+  </div>
+</section>
+
+<!-- ==================== GLOSSARY ==================== -->
+<section id="glossary">
+  <h2>12. Glossary</h2>
+  <dl class="glossary">
+    <dt>Base model</dt>
+    <dd>A model that has undergone pretraining but not instruction tuning or alignment. Predicts the next token but may not follow instructions well.</dd>
+
+    <dt>Catastrophic forgetting</dt>
+    <dd>Loss of previously learned capabilities when a model is fine-tuned on new data.</dd>
+
+    <dt>Chat template</dt>
+    <dd>The exact text format a model expects for multi-turn conversations, including special tokens that delimit roles.</dd>
+
+    <dt>DPO (Direct Preference Optimization)</dt>
+    <dd>A preference-learning method that trains directly on pairs of preferred/dispreferred responses, without a separate reward model.</dd>
+
+    <dt>GRPO (Group Relative Policy Optimization)</dt>
+    <dd>An RL method that samples a group of outputs per prompt and computes advantages relative to the group mean and standard deviation. Removes the value network.</dd>
+
+    <dt>LoRA (Low-Rank Adaptation)</dt>
+    <dd>A PEFT method that freezes the base model and trains a low-rank update ΔW = BA.</dd>
+
+    <dt>NF4 (4-bit NormalFloat)</dt>
+    <dd>A quantization data type designed for normally distributed weights, used in QLoRA.</dd>
+
+    <dt>PEFT (Parameter-Efficient Fine-Tuning)</dt>
+    <dd>Methods that train only a small fraction of a model's parameters.</dd>
+
+    <dt>PPO (Proximal Policy Optimization)</dt>
+    <dd>An RL algorithm used in classic RLHF to optimise the policy against a reward model.</dd>
+
+    <dt>QLoRA</dt>
+    <dd>LoRA on top of a 4-bit quantised base model, with double quantization and paged optimizers.</dd>
+
+    <dt>RLHF (Reinforcement Learning from Human Feedback)</dt>
+    <dd>The classic three-stage alignment pipeline: SFT, reward modelling, and RL fine-tuning.</dd>
+
+    <dt>SFT (Supervised Fine-Tuning)</dt>
+    <dd>Training a model to imitate instruction–response pairs.</dd>
+
+    <dt>SLM (Small Language Model)</dt>
+    <dd>A model small enough to run on consumer hardware or edge devices. Often fine-tuned for a specific task.</dd>
+  </dl>
+</section>
+
+<!-- ==================== SOURCES ==================== -->
+<section id="sources" class="sources">
+  <h2>Sources &amp; Further Reading</h2>
+  <p style="font-size:0.85rem; color:var(--text-secondary);">The following sources were consulted in preparing this course. They are a mix of primary research papers, official documentation, and reputable technical references.</p>
+  <ol>
+    <li>Hu, E. et al. (2021). <em>LoRA: Low-Rank Adaptation of Large Language Models.</em> arXiv:2106.09685. <a href="https://arxiv.org/abs/2106.09685" target="_blank" rel="noopener">arxiv.org/abs/2106.09685</a></li>
+    <li>Dettmers, T. et al. (2023). <em>QLoRA: Efficient Finetuning of Quantized LLMs.</em> NeurIPS 2023. <a href="https://papers.nips.cc/paper_files/paper/2023/hash/1feb87871436031bdc0f2beaa62a049b-Abstract-Conference.html" target="_blank" rel="noopener">papers.nips.cc</a></li>
+    <li>Rafailov, R. et al. (2023). <em>Direct Preference Optimization: Your Language Model is Secretly a Reward Model.</em> NeurIPS 2023. arXiv:2305.18290. <a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener">arxiv.org/abs/2305.18290</a></li>
+    <li>DeepSeek-AI (2025). <em>DeepSeek-R1 incentivizes reasoning in LLMs through reinforcement learning.</em> Nature. <a href="https://www.nature.com/articles/s41586-025-09422-z" target="_blank" rel="noopener">nature.com</a></li>
+    <li>Hugging Face. <em>PEFT: Parameter-Efficient Fine-Tuning.</em> <a href="https://huggingface.co/docs/peft" target="_blank" rel="noopener">huggingface.co/docs/peft</a></li>
+    <li>Hugging Face. <em>TRL: Transformers Reinforcement Learning.</em> <a href="https://huggingface.co/docs/trl" target="_blank" rel="noopener">huggingface.co/docs/trl</a></li>
+    <li>Unsloth Documentation. <em>Efficient fine-tuning workflows.</em> <a href="https://docs.unsloth.ai" target="_blank" rel="noopener">docs.unsloth.ai</a></li>
+    <li>bitsandbytes. <em>8-bit and 4-bit quantization for PyTorch.</em> <a href="https://huggingface.co/docs/bitsandbytes" target="_blank" rel="noopener">huggingface.co/docs/bitsandbytes</a></li>
+    <li>Goddard, C. et al. (2024). <em>mergekit: A toolkit for merging large language models.</em> GitHub. <a href="https://github.com/arcee-ai/mergekit" target="_blank" rel="noopener">github.com/arcee-ai/mergekit</a></li>
+    <li>Hendrycks, D. et al. (2021). <em>Measuring Massive Multitask Language Understanding (MMLU).</em> ICLR 2021. arXiv:2009.03300. <a href="https://arxiv.org/abs/2009.03300" target="_blank" rel="noopener">arxiv.org/abs/2009.03300</a></li>
+    <li>Chen, M. et al. (2021). <em>Evaluating Large Language Models Trained on Code (HumanEval).</em> arXiv:2107.03374. <a href="https://arxiv.org/abs/2107.03374" target="_blank" rel="noopener">arxiv.org/abs/2107.03374</a></li>
+    <li>Cobbe, K. et al. (2021). <em>Training Verifiers to Solve Math Word Problems (GSM8K).</em> arXiv:2110.14168. <a href="https://arxiv.org/abs/2110.14168" target="_blank" rel="noopener">arxiv.org/abs/2110.14168</a></li>
+    <li>Zheng, L. et al. (2023). <em>Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena.</em> NeurIPS 2023. arXiv:2306.05685. <a href="https://arxiv.org/abs/2306.05685" target="_blank" rel="noopener">arxiv.org/abs/2306.05685</a></li>
+    <li>HuggingFaceTB. <em>Smol Training Playbook.</em> <a href="https://huggingface.co/HuggingFaceTB/smol-training-playbook" target="_blank" rel="noopener">huggingface.co</a></li>
+  </ol>
+  <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:1rem;"><strong>Note on uncertainty:</strong> The field of LLM post-training evolves rapidly. Some techniques described here (e.g., GRPO variants, DPO alternatives) are active areas of research, and best practices may shift. Where claims are contested or uncertain, this course has noted it. Always verify against current primary sources for production decisions.</p>
+</section>
+
+<footer>
+  <p>Interactive Learning Page — LLM Fine-Tuning &amp; Post-Training</p>
+  <p style="margin-top:0.3rem;">Built for learning. All interactions run locally in your browser.</p>
+</footer>
+
+</div><!-- /container -->
+
+<script>
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+function updateProgress() {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+window.addEventListener('scroll', updateProgress, { passive: true });
+updateProgress();
+
+/* ============================================================
+   NAV ACTIVE STATE
+   ============================================================ */
+const navLinks = document.querySelectorAll('#topNav a');
+const sections = document.querySelectorAll('section[id]');
+
+function updateNav() {
+  let current = '';
+  sections.forEach(s => {
+    const top = s.offsetTop - 120;
+    if (window.scrollY >= top) current = s.id;
+  });
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+}
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+
+/* ============================================================
+   REVEAL TOGGLE
+   ============================================================ */
+function toggleReveal(id) {
+  const el = document.getElementById(id);
+  const btn = el.previousElementSibling;
+  const isOpen = el.classList.contains('show');
+  el.classList.toggle('show');
+  btn.textContent = isOpen ? 'Reveal answer' : 'Hide answer';
+  btn.setAttribute('aria-expanded', String(!isOpen));
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(evt, panelId) {
+  const tab = evt.currentTarget;
+  const container = tab.closest('.viz-wrap');
+  container.querySelectorAll('.tab').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
+  tab.classList.add('active');
+  tab.setAttribute('aria-selected', 'true');
+  container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+}
+
+/* ============================================================
+   QUIZ
+   ============================================================ */
+const quizExplanations = {
+  'core-1': {
+    correct: 'Correct. Data quality is the single biggest lever in instruction tuning. Start with a small, clean, diverse set, evaluate, and only add more data if you can see a clear benefit.',
+    incorrect: 'Not quite. More data is not automatically better. Noisy, inconsistent, and duplicated data can actively harm the model. A small high-quality set is usually the stronger starting point.'
+  },
+  'lora-1': {
+    correct: 'Correct. After merging, the model has the same architecture and parameter count as the base model. The LoRA update is baked into the weights, so inference cost is identical.',
+    incorrect: 'Not quite. After merging, the LoRA matrices are folded into the base weights. The resulting model has exactly the same shape and inference cost as the original base model.'
+  },
+  'pref-1': {
+    correct: 'Correct. GRPO with verifiable rewards is specifically designed for settings where correctness can be checked automatically — exactly the case for math problems with known answers.',
+    incorrect: 'Not quite. DPO needs preference pairs, and more pretraining data is expensive and not targeted at reasoning. GRPO with rule-based accuracy rewards is the natural fit for verifiable reasoning tasks.'
+  },
+  'pitfall-1': {
+    correct: 'Correct. This is the classic signature of catastrophic forgetting: strong performance on the fine-tuning domain but degradation on general capabilities.',
+    incorrect: 'Not quite. A low learning rate would slow learning, not selectively destroy general knowledge. The pattern described is characteristic of catastrophic forgetting.'
+  },
+  'final-1': {
+    correct: 'Correct. Pretraining is self-supervised next-token prediction on raw text. SFT is supervised imitation of instruction–response pairs.',
+    incorrect: 'Not quite. The distinction is about the training objective and data, not the hardware. Pretraining learns from raw text; SFT learns from instruction–response pairs.'
+  },
+  'final-2': {
+    correct: 'Correct. A and B form the low-rank update ΔW = BA, which is added to the frozen base weights W₀.',
+    incorrect: 'Not quite. A and B do not replace the base weights — they form a small additive update that is combined with the frozen W₀.'
+  },
+  'final-3': {
+    correct: 'Correct. Neural network weights tend to follow a roughly normal distribution, so NF4 allocates quantization bins optimally for that distribution.',
+    incorrect: 'Not quite. NF4 exploits the fact that neural network weights are approximately normally distributed, not uniform or zero.'
+  },
+  'final-4': {
+    correct: 'Correct. DPO collapses the two-stage RLHF pipeline (reward model + PPO) into a single supervised objective over preference pairs.',
+    incorrect: 'Not quite. DPO actually requires fewer models in memory than RLHF, and it is not limited to code generation.'
+  },
+  'final-5': {
+    correct: 'Correct. GRPO computes advantages relative to a group of sampled outputs, eliminating the need for a separate value network.',
+    incorrect: 'Not quite. GRPO still requires a reward signal (often rule-based for reasoning), and it is not limited to human feedback. Its key innovation is removing the value network.'
+  },
+  'final-6': {
+    correct: 'Correct. Freezing the base model means its weights are not modified, which dramatically reduces the risk of losing general capabilities.',
+    incorrect: 'Not quite. The key factor is that the base weights are frozen. Only the small LoRA update is trained.'
+  },
+  'final-7': {
+    correct: 'Correct. The chat template defines the exact text format, including special tokens, that the model expects for multi-turn conversations.',
+    incorrect: 'Not quite. A chat template does not generate data or select hyperparameters. It defines the conversational text format.'
+  },
+  'final-8': {
+    correct: 'Correct. Model merging combines weights directly, without additional training.',
+    incorrect: 'Not quite. Model merging is a training-free operation that combines weights directly.'
+  },
+  'final-9': {
+    correct: 'Correct. After merging, the model has the same architecture and parameter count as the base model, so inference cost is essentially unchanged.',
+    incorrect: 'Not quite. Merging folds the LoRA update into the base weights, leaving inference cost identical to the base model.'
+  },
+  'final-10': {
+    correct: 'Correct. Your held-out use-case data is the most meaningful evaluation. Benchmarks can guide you but should not replace task-specific evaluation.',
+    incorrect: 'Not quite. MMLU and training loss are both weak proxies for real-world performance on your specific task. A held-out set from your use case is far more reliable.'
+  }
+};
+
+function answerQuiz(quizId, btn, isCorrect) {
+  const container = btn.closest('.quiz-q');
+  const options = container.querySelectorAll('.quiz-options button');
+  const feedback = document.getElementById('fb-' + quizId);
+
+  // Disable all buttons
+  options.forEach(b => b.disabled = true);
+
+  // Mark correct/incorrect
+  options.forEach(b => {
+    if (b === btn) {
+      b.classList.add(isCorrect ? 'correct' : 'incorrect');
+    }
+  });
+
+  // If wrong, also highlight the correct one
+  if (!isCorrect) {
+    options.forEach(b => {
+      if (b !== btn && b.getAttribute('onclick') && b.getAttribute('onclick').includes('true')) {
+        b.classList.add('correct');
+      }
+    });
+  }
+
+  const exp = quizExplanations[quizId];
+  if (exp) {
+    feedback.textContent = isCorrect ? exp.correct : exp.incorrect;
+    feedback.className = 'quiz-feedback show ' + (isCorrect ? 'ok' : 'no');
+  }
+
+  // Scroll feedback into view smoothly
+  feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ============================================================
+   LoRA VISUALIZATION
+   ============================================================ */
+function updateLoraViz() {
+  const r = parseInt(document.getElementById('loraRank').value);
+  const d = parseInt(document.getElementById('loraDim').value);
+  document.getElementById('loraRankVal').textContent = r;
+  document.getElementById('loraDimVal').textContent = d;
+
+  const full = d * d;
+  const lora = 2 * d * r;
+
+  document.getElementById('fullParams').textContent = formatNum(full);
+  document.getElementById('loraParams').textContent = formatNum(lora);
+
+  const ratio = (lora / full) * 100;
+  document.getElementById('loraRatio').textContent = ratio.toFixed(2) + '%';
+  document.getElementById('loraReduction').textContent = (100 - ratio).toFixed(1) + '%';
+}
+
+function formatNum(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+  return n.toString();
+}
+
+document.getElementById('loraRank').addEventListener('input', updateLoraViz);
+document.getElementById('loraDim').addEventListener('input', updateLoraViz);
+updateLoraViz();
+
+/* ============================================================
+   MEMORY CALCULATOR
+   ============================================================ */
+function updateMemory() {
+  const paramsB = parseFloat(document.getElementById('memParams').value);
+  const method = document.getElementById('memMethod').value;
+  document.getElementById('memParamsVal').textContent = paramsB + 'B';
+
+  const params = paramsB * 1e9;
+  let weightsGB, optGB, activGB;
+
+  if (method === 'qlora') {
+    // 4-bit base ≈ 0.5 bytes/param, LoRA adapters negligible for this estimate
+    weightsGB = (params * 0.5) / (1024 ** 3);
+    // Only LoRA params have optimizer states; estimate ~1% of params trainable
+    optGB = (params * 0.01 * 8) / (1024 ** 3); // rough: 8 bytes per trainable param for Adam
+    activGB = Math.max(1, paramsB * 0.3); // rough activation estimate
+  } else if (method === 'lora') {
+    // 16-bit base ≈ 2 bytes/param
+    weightsGB = (params * 2) / (1024 ** 3);
+    optGB = (params * 0.01 * 8) / (1024 ** 3);
+    activGB = Math.max(1, paramsB * 0.4);
+  } else {
+    // Full fine-tuning: 16-bit weights + Adam states for all params
+    weightsGB = (params * 2) / (1024 ** 3);
+    optGB = (params * 8) / (1024 ** 3); // Adam: 2 moments × 4 bytes + master weights
+    activGB = Math.max(2, paramsB * 0.8);
+  }
+
+  const total = weightsGB + optGB + activGB;
+
+  document.getElementById('memWeights').textContent = weightsGB.toFixed(1) + ' GB';
+  document.getElementById('memOpt').textContent = optGB.toFixed(1) + ' GB';
+  document.getElementById('memActiv').textContent = activGB.toFixed(1) + ' GB';
+  document.getElementById('memTotal').textContent = '~' + total.toFixed(1) + ' GB';
+}
+
+document.getElementById('memParams').addEventListener('input', updateMemory);
+document.getElementById('memMethod').addEventListener('change', updateMemory);
+updateMemory();
+
+/* ============================================================
+   PIPELINE CANVAS
+   ============================================================ */
+function drawPipeline() {
+  const canvas = document.getElementById('pipelineCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width;
+  const h = 120;
+
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  ctx.scale(dpr, dpr);
+
+  const stages = [
+    { label: 'Pretraining', color: '#2a6f6a', sub: 'Raw text' },
+    { label: 'Continued\nPretraining', color: '#3a8a84', sub: 'Domain text' },
+    { label: 'SFT', color: '#4da39c', sub: 'Instruction pairs' },
+    { label: 'Preference\nLearning', color: '#6bb5b0', sub: 'DPO / RLHF / GRPO' },
+    { label: 'Deploy', color: '#8ec9c5', sub: 'Quantise / Merge' }
+  ];
+
+  const boxW = (w - 60) / stages.length;
+  const boxH = 48;
+  const startY = (h - boxH) / 2 - 8;
+
+  stages.forEach((s, i) => {
+    const x = 30 + i * boxW;
+    // Box
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.roundRect(x, startY, boxW - 10, boxH, 6);
+    ctx.fill();
+
+    // Label
+    ctx.fillStyle = '#fff';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const lines = s.label.split('\n');
+    lines.forEach((line, li) => {
+      ctx.fillText(line, x + (boxW - 10) / 2, startY + boxH / 2 - 6 + li * 13);
+    });
+
+    // Sub label
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillText(s.sub, x + (boxW - 10) / 2, startY + boxH - 8);
+
+    // Arrow
+    if (i < stages.length - 1) {
+      const ax = x + boxW - 8;
+      const ay = startY + boxH / 2;
+      ctx.strokeStyle = '#b0b0aa';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(ax + 12, ay);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(ax + 12, ay - 4);
+      ctx.lineTo(ax + 18, ay);
+      ctx.lineTo(ax + 12, ay + 4);
+      ctx.fillStyle = '#b0b0aa';
+      ctx.fill();
+    }
+  });
+}
+
+// Polyfill for roundRect
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (r > w/2) r = w/2;
+    if (r > h/2) r = h/2;
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+    return this;
+  };
+}
+
+window.addEventListener('load', drawPipeline);
+window.addEventListener('resize', drawPipeline);
+</script>
+
+</body>
+</html>

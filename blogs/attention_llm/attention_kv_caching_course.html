@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Interactive mini-course on attention variants and KV caching in LLMs, including MQA, GQA, MLA, PagedAttention, quantized caches, and DeepSeek-V4.1-Flash.">
+<title>Attention & KV Caching in LLMs — Interactive Mini-Course</title>
+<style>
+  :root{
+    --bg:#fbfcfe; --panel:#ffffff; --ink:#172033; --muted:#5f6b7a; --line:#dce3ec;
+    --blue:#2f6fed; --blue-2:#eaf1ff; --teal:#0b7f78; --teal-2:#e8f7f5;
+    --amber:#9b6500; --amber-2:#fff6df; --red:#b23a48; --red-2:#fff0f2;
+    --purple:#6d4cbe; --purple-2:#f0ebff; --green:#287a44; --green-2:#eaf7ee;
+    --shadow:0 8px 28px rgba(22,32,51,.06); --radius:16px; --max:1180px;
+    --code:#f4f6f8;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  button,input,select{font:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:3px solid #9fc0ff;outline-offset:2px}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 22px}
+  .top{position:sticky;top:0;z-index:20;background:rgba(251,252,254,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .top-inner{display:flex;gap:18px;align-items:center;min-height:64px}
+  .brand{font-weight:800;letter-spacing:.1px;white-space:nowrap}
+  .brand small{display:block;font-weight:500;color:var(--muted);font-size:11px;letter-spacing:.4px;text-transform:uppercase}
+  .progress{flex:1;display:flex;gap:8px;align-items:center}
+  .progress-track{height:7px;background:#e7ebf0;border-radius:999px;flex:1;overflow:hidden}
+  .progress-fill{height:100%;width:0;background:var(--blue);transition:width .2s ease}
+  .progress-label{font-size:12px;color:var(--muted);min-width:110px;text-align:right}
+  .section-nav{display:flex;gap:6px;overflow:auto;padding:8px 0 10px;scrollbar-width:none}
+  .section-nav::-webkit-scrollbar{display:none}
+  .nav-pill{border:1px solid var(--line);background:#fff;color:var(--muted);padding:7px 10px;border-radius:999px;font-size:12px;white-space:nowrap}
+  .nav-pill.active{border-color:#a9c2f7;background:var(--blue-2);color:#1f4ea8;font-weight:700}
+  main{padding:26px 0 80px}
+  .hero{display:grid;grid-template-columns:1.35fr .85fr;gap:24px;align-items:stretch;margin-bottom:26px}
+  .hero-card,.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .hero-card{padding:28px}
+  h1{font-size:clamp(32px,4.5vw,52px);line-height:1.06;letter-spacing:-.03em;margin:10px 0 12px}
+  h2{font-size:clamp(25px,3vw,34px);line-height:1.16;letter-spacing:-.02em;margin:42px 0 14px}
+  h3{font-size:20px;margin:0 0 8px}
+  h4{font-size:15px;margin:0 0 6px}
+  p{margin:0 0 12px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;color:#1e4ea9;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:12px}
+  .lead{font-size:18px;color:#465468;max-width:72ch}
+  .objectives{display:grid;gap:9px;margin-top:18px}
+  .obj{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;background:#f6f8fb;border:1px solid #e8edf3;border-radius:12px;font-size:14px}
+  .obj b{display:block;font-size:13px}
+  .mini-visual{position:relative;overflow:hidden;padding:24px;background:linear-gradient(#fff,#fbfcfe)}
+  .mini-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:8px;align-items:center;height:100%;min-height:250px}
+  .flow-box{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff;min-width:0}
+  .flow-box small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+  .flow-arrow{color:#8a96a5;font-weight:800}
+  .kv-stack{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .kv-dot{width:14px;height:14px;border-radius:4px;background:#c9d9ff;border:1px solid #9ab6f2}
+  .kv-dot.v{background:#ccebe7;border-color:#92d2ca}
+  .step-badge{display:inline-block;font-size:11px;font-weight:800;padding:3px 7px;border-radius:999px;background:var(--blue-2);color:#1f4ea8;margin-bottom:7px}
+  .callout{border:1px solid #cdd9ed;background:#f5f8fd;border-radius:14px;padding:13px 15px;margin:14px 0}
+  .callout strong{display:block;margin-bottom:3px}
+  .fact{border-left:4px solid var(--blue)} .interpretation{border-left:4px solid var(--purple)} .uncertainty{border-left:4px solid var(--amber)}
+  .section-kicker{font-size:12px;text-transform:uppercase;letter-spacing:.09em;font-weight:800;color:var(--muted);margin-bottom:7px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .card{padding:19px}
+  .card.soft{box-shadow:none}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid var(--line);color:var(--muted);background:#fff}
+  .tag.essential{color:#1d5c35;background:var(--green-2);border-color:#b9dfc6}
+  .tag.advanced{color:#6547a7;background:var(--purple-2);border-color:#d2c5f5}
+  .tag.system{color:#8a5a00;background:var(--amber-2);border-color:#ead39a}
+  .concept-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
+  .concept{display:flex;gap:12px}
+  .icon{width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:#f7f9fc;display:grid;place-items:center;font-weight:900;flex:0 0 auto}
+  .concept strong{display:block;margin-bottom:2px}
+  .small{font-size:13px;color:var(--muted)}
+  .formula{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);border:1px solid #e1e6ec;padding:10px 12px;border-radius:10px;overflow:auto;font-size:13px;margin:10px 0}
+  .interactive{border:1px solid #cfdcf2;background:#f9fbff}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:14px 0}
+  .control{display:grid;gap:5px;min-width:135px}
+  .control label{font-size:12px;color:var(--muted);font-weight:700}
+  .control select,.control input[type=number],.control input[type=text]{border:1px solid #cad3df;border-radius:9px;padding:8px 9px;background:#fff;color:var(--ink)}
+  .control input[type=range]{width:100%}
+  .btn{border:1px solid #b9c7da;background:#fff;color:#23344f;padding:8px 12px;border-radius:9px;font-weight:700}
+  .btn.primary{border-color:#86a9ed;background:#eef4ff;color:#1f4ea8}
+  .btn.success{border-color:#98ceb0;background:#eef9f2;color:#23683a}
+  .btn.ghost{background:transparent}
+  .metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+  .metric{padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  .metric .v{font-size:22px;font-weight:850;letter-spacing:-.02em}
+  .metric .l{font-size:11px;color:var(--muted);margin-top:2px}
+  .bars{display:grid;gap:9px;margin-top:14px}
+  .bar-row{display:grid;grid-template-columns:100px 1fr 74px;gap:8px;align-items:center;font-size:12px}
+  .bar-bg{height:16px;border-radius:999px;background:#e9eef4;overflow:hidden}
+  .bar-fill{height:100%;border-radius:999px;background:#5d84da}
+  .bar-fill.teal{background:#4ea8a0}.bar-fill.purple{background:#876fd0}.bar-fill.amber{background:#d2a553}
+  .head-map{display:flex;gap:10px;align-items:flex-start;overflow:auto;padding:8px 0}
+  .q-col,.kv-col{display:grid;gap:5px}
+  .head-chip{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-size:10px;font-weight:800;border:1px solid #b9c5d6;background:#fff}
+  .head-chip.q{background:#f4f7ff;color:#2852a8}.head-chip.kv{background:#eef9f7;color:#14756f}
+  .mapping-lines{display:grid;gap:5px;min-width:80px}
+  .line{height:28px;display:flex;align-items:center;justify-content:center;color:#95a2b1;font-size:12px}
+  .timeline{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-top:14px}
+  .time-card{position:relative;border-top:3px solid #8ea3bf;padding:10px 9px 12px;background:#fff;border:1px solid var(--line);border-radius:11px}
+  .time-year{font-size:11px;font-weight:850;color:#6a7787}.time-card h4{margin-top:4px}.time-card p{font-size:12px;color:var(--muted);line-height:1.45}
+  .detail-tabs{display:flex;gap:7px;overflow:auto;border-bottom:1px solid var(--line);padding-bottom:9px}
+  .tab{border:0;background:transparent;color:var(--muted);padding:7px 9px;border-radius:8px;font-weight:700;white-space:nowrap}
+  .tab[aria-selected=true]{background:var(--blue-2);color:#2455b1}
+  .tab-panel{padding-top:14px}
+  .compare{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#fff}
+  .compare th,.compare td{text-align:left;padding:10px 11px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13px}
+  .compare th{background:#f7f9fc;font-size:12px;color:#526074}
+  .compare tr:last-child td{border-bottom:0}
+  .compare td:first-child,.compare th:first-child{position:sticky;left:0;background:#fff;font-weight:750;min-width:135px}
+  .pill-row{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
+  .pill{padding:4px 8px;border-radius:999px;font-size:11px;background:#f5f7fa;border:1px solid var(--line);color:#59677b}
+  .cache-stage{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;align-items:stretch;margin-top:12px}
+  .stage{border:1px solid var(--line);border-radius:13px;background:#fff;padding:13px;text-align:center}
+  .stage .num{width:29px;height:29px;border-radius:50%;background:var(--blue-2);color:#2854ad;display:grid;place-items:center;font-weight:900;margin:0 auto 7px}
+  .stage p{font-size:12px;color:var(--muted);margin:0}
+  .deepseek-stack{display:grid;gap:10px}
+  .ds-layer{display:grid;grid-template-columns:145px 1fr;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;background:#fff;padding:10px}
+  .ds-layer .label{font-weight:800;font-size:12px}.ds-layer .explain{font-size:12px;color:var(--muted)}
+  .mode-buttons{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+  .mode-btn{border:1px solid #cfd8e4;background:#fff;padding:7px 10px;border-radius:8px;font-size:12px;font-weight:800}
+  .mode-btn.active{background:#f0f5ff;border-color:#9bb7ed;color:#244fa5}
+  .quiz{display:grid;gap:17px}
+  .q-card{border:1px solid var(--line);background:#fff;border-radius:14px;padding:16px}
+  .q-title{font-weight:800;margin-bottom:10px}
+  .options{display:grid;gap:7px}
+  .opt{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff}
+  .opt input{margin-top:3px}
+  .feedback{margin-top:9px;padding:9px;border-radius:9px;font-size:13px;display:none}
+  .feedback.show{display:block}.feedback.ok{background:var(--green-2);border:1px solid #b9dfc6;color:#1f5a34}.feedback.no{background:var(--red-2);border:1px solid #efbdc5;color:#8d2e3a}
+  .score{font-size:20px;font-weight:900;margin-top:10px}
+  .accordion{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+  .acc-row + .acc-row{border-top:1px solid var(--line)}
+  .acc-btn{width:100%;background:#fff;border:0;text-align:left;padding:13px 14px;font-weight:800;display:flex;justify-content:space-between;gap:12px}
+  .acc-panel{padding:0 14px 13px;color:var(--muted);font-size:13px;display:none}.acc-row.open .acc-panel{display:block}
+  .takeaways{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+  .take{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff}
+  .take b{display:block;margin-bottom:3px}
+  .glossary{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+  .term{border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}
+  .term dt{font-weight:850}.term dd{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .source-list{display:grid;gap:10px}
+  .source{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;font-size:13px}
+  .source b{display:block}.source span{color:var(--muted)}
+  footer{border-top:1px solid var(--line);padding:22px 0 44px;color:var(--muted);font-size:12px}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .skip{position:absolute;left:-9999px}.skip:focus{left:12px;top:12px;z-index:40;background:#fff;border:1px solid var(--line);padding:8px;border-radius:8px}
+  .muted-box{background:#f7f8fa;border:1px solid var(--line);padding:12px;border-radius:12px}
+  .code-chip{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#f1f3f6;border:1px solid #e1e5eb;padding:2px 5px;border-radius:5px;font-size:.92em}
+  .mobile-note{display:none}
+  @media(max-width:900px){
+    .hero{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}.timeline{grid-template-columns:1fr 1fr}.metric-row{grid-template-columns:1fr 1fr}.cache-stage{grid-template-columns:1fr 1fr}.hero-card{padding:22px}
+  }
+  @media(max-width:640px){
+    .wrap{padding:0 14px}.top-inner{gap:10px}.progress-label{min-width:80px}.concept-grid,.grid-2,.takeaways,.glossary{grid-template-columns:1fr}.timeline{grid-template-columns:1fr}.metric-row{grid-template-columns:1fr 1fr}.cache-stage{grid-template-columns:1fr}.bar-row{grid-template-columns:82px 1fr 64px}.mobile-note{display:block}
+    h2{margin-top:34px}.lead{font-size:16px}.mini-flow{grid-template-columns:1fr;gap:6px;min-height:auto}.flow-arrow{transform:rotate(90deg);justify-self:center}
+  }
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.progress-fill{transition:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<header class="top" aria-label="Course navigation">
+  <div class="wrap top-inner">
+    <div class="brand"><div>Attention + KV Cache</div><small>Interactive mini-course</small></div>
+    <div class="progress" aria-label="Course progress">
+      <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+      <div id="progressLabel" class="progress-label">0% explored</div>
+    </div>
+  </div>
+  <div class="wrap section-nav" id="sectionNav">
+    <a class="nav-pill" href="#big-picture">Big picture</a>
+    <a class="nav-pill" href="#core">Core concepts</a>
+    <a class="nav-pill" href="#evolution">Evolution</a>
+    <a class="nav-pill" href="#explorer">Explore</a>
+    <a class="nav-pill" href="#deepseek">V4.1-Flash</a>
+    <a class="nav-pill" href="#practice">Practice</a>
+    <a class="nav-pill" href="#quiz">Quiz</a>
+    <a class="nav-pill" href="#review">Review</a>
+  </div>
+</header>
+
+<main id="content" class="wrap">
+  <section class="hero" aria-labelledby="title">
+    <div class="hero-card">
+      <div class="eyebrow">Level 1 · The big picture</div>
+      <h1 id="title">Attention is the lookup. KV cache is the notebook.</h1>
+      <p class="lead">During autoregressive generation, every new token asks the model to compare its query against the keys and retrieve values from earlier tokens. The KV cache keeps those old keys and values so the model does not recompute them at every decoding step.</p>
+      <div class="objectives" aria-label="Learning objectives">
+        <div class="obj"><span>1</span><div><b>Know the cache bottleneck.</b> Understand why the memory footprint grows with context, layers, KV heads, head size and precision.</div></div>
+        <div class="obj"><span>2</span><div><b>Separate the design axes.</b> MQA/GQA/MLA change what is stored; PagedAttention changes where/how it is allocated; quantization changes how many bits are stored.</div></div>
+        <div class="obj"><span>3</span><div><b>Read the evolution.</b> Trace the path from MHA → MQA → GQA → MLA → paged allocation / quantization → increasingly compressed long-context systems.</div></div>
+        <div class="obj"><span>4</span><div><b>Understand V4.1-Flash.</b> Explain CED + CSA2 cross-layer reuse + FP4 global KV + SWA bounded replay, and how that differs from the older families.</div></div>
+      </div>
+      <div class="callout fact"><strong>One sentence to remember</strong>KV caching is fundamentally a memory-and-bandwidth problem: the model wants the whole past, but serving hardware wants that past to be as small, well-packed and reusable as possible.</div>
+    </div>
+    <div class="hero-card mini-visual" aria-label="Illustration of autoregressive decoding with a KV cache">
+      <div class="mini-flow">
+        <div class="flow-box"><span class="step-badge">1 · New token</span><b>Query Q</b><small>What am I looking for?</small></div>
+        <div class="flow-arrow" aria-hidden="true">→</div>
+        <div class="flow-box"><span class="step-badge">2 · Read memory</span><b>Cached K, V</b><div class="kv-stack" aria-hidden="true"><span class="kv-dot"></span><span class="kv-dot"></span><span class="kv-dot"></span><span class="kv-dot v"></span><span class="kv-dot v"></span></div><small>Keys select. Values supply.</small></div>
+        <div class="flow-arrow" aria-hidden="true">→</div>
+        <div class="flow-box"><span class="step-badge">3 · Next token</span><b>Attention output</b><small>Reuse the past instead of recomputing it.</small></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="big-picture" class="lesson-section" aria-labelledby="big-title">
+    <div class="section-kicker">Level 1 · Intuition</div>
+    <h2 id="big-title">Why does KV caching exist?</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Without a cache</h3>
+        <p>At decoding step <em>t</em>, you could recompute keys and values for the entire prefix <em>1…t</em>. That repeats work you already did.</p>
+        <div class="formula">Step t: recompute K₁…Kₜ and V₁…Vₜ → attend → emit token t+1</div>
+        <div class="muted-box small">This is correct, but it repeatedly reads and transforms the same history.</div>
+      </div>
+      <div class="card">
+        <h3>With a cache</h3>
+        <p>At step <em>t</em>, the old keys/values are already stored. Compute only the new token’s Q/K/V and append its K/V to the cache.</p>
+        <div class="formula">Step t: compute qₜ, kₜ, vₜ → read cache + kₜ,vₜ → attend → emit</div>
+        <div class="muted-box small">The trade-off is memory: every generated token extends the cache.</div>
+      </div>
+    </div>
+    <div class="cache-stage" role="list" aria-label="KV caching workflow">
+      <div class="stage" role="listitem"><div class="num">A</div><b>Prefill</b><p>Process the prompt and build its cache.</p></div>
+      <div class="stage" role="listitem"><div class="num">B</div><b>Decode</b><p>Add one token's K/V at a time.</p></div>
+      <div class="stage" role="listitem"><div class="num">C</div><b>Read</b><p>Attention repeatedly reads the stored past.</p></div>
+      <div class="stage" role="listitem"><div class="num">D</div><b>Pressure</b><p>Longer context → larger cache → more HBM traffic.</p></div>
+    </div>
+    <div class="callout uncertainty"><strong>Prediction</strong> Suppose context length doubles but model architecture stays fixed. What happens to KV-cache storage? <button class="btn primary" data-reveal="pred1">Reveal answer</button><div id="pred1" class="small" hidden><b>Answer:</b> it doubles. KV cache is roughly linear in the number of cached tokens for a fixed architecture and precision. The challenge is not just capacity: decoding also repeatedly loads this memory, making bandwidth important.</div></div>
+  </section>
+
+  <section id="core" class="lesson-section" aria-labelledby="core-title">
+    <div class="section-kicker">Level 2 · Core concepts</div>
+    <h2 id="core-title">The design space: what exactly are we compressing?</h2>
+    <div class="concept-grid">
+      <div class="card concept"><div class="icon">Q</div><div><strong>Query</strong><span class="small">The current token’s request for relevant information. Queries are usually computed fresh at decode.</span></div></div>
+      <div class="card concept"><div class="icon">K</div><div><strong>Key</strong><span class="small">An address-like representation of each previous token. Attention scores compare Q with K.</span></div></div>
+      <div class="card concept"><div class="icon">V</div><div><strong>Value</strong><span class="small">The payload retrieved after attention scores decide which earlier tokens matter.</span></div></div>
+      <div class="card concept"><div class="icon">KV</div><div><strong>KV cache</strong><span class="small">Stored K and V for previous tokens. It is the state reused across autoregressive decoding steps.</span></div></div>
+    </div>
+
+    <div class="grid-3" style="margin-top:16px">
+      <div class="card"><span class="tag essential">Essential</span><h3 style="margin-top:9px">MHA — Multi-Head Attention</h3><p>Each query head has its own key and value head.</p><div class="formula">KV/token ≈ 2 × H × D × L</div><p class="small">Largest cache among the head-sharing family for the same H and D.</p></div>
+      <div class="card"><span class="tag essential">Essential</span><h3 style="margin-top:9px">MQA — Multi-Query Attention</h3><p>All query heads share a single K head and a single V head.</p><div class="formula">KV/token ≈ 2 × 1 × D × L</div><p class="small">A large cache reduction, with a quality trade-off reported in the original work and later GQA work.</p></div>
+      <div class="card"><span class="tag essential">Essential</span><h3 style="margin-top:9px">GQA — Grouped Query Attention</h3><p>Query heads are partitioned into groups; each group shares one K/V head.</p><div class="formula">KV/token ≈ 2 × G × D × L</div><p class="small">A middle point between MHA and MQA.</p></div>
+    </div>
+
+    <div class="card interactive" style="margin-top:16px">
+      <div class="section-kicker">Interactive head-sharing map</div>
+      <h3>See the “many Qs, fewer K/Vs” idea</h3>
+      <p class="small">Change the mechanism. The boxes are query heads; the colored destination boxes are KV heads.</p>
+      <div class="controls">
+        <div class="control"><label for="attnMode">Attention family</label><select id="attnMode"><option value="MHA">MHA</option><option value="GQA" selected>GQA</option><option value="MQA">MQA</option><option value="MLA">MLA</option></select></div>
+        <div class="control"><label for="qHeads">Query heads</label><select id="qHeads"><option>8</option><option selected>16</option><option>32</option></select></div>
+        <div class="control"><label for="gHeads">KV heads / groups</label><select id="gHeads"><option>1</option><option>2</option><option selected>4</option><option>8</option><option>16</option></select></div>
+      </div>
+      <div id="headMap" class="head-map" aria-live="polite"></div>
+      <div id="headMapNote" class="muted-box small"></div>
+    </div>
+
+    <div class="callout fact"><strong>Important separation</strong>MHA, MQA, GQA and MLA are <em>attention/cache representation strategies</em>. PagedAttention is primarily a <em>memory-allocation and addressing strategy</em>. Quantization is a <em>numeric representation strategy</em>. These can be combined rather than treated as mutually exclusive choices.</div>
+  </section>
+
+  <section id="evolution" class="lesson-section" aria-labelledby="evo-title">
+    <div class="section-kicker">Level 2 → 3 · Evolution</div>
+    <h2 id="evo-title">How the KV-cache story evolved</h2>
+    <p>There is no single “replacement chain.” The field has added multiple levers, each attacking a different source of cost.</p>
+    <div class="timeline" aria-label="Timeline of attention and KV-cache developments">
+      <div class="time-card"><div class="time-year">2017</div><h4>Transformer / MHA</h4><p>Multi-head attention becomes the standard self-attention architecture.</p></div>
+      <div class="time-card"><div class="time-year">2019</div><h4>MQA</h4><p>Share K/V across query heads to reduce decode-time memory traffic.</p></div>
+      <div class="time-card"><div class="time-year">2023</div><h4>GQA + PagedAttention</h4><p>Use a middle number of KV heads; manage variable-length caches in blocks.</p></div>
+      <div class="time-card"><div class="time-year">2024</div><h4>MLA + 2-bit research</h4><p>Compress the cached state itself via a latent representation; quantize KV caches to fewer bits.</p></div>
+      <div class="time-card"><div class="time-year">2025–26</div><h4>Sparse / long-context systems</h4><p>Reduce the set of attended tokens and increasingly optimize cache storage, reuse and movement.</p></div>
+      <div class="time-card"><div class="time-year">2026</div><h4>DeepSeek V4.1-Flash</h4><p>Combine cross-layer KV reuse, sparse indexing, FP4 global KV and bounded replay.</p></div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card"><h3>Why MQA was not the end</h3><p>Sharing every K/V across all query heads maximizes cache savings within this family, but the GQA paper reports that MQA can degrade quality. GQA introduces an intermediate number of KV heads to recover quality while keeping much of the memory/bandwidth benefit.</p><div class="callout interpretation"><strong>Interpretation, from the GQA authors</strong>GQA was proposed as a compromise point: fewer K/V heads than MHA, more than MQA.</div></div>
+      <div class="card"><h3>Why MLA is a different idea</h3><p>MLA does not simply say “use fewer KV heads.” It projects the K/V information into a much smaller latent representation and caches that latent vector (plus a small position-carrying component in DeepSeek-V2).</p><div class="formula">DeepSeek-V2: KV elements/token ≈ (dᶜ + dᴿ) × L ≈ 4.5 D × L</div><p class="small">The DeepSeek-V2 paper gives this as an approximately GQA-like cache size with 2.25 groups, while reporting stronger task performance than its MHA comparison. The paper's exact claim is model- and experiment-specific.</p></div>
+    </div>
+  </section>
+
+  <section id="explorer" class="lesson-section" aria-labelledby="explore-title">
+    <div class="section-kicker">Level 3 · Interactive explanation</div>
+    <h2 id="explore-title">Explore the cache size equation</h2>
+    <p>The basic head-sharing family has a simple rule: <b>two tensors (K + V) × number of KV heads × head dimension × number of layers × bytes per element × number of tokens.</b></p>
+    <div class="card interactive">
+      <div class="controls">
+        <div class="control"><label for="calcMode">Mechanism</label><select id="calcMode"><option value="MHA">MHA</option><option value="GQA" selected>GQA</option><option value="MQA">MQA</option><option value="MLA">MLA</option></select></div>
+        <div class="control"><label for="ctx">Context tokens</label><input id="ctx" type="number" min="256" step="256" value="131072"></div>
+        <div class="control"><label for="layers">Layers</label><input id="layers" type="number" min="1" step="1" value="32"></div>
+        <div class="control"><label for="heads">Query heads</label><input id="heads" type="number" min="1" step="1" value="32"></div>
+        <div class="control"><label for="headDim">Head dimension</label><input id="headDim" type="number" min="16" step="16" value="128"></div>
+        <div class="control"><label for="kvHeads">KV heads / groups</label><input id="kvHeads" type="number" min="1" step="1" value="8"></div>
+        <div class="control"><label for="precision">Storage</label><select id="precision"><option value="2">2-bit</option><option value="4">4-bit</option><option value="8">FP8 / int8-like</option><option value="16" selected>BF16 / FP16</option></select></div>
+        <div class="control"><label for="mlaMult">MLA latent × headDim</label><input id="mlaMult" type="number" min="1" step="0.5" value="4"></div>
+        <div class="control"><label for="mlaRope">MLA position dims × headDim</label><input id="mlaRope" type="number" min="0" step="0.25" value="0.5"></div>
+      </div>
+      <div class="metric-row">
+        <div class="metric"><div id="perToken" class="v">—</div><div class="l">bytes per token, all layers</div></div>
+        <div class="metric"><div id="totalCache" class="v">—</div><div class="l">cache for selected context</div></div>
+        <div class="metric"><div id="relativeMha" class="v">—</div><div class="l">relative to MHA baseline</div></div>
+        <div class="metric"><div id="elements" class="v">—</div><div class="l">stored numeric elements / token</div></div>
+      </div>
+      <div class="bars" aria-label="Relative cache-size bars">
+        <div class="bar-row"><span>MHA</span><div class="bar-bg"><div id="barMHA" class="bar-fill"></div></div><b id="txtMHA">—</b></div>
+        <div class="bar-row"><span>GQA</span><div class="bar-bg"><div id="barGQA" class="bar-fill teal"></div></div><b id="txtGQA">—</b></div>
+        <div class="bar-row"><span>MQA</span><div class="bar-bg"><div id="barMQA" class="bar-fill amber"></div></div><b id="txtMQA">—</b></div>
+        <div class="bar-row"><span>MLA</span><div class="bar-bg"><div id="barMLA" class="bar-fill purple"></div></div><b id="txtMLA">—</b></div>
+      </div>
+      <p class="small" style="margin-top:12px">This calculator models <em>stored numeric payload</em>. Real implementations add scale/metadata overhead, layout padding, page/block metadata, and sometimes position-specific components. That is why “bits per value” is not always identical to end-to-end bytes per token.</p>
+    </div>
+
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <h3>Try this thought experiment</h3>
+        <p>Keep the model fixed. Move the context from 32K → 128K → 512K.</p>
+        <button class="btn primary" id="runContextExperiment">Run experiment</button>
+        <div id="contextExperiment" class="muted-box small" style="margin-top:10px">You predict first: which factor changes linearly?</div>
+      </div>
+      <div class="card">
+        <h3>What the calculator does <em>not</em> say</h3>
+        <p>A smaller cache does not automatically mean faster end-to-end decoding. Kernel efficiency, memory bandwidth, attention sparsity, interconnect traffic, dequantization cost, and model quality all matter too.</p>
+        <div class="callout fact"><strong>Key distinction</strong>“Smaller” is a storage statement. “Faster” is a systems statement.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="paged" class="lesson-section" aria-labelledby="paged-title">
+    <div class="section-kicker">Level 3 · System mechanics</div>
+    <h2 id="paged-title">Paged allocation: making the cache fit efficiently</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Why contiguous allocation wastes memory</h3>
+        <p>If you reserve one giant contiguous region sized for every request's maximum possible output, much of it can sit unused. Different sequence lengths also create fragmentation.</p>
+        <div class="formula">Logical sequence → [block 0][block 1][block 2]…</div>
+        <p>With PagedAttention, logical KV blocks map to physical blocks that need not be contiguous. New blocks are allocated as tokens arrive.</p>
+      </div>
+      <div class="card">
+        <h3>The operating-system analogy</h3>
+        <p>Think “virtual memory for KV cache”: a request sees logical pages; the runtime maps them onto whatever physical GPU blocks are available.</p>
+        <div class="callout interpretation"><strong>What changes?</strong> Not the mathematical attention rule. The cache is still the same K/V information; its physical placement is more flexible.</div>
+      </div>
+    </div>
+    <div class="card interactive" style="margin-top:16px">
+      <div class="section-kicker">Mini allocator simulation</div>
+      <h3>Add tokens and watch blocks appear</h3>
+      <p class="small">This is a teaching model: 12 physical blocks, 4 tokens per block. The goal is to see dynamic allocation and why physical blocks do not need to be contiguous.</p>
+      <div class="controls">
+        <div class="control"><label for="reqSelect">Request</label><select id="reqSelect"><option value="A">Request A</option><option value="B">Request B</option><option value="C">Request C</option></select></div>
+        <button class="btn primary" id="addToken">Add 1 token</button>
+        <button class="btn" id="addFour">Add 4 tokens</button>
+        <button class="btn ghost" id="freeReq">Free request</button>
+        <button class="btn ghost" id="resetPages">Reset</button>
+      </div>
+      <div id="allocatorState" class="muted-box small" aria-live="polite"></div>
+      <div id="physicalBlocks" style="display:grid;grid-template-columns:repeat(12,1fr);gap:6px;margin-top:12px"></div>
+      <div id="requestMaps" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px"></div>
+      <p class="small" style="margin-top:11px"><b>What to notice:</b> each request grows only when it needs another block. Two logical neighbors can live in distant physical blocks, and a freed block becomes available to other requests.</p>
+    </div>
+  </section>
+
+  <section id="quant" class="lesson-section" aria-labelledby="quant-title">
+    <div class="section-kicker">Level 3 · Numeric compression</div>
+    <h2 id="quant-title">Quantized KV caches: store fewer bits</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>What quantization does</h3>
+        <p>Instead of storing each K/V element in a 16-bit or 8-bit floating format, quantization maps values into a smaller discrete representation and stores extra scale information so the values can be approximately reconstructed.</p>
+        <div class="formula">effective cache ≈ quantized values + scale / metadata overhead</div>
+        <p class="small">The smaller representation can reduce memory capacity pressure and memory traffic, but accuracy and kernel overhead depend on the method.</p>
+      </div>
+      <div class="card">
+        <h3>KIVI as a research example</h3>
+        <p>The KIVI paper studied the value distributions in KV caches and proposed a tuning-free 2-bit method with asymmetric treatment: per-channel key quantization and per-token value quantization.</p>
+        <div class="callout fact"><strong>Reported result</strong>The KIVI authors report near-preserved quality in their tested models and substantial memory/throughput changes, but those figures are tied to their experimental setup and should not be generalized to every model or hardware stack.</div>
+      </div>
+    </div>
+    <div class="card interactive" style="margin-top:16px">
+      <h3>Quantization slider</h3>
+      <div class="controls">
+        <div class="control" style="min-width:260px;flex:1"><label for="bitsRange">Bits per stored value: <b id="bitsLabel">16</b></label><input id="bitsRange" type="range" min="2" max="16" step="1" value="16"></div>
+      </div>
+      <div class="metric-row">
+        <div class="metric"><div id="quantRaw" class="v">2.00×</div><div class="l">raw-value compression vs 16-bit</div></div>
+        <div class="metric"><div id="quantBytes" class="v">16</div><div class="l">bits/value (before metadata)</div></div>
+        <div class="metric"><div id="quantScale" class="v">metadata matters</div><div class="l">why real savings are not exact</div></div>
+        <div class="metric"><div id="quantWarning" class="v">—</div><div class="l">systems consideration</div></div>
+      </div>
+      <p class="small" style="margin-top:10px">A 4-bit payload has 4× less raw value storage than a 16-bit payload. That does <em>not</em> mean the whole model or cache consumes exactly 4× less memory because scales, alignment, non-quantized components, and implementation choices remain.</p>
+    </div>
+  </section>
+
+  <section id="deepseek" class="lesson-section" aria-labelledby="ds-title">
+    <div class="section-kicker">Level 4–5 · Deep dive</div>
+    <h2 id="ds-title">DeepSeek-V4.1-Flash: a multi-lever KV strategy</h2>
+    <div class="callout fact"><strong>Current as of September 21, 2026</strong>DeepSeek released V4.1-Flash on September 10, 2026. Its technical report describes a 552B-backbone multimodal MoE with up to 1M-token context. The cache design combines cross-layer reuse in CSA2, FP4 global KV, and SWA Bounded Replay; the paper reports 890 bytes/token of global runtime KV and about 1/8 of V4-Flash's persistent KV footprint.</div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>1 · Causal Encoder–Decoder (CED)</h3>
+        <p>The architecture is a 20-layer causal encoder followed by a 20-layer decoder. The decoder's global KV is projected from the final encoder hidden states rather than generated independently from each decoder layer's own hidden state.</p>
+        <div class="callout interpretation"><strong>Why it matters to caching</strong>It changes where global decoder KV comes from, helping reduce active compute during prefill to 8B parameters/token and decode activation to 16B parameters/token, according to the report.</div>
+      </div>
+      <div class="card">
+        <h3>2 · CSA2: reuse across layers</h3>
+        <p>CSA2 assigns each attention layer one of three static modes: <b>Full</b>, <b>Reindex</b>, or <b>Reuse</b>. The key cache insight is that several layers can share global main KV and indexer K, and some can reuse already-selected Top-K indices.</p>
+        <div class="mode-buttons" role="tablist" aria-label="CSA2 modes">
+          <button class="mode-btn active" data-mode="full" role="tab" aria-selected="true">Full</button>
+          <button class="mode-btn" data-mode="reindex" role="tab" aria-selected="false">Reindex</button>
+          <button class="mode-btn" data-mode="reuse" role="tab" aria-selected="false">Reuse</button>
+        </div>
+        <div id="modeExplain" class="muted-box small">Computes main KV and indexer K, then indexes the cache to produce fresh Top-K indices.</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card">
+        <h3>3 · FP4 global KV</h3>
+        <p>V4.1-Flash extends quantization-aware training to the main global KV cache. The report selects an E2M1 FP4 representation with one E4M3 scale per 16 channels for the main KV cache. The SWA KV cache remains in FP8 because the paper reports greater sensitivity there.</p>
+        <div class="formula">FP4 → 4-bit main global KV payload + per-group scale</div>
+      </div>
+      <div class="card">
+        <h3>4 · SWA Bounded Replay</h3>
+        <p>Instead of persisting every Sliding-Window Attention KV state to SSD, V4.1-Flash reconstructs missing SWA KV by replaying only the most recent <em>n</em><sub>win</sub> tokens. The paper reports negligible quality impact in its experiments while reducing persistent cache storage.</p>
+        <div class="callout uncertainty"><strong>Important nuance</strong>The reconstructed state is intentionally approximate. The paper treats the small quality cost as a storage–recomputation trade-off, not as a mathematically exact replay.</div>
+      </div>
+    </div>
+
+    <div class="card interactive" style="margin-top:16px">
+      <div class="section-kicker">Put the pieces together</div>
+      <h3>One token through V4.1-Flash's cache design</h3>
+      <div class="deepseek-stack">
+        <div class="ds-layer"><div class="label">Input / prefill</div><div class="explain">CED encoder processes the prompt; global state is prepared for the decoder.</div></div>
+        <div class="ds-layer"><div class="label">Global KV</div><div class="explain">CSA2 shares main KV + indexer K across layers and reuses Top-K sparse indices when assigned to Reuse mode.</div></div>
+        <div class="ds-layer"><div class="label">Numeric format</div><div class="explain">Main global KV is kept in FP4; dequantization is used for attention rather than requiring native FP4 matrix multiplication.</div></div>
+        <div class="ds-layer"><div class="label">Local SWA</div><div class="explain">Each layer keeps local sliding-window KV. Missing persistent SWA KV can be reconstructed by bounded replay.</div></div>
+      </div>
+      <div class="metric-row" style="margin-top:15px">
+        <div class="metric"><div class="v">890 B</div><div class="l">global KV / token reported for V4.1-Flash</div></div>
+        <div class="metric"><div class="v">≈ 1/4</div><div class="l">of V4-Flash global/runtime KV</div></div>
+        <div class="metric"><div class="v">≈ 1/8</div><div class="l">of V4-Flash persistent KV footprint</div></div>
+        <div class="metric"><div class="v">1M</div><div class="l">maximum context length stated in the report</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>How it compares with the familiar methods</h3>
+      <div style="overflow:auto">
+        <table class="compare">
+          <thead><tr><th>Technique</th><th>What changes?</th><th>Cache effect</th><th>System role</th><th>Trade-off / nuance</th></tr></thead>
+          <tbody>
+            <tr><td>MHA</td><td>Independent K/V per query head</td><td>Largest head-based cache</td><td>Attention architecture</td><td>High representational freedom; high cache cost.</td></tr>
+            <tr><td>MQA</td><td>One shared K/V head</td><td>Strong reduction vs MHA</td><td>Attention architecture</td><td>Quality can degrade; original and GQA papers motivate compromises.</td></tr>
+            <tr><td>GQA</td><td>Intermediate number of K/V heads</td><td>Between MHA and MQA</td><td>Attention architecture</td><td>Tunable quality/cache trade-off via number of groups.</td></tr>
+            <tr><td>MLA</td><td>Joint low-rank latent K/V representation</td><td>Can be much smaller than MHA while preserving many heads in the computation</td><td>Attention architecture</td><td>Different factorization and positional-handling design; not simply “fewer heads.”</td></tr>
+            <tr><td>PagedAttention</td><td>Physical block allocation / logical→physical mapping</td><td>Less allocator waste; sharing becomes practical</td><td>Serving system</td><td>Does not intrinsically reduce the mathematical KV payload per token.</td></tr>
+            <tr><td>Quantized KV</td><td>Fewer bits + scale/metadata</td><td>Reduces bytes per stored value</td><td>Numeric representation</td><td>Accuracy, dequantization, metadata and hardware support matter.</td></tr>
+            <tr><td><b>V4.1-Flash</b></td><td>CSA2 cross-layer reuse + sparse index reuse + FP4 main global KV + CED + bounded SWA replay</td><td><b>890 B/global-token</b> in the paper; ≈1/4 of V4-Flash runtime KV and ≈1/8 persistent footprint</td><td>Model + cache precision + inference strategy</td><td>It is a compound design; it is not a drop-in replacement for any single one of MQA/GQA/MLA/PagedAttention.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="callout uncertainty"><strong>Do not overinterpret “890 bytes”</strong>It is the paper's reported global KV cache footprint for V4.1-Flash. It is not a universal constant for “DeepSeek attention,” and it is not directly comparable to every model's cache layout unless the same components, precision and scope are counted.</div>
+  </section>
+
+  <section id="practice" class="lesson-section" aria-labelledby="practice-title">
+    <div class="section-kicker">Level 5–6 · Practice</div>
+    <h2 id="practice-title">Make predictions before you look at the answer</h2>
+    <div class="accordion">
+      <div class="acc-row">
+        <button class="acc-btn" aria-expanded="false"><span>Prediction 1 — What does increasing query heads do to an MQA cache?</span><span>+</span></button>
+        <div class="acc-panel">Almost nothing to the K/V cache size: MQA stores one K head and one V head regardless of how many query heads attend to them. The query computation itself can still change, but the cached K/V count does not scale with query-head count in the same way as MHA.</div>
+      </div>
+      <div class="acc-row">
+        <button class="acc-btn" aria-expanded="false"><span>Prediction 2 — Does PagedAttention halve the number of bytes per token?</span><span>+</span></button>
+        <div class="acc-panel">Not by itself. PagedAttention is mainly about allocation and sharing: it reduces wasted reserved space and fragmentation and lets multiple logical sequences share physical blocks. The payload bytes required for a single token remain determined by the model's cache representation.</div>
+      </div>
+      <div class="acc-row">
+        <button class="acc-btn" aria-expanded="false"><span>Prediction 3 — Is 4-bit storage exactly 4× smaller end-to-end?</span><span>+</span></button>
+        <div class="acc-panel">No. Four bits is 1/4 the raw payload size of 16 bits, but scales, metadata, alignment, non-quantized components and runtime buffers add overhead. The practical reduction depends on the implementation.</div>
+      </div>
+      <div class="acc-row">
+        <button class="acc-btn" aria-expanded="false"><span>Prediction 4 — Can MLA and quantization be combined?</span><span>+</span></button>
+        <div class="acc-panel">Conceptually yes. They attack different axes: MLA changes the cached representation; quantization changes the numeric precision of that representation. The real question is whether the training/inference implementation can preserve quality and use the resulting layout efficiently.</div>
+      </div>
+      <div class="acc-row">
+        <button class="acc-btn" aria-expanded="false"><span>Application — An agent repeatedly sends a long shared prefix. What system features matter?</span><span>+</span></button>
+        <div class="acc-panel">Persistent prefix caching and block-level reuse become important. DeepSeek has documented disk-based context caching for its API, while PagedAttention-style block sharing is one general way a serving system can reuse shared prefixes efficiently. V4.1-Flash adds its own persistent-cache design, including SWA Bounded Replay.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="quiz" class="lesson-section" aria-labelledby="quiz-title">
+    <div class="section-kicker">Level 6 · Test yourself</div>
+    <h2 id="quiz-title">Final quiz</h2>
+    <p>Choose an answer, submit the quiz, then read the explanations. The goal is to reconstruct the mechanism, not memorize names.</p>
+    <form id="quizForm" class="quiz">
+      <div class="q-card" data-answer="b" data-explain="A cache stores K and V for earlier tokens so future decode steps can reuse them instead of recomputing the prefix's K/V.">
+        <div class="q-title">1. Why does KV cache reduce autoregressive decoding work?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q1" value="a">It removes the need to compute the current token's query.</label>
+          <label class="opt"><input type="radio" name="q1" value="b">It reuses previously computed keys and values instead of rebuilding them for the whole prefix.</label>
+          <label class="opt"><input type="radio" name="q1" value="c">It replaces attention with a feed-forward network.</label>
+          <label class="opt"><input type="radio" name="q1" value="d">It makes the context length constant.</label>
+        </div><div class="feedback"></div>
+      </div>
+
+      <div class="q-card" data-answer="c" data-explain="GQA keeps fewer KV heads than query heads, but more than one. The number of KV groups therefore controls the cache size.">
+        <div class="q-title">2. What distinguishes GQA from MQA?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q2" value="a">GQA has no K/V cache.</label>
+          <label class="opt"><input type="radio" name="q2" value="b">GQA uses one K/V head per query head.</label>
+          <label class="opt"><input type="radio" name="q2" value="c">GQA uses an intermediate number of K/V heads, grouped across query heads.</label>
+          <label class="opt"><input type="radio" name="q2" value="d">GQA stores only values, not keys.</label>
+        </div><div class="feedback"></div>
+      </div>
+
+      <div class="q-card" data-answer="a" data-explain="MLA uses low-rank joint compression of key/value information into a latent vector, plus a positional component in the DeepSeek-V2 formulation. It is a different design from head sharing.">
+        <div class="q-title">3. What is the core cache idea behind MLA?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q3" value="a">Cache a compact latent representation instead of every full per-head K/V vector.</label>
+          <label class="opt"><input type="radio" name="q3" value="b">Store the cache only on SSD.</label>
+          <label class="opt"><input type="radio" name="q3" value="c">Use one physical memory address for every token.</label>
+          <label class="opt"><input type="radio" name="q3" value="d">Quantize all activations to one bit.</label>
+        </div><div class="feedback"></div>
+      </div>
+
+      <div class="q-card" data-answer="d" data-explain="PagedAttention changes how blocks are allocated and addressed. It can reduce fragmentation and enable sharing without changing the logical K/V values themselves.">
+        <div class="q-title">4. Which statement about PagedAttention is most accurate?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q4" value="a">It is a quantization algorithm.</label>
+          <label class="opt"><input type="radio" name="q4" value="b">It guarantees half the bytes per cache token.</label>
+          <label class="opt"><input type="radio" name="q4" value="c">It is another name for MQA.</label>
+          <label class="opt"><input type="radio" name="q4" value="d">It manages KV cache memory in blocks and maps logical blocks to physical storage.</label>
+        </div><div class="feedback"></div>
+      </div>
+
+      <div class="q-card" data-answer="b" data-explain="Quantization reduces the number of bits used for the stored payload. The actual savings depend on metadata, non-quantized pieces, alignment and the implementation.">
+        <div class="q-title">5. Why can 4-bit KV storage be smaller but not exactly 4× smaller overall?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q5" value="a">Because 4-bit numbers use more memory than 16-bit numbers.</label>
+          <label class="opt"><input type="radio" name="q5" value="b">Because scales, metadata, alignment and other cached components contribute extra bytes.</label>
+          <label class="opt"><input type="radio" name="q5" value="c">Because quantization increases the number of tokens.</label>
+          <label class="opt"><input type="radio" name="q5" value="d">Because quantization removes the model's weights.</label>
+        </div><div class="feedback"></div>
+      </div>
+
+      <div class="q-card" data-answer="c" data-explain="V4.1-Flash combines cross-layer reuse in CSA2 with FP4 main/global KV, while SWA Bounded Replay changes persistent-cache storage. Its cache strategy is compound rather than a single MQA/GQA-like knob.">
+        <div class="q-title">6. Which combination best describes V4.1-Flash's KV strategy?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q6" value="a">MHA only, with larger BF16 caches.</label>
+          <label class="opt"><input type="radio" name="q6" value="b">MQA only, with one K/V head per layer.</label>
+          <label class="opt"><input type="radio" name="q6" value="c">CSA2 cross-layer reuse + FP4 global KV + bounded replay for SWA persistence.</label>
+          <label class="opt"><input type="radio" name="q6" value="d">PagedAttention only, with no architectural changes.</label>
+        </div><div class="feedback"></div>
+      </div>
+
+      <div class="q-card" data-answer="a" data-explain="The report distinguishes runtime global KV in HBM from persistent KV in SSD/host memory. SWA Bounded Replay specifically targets the persistent side by avoiding storage of SWA KV and reconstructing it approximately when needed.">
+        <div class="q-title">7. What does SWA Bounded Replay mainly target?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q7" value="a">Reducing the persistent KV footprint by trading some recomputation for storage.</label>
+          <label class="opt"><input type="radio" name="q7" value="b">Increasing the number of query heads.</label>
+          <label class="opt"><input type="radio" name="q7" value="c">Replacing the tokenizer.</label>
+          <label class="opt"><input type="radio" name="q7" value="d">Turning every attention layer into dense MHA.</label>
+        </div><div class="feedback"></div>
+      </div>
+
+      <div class="q-card" data-answer="d" data-explain="V4.1-Flash's reported 890 B/token figure is a model/report-specific cache footprint for its global KV representation. It should not be treated as a universal constant across architectures or layouts.">
+        <div class="q-title">8. What is the safest interpretation of “890 bytes per token”?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q8" value="a">Every LLM with 1M context will use 890 bytes per token.</label>
+          <label class="opt"><input type="radio" name="q8" value="b">It is exactly the amount of GPU memory used by the whole model per token.</label>
+          <label class="opt"><input type="radio" name="q8" value="c">It is the size of all model parameters.</label>
+          <label class="opt"><input type="radio" name="q8" value="d">It is the global KV cache footprint reported for V4.1-Flash under its stated design and counting scope.</label>
+        </div><div class="feedback"></div>
+      </div>
+
+      <div>
+        <button class="btn primary" type="button" id="gradeQuiz">Grade quiz</button>
+        <button class="btn ghost" type="button" id="resetQuiz">Reset</button>
+        <div id="quizScore" class="score" aria-live="polite"></div>
+      </div>
+    </form>
+  </section>
+
+  <section id="review" class="lesson-section" aria-labelledby="review-title">
+    <div class="section-kicker">Review</div>
+    <h2 id="review-title">The Mental Model</h2>
+    <div class="card">
+      <div class="formula">ATTENTION = Q asks a question → K scores where to look → V supplies content</div>
+      <p><b>KV cache = persistent working memory for autoregressive decoding.</b> It saves repeated K/V computation, but the price is memory capacity and repeated memory reads.</p>
+      <div class="grid-3" style="margin-top:12px">
+        <div class="card soft"><h3>Compress the content</h3><p class="small">MHA → GQA/MQA reduces the number of K/V heads. MLA compresses K/V into a latent representation.</p></div>
+        <div class="card soft"><h3>Pack the memory</h3><p class="small">PagedAttention allocates fixed-size blocks on demand and maps logical cache blocks to physical memory blocks.</p></div>
+        <div class="card soft"><h3>Use fewer bits</h3><p class="small">Quantized caches trade numeric precision plus metadata for lower bytes per stored value.</p></div>
+      </div>
+      <div class="callout fact" style="margin-top:14px"><strong>DeepSeek V4.1-Flash in one line</strong>It combines a new Causal Encoder–Decoder architecture with CSA2 cross-layer/global-KV reuse and sparse index reuse, FP4 main global KV, and SWA Bounded Replay—attacking model representation, cache precision and persistent storage together.</div>
+    </div>
+
+    <h3 style="margin-top:28px">5–10 Things to Remember</h3>
+    <div class="takeaways">
+      <div class="take"><b>1. KV cache is a memory trade.</b> You save repeated K/V computation by storing history.</div>
+      <div class="take"><b>2. Cache size is roughly linear in context.</b> More tokens mean more stored states.</div>
+      <div class="take"><b>3. MQA/GQA change KV head sharing.</b> They reduce cache size within the standard head-based representation.</div>
+      <div class="take"><b>4. MLA changes the representation itself.</b> It caches a compact latent, not full K/V per head.</div>
+      <div class="take"><b>5. PagedAttention is about allocation.</b> It attacks fragmentation and enables block-level sharing.</div>
+      <div class="take"><b>6. Quantization is orthogonal.</b> You can reduce bits of whatever representation you store.</div>
+      <div class="take"><b>7. Runtime and persistent caches are different.</b> HBM pressure and SSD/host pressure need different tactics.</div>
+      <div class="take"><b>8. V4.1-Flash is a compound design.</b> CSA2 + FP4 + bounded replay are coordinated, not a single “attention trick.”</div>
+      <div class="take"><b>9. Smaller is not automatically faster.</b> Dequantization, kernels, memory access and interconnects still matter.</div>
+      <div class="take"><b>10. Always check the counting scope.</b> “Bytes/token” depends on what is counted and the exact cache layout.</div>
+    </div>
+
+    <h3 style="margin-top:28px">Glossary</h3>
+    <dl class="glossary">
+      <div class="term"><dt>MHA</dt><dd>Multi-Head Attention: each query head has its own K/V head.</dd></div>
+      <div class="term"><dt>MQA</dt><dd>Multi-Query Attention: all query heads share one K head and one V head.</dd></div>
+      <div class="term"><dt>GQA</dt><dd>Grouped Query Attention: query heads are grouped and each group shares K/V.</dd></div>
+      <div class="term"><dt>MLA</dt><dd>Multi-head Latent Attention: low-rank joint compression of K/V into a cached latent state.</dd></div>
+      <div class="term"><dt>KV cache</dt><dd>Stored keys and values for past tokens, reused during autoregressive decoding.</dd></div>
+      <div class="term"><dt>PagedAttention</dt><dd>A block-based KV cache management scheme inspired by OS virtual-memory paging.</dd></div>
+      <div class="term"><dt>Quantization</dt><dd>Representing values with fewer bits plus enough side information to approximately reconstruct them.</dd></div>
+      <div class="term"><dt>FP4</dt><dd>A 4-bit floating-point representation; V4.1-Flash uses E2M1 for the main global KV payload with grouped scaling.</dd></div>
+      <div class="term"><dt>SWA</dt><dd>Sliding-Window Attention: each layer only keeps a local attention window.</dd></div>
+      <div class="term"><dt>CSA2</dt><dd>Compressed Sparse Attention 2: V4.1-Flash's cross-layer reuse + sparse index strategy.</dd></div>
+      <div class="term"><dt>Prefill</dt><dd>Processing the input/prompt to establish the model state before token-by-token generation.</dd></div>
+      <div class="term"><dt>Decode</dt><dd>The autoregressive phase that generates new tokens one step at a time.</dd></div>
+    </dl>
+
+    <h3 style="margin-top:30px">Sources / Further Reading</h3>
+    <div class="source-list">
+      <div class="source"><b>Vaswani et al. (2017), “Attention Is All You Need.”</b><span>Original Transformer paper and multi-head attention foundation. <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">arXiv</a>.</span></div>
+      <div class="source"><b>Shazeer (2019), “Fast Transformer Decoding: One Write-Head is All You Need.”</b><span>Introduces Multi-Query Attention. <a href="https://arxiv.org/abs/1911.02150" target="_blank" rel="noopener">arXiv</a>.</span></div>
+      <div class="source"><b>Ainslie et al. (2023), “GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints.”</b><span>Introduces Grouped Query Attention and an uptraining recipe. <a href="https://arxiv.org/abs/2305.13245" target="_blank" rel="noopener">arXiv</a>.</span></div>
+      <div class="source"><b>Kwon et al. (2023), “Efficient Memory Management for Large Language Model Serving with PagedAttention.”</b><span>Foundational PagedAttention/vLLM paper. <a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">arXiv</a>.</span></div>
+      <div class="source"><b>DeepSeek-AI (2024), “DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model.”</b><span>Introduces MLA and explicitly compares its KV cache footprint with MHA, GQA and MQA. <a href="https://arxiv.org/abs/2405.04434" target="_blank" rel="noopener">arXiv</a>.</span></div>
+      <div class="source"><b>Liu et al. (2024), “KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache.”</b><span>Representative KV-cache quantization research. <a href="https://arxiv.org/abs/2402.02750" target="_blank" rel="noopener">arXiv</a>.</span></div>
+      <div class="source"><b>DeepSeek-AI (2026), “DeepSeek-V4.1-Flash: Pushing the Limits of KV Cache Compression.”</b><span>Primary technical report: CSA2, cross-layer reuse, FP4 main KV, SWA Bounded Replay, and reported cache footprints. <a href="https://arxiv.org/abs/2609.19969" target="_blank" rel="noopener">arXiv</a> · <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash" target="_blank" rel="noopener">Hugging Face model card</a>.</span></div>
+      <div class="source"><b>DeepSeek API Documentation (2026), V4.1-Flash release notes.</b><span>Release date, API model name and current model details. <a href="https://api-docs.deepseek.com/updates/" target="_blank" rel="noopener">DeepSeek API change log</a>.</span></div>
+    </div>
+    <div class="callout small" style="margin-top:12px"><b>Research note:</b> This lesson favors primary sources and separates attention architecture, cache representation, physical allocation, quantization, and persistent-cache policy because they solve different bottlenecks. For active systems such as V4.1-Flash, model cards and technical reports can evolve; the page records the state checked on September 21, 2026.</div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Built as a self-contained learning page. No account, backend, database, or external JavaScript library is required. Interactions run locally in your browser.</div>
+</footer>
+
+<script>
+(function(){
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const qs = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+  // Reveal buttons
+  qs('[data-reveal]').forEach(btn => btn.addEventListener('click', () => {
+    const el = $(btn.dataset.reveal);
+    const hidden = el.hasAttribute('hidden');
+    if(hidden){ el.removeAttribute('hidden'); btn.textContent='Hide answer'; }
+    else { el.setAttribute('hidden',''); btn.textContent='Reveal answer'; }
+  }));
+
+  // Progress + section tracking
+  const sections = qs('.lesson-section');
+  const navPills = qs('.nav-pill');
+  const progressFill = $('progressFill');
+  const progressLabel = $('progressLabel');
+  const seen = new Set();
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) seen.add(e.target.id); });
+    const total = sections.length || 1;
+    const pct = Math.round((seen.size/total)*100);
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = pct + '% explored';
+  }, {rootMargin:'-20% 0px -60% 0px', threshold:0});
+  sections.forEach(s => io.observe(s));
+  const navIO = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if(e.isIntersecting){
+        navPills.forEach(p => p.classList.toggle('active', p.getAttribute('href') === '#' + e.target.id));
+      }
+    });
+  }, {rootMargin:'-35% 0px -55% 0px', threshold:0});
+  sections.forEach(s => navIO.observe(s));
+
+  // Head sharing explorer
+  const attnMode = $('attnMode'), qHeads = $('qHeads'), gHeads = $('gHeads'), headMap = $('headMap'), headMapNote = $('headMapNote');
+  function renderHeadMap(){
+    const mode = attnMode.value;
+    const q = +qHeads.value;
+    const g = mode === 'MQA' ? 1 : mode === 'MHA' ? q : Math.min(q, +gHeads.value);
+    headMap.innerHTML = '';
+    const left = document.createElement('div'); left.className='q-col';
+    const right = document.createElement('div'); right.className='kv-col';
+    const lines = document.createElement('div'); lines.className='mapping-lines';
+    for(let i=0;i<q;i++){ const el=document.createElement('div'); el.className='head-chip q'; el.textContent='Q'+(i+1); left.appendChild(el); const ln=document.createElement('div'); ln.className='line'; ln.textContent='→'; lines.appendChild(ln); }
+    for(let i=0;i<g;i++){ const el=document.createElement('div'); el.className='head-chip kv'; el.textContent='KV'+(i+1); right.appendChild(el); }
+    headMap.appendChild(left); headMap.appendChild(lines); headMap.appendChild(right);
+    let note='';
+    if(mode==='MHA') note='MHA: one K/V pair per query head, so Q, K and V have the same number of heads.';
+    else if(mode==='MQA') note='MQA: all query heads point to the same single K/V head. This maximizes head-sharing cache reduction.';
+    else if(mode==='GQA') note=`GQA: ${q} query heads are partitioned across ${g} KV groups; each group shares its K/V.`;
+    else note='MLA: this head map is only a metaphor. MLA does not just assign fewer K/V heads; it caches a compact latent representation, so the storage formula is different.';
+    headMapNote.textContent=note;
+  }
+  [attnMode,qHeads,gHeads].forEach(el=>el.addEventListener('change', renderHeadMap)); renderHeadMap();
+
+  // Cache calculator
+  const calcIds = ['calcMode','ctx','layers','heads','headDim','kvHeads','precision','mlaMult','mlaRope'];
+  calcIds.forEach(id=>$(id).addEventListener('input', updateCalculator));
+  calcIds.forEach(id=>$(id).addEventListener('change', updateCalculator));
+  function humanBytes(n){
+    if(!isFinite(n)) return '—';
+    const units=['B','KiB','MiB','GiB','TiB']; let i=0, x=n; while(x>=1024 && i<units.length-1){x/=1024;i++;}
+    return (x<10&&i>0?x.toFixed(2):x.toFixed(x<100?1:0))+' '+units[i];
+  }
+  function bytesPerToken(mode, ctx, layers, heads, dim, kvHeads, bits, mlaMult, mlaRope){
+    const byte=bits/8;
+    if(mode==='MHA') return 2*heads*dim*layers*byte;
+    if(mode==='MQA') return 2*1*dim*layers*byte;
+    if(mode==='GQA') return 2*Math.min(heads, Math.max(1,kvHeads))*dim*layers*byte;
+    const latent=mlaMult*dim, rope=mlaRope*dim;
+    return (latent+rope)*layers*byte;
+  }
+  function updateCalculator(){
+    const mode=$('calcMode').value, ctx=Math.max(1,+$('ctx').value||1), layers=Math.max(1,+$('layers').value||1), heads=Math.max(1,+$('heads').value||1), dim=Math.max(1,+$('headDim').value||1), kvHeads=Math.max(1,+$('kvHeads').value||1), bits=+$('precision').value||16, mm=Math.max(1,+$('mlaMult').value||4), mr=Math.max(0,+$('mlaRope').value||0.5);
+    const chosen=bytesPerToken(mode,ctx,layers,heads,dim,kvHeads,bits,mm,mr);
+    const bits16=16;
+    const mha=bytesPerToken('MHA',ctx,layers,heads,dim,kvHeads,bits,mm,mr);
+    const gqa=bytesPerToken('GQA',ctx,layers,heads,dim,kvHeads,bits,mm,mr);
+    const mqa=bytesPerToken('MQA',ctx,layers,heads,dim,kvHeads,bits,mm,mr);
+    const mla=bytesPerToken('MLA',ctx,layers,heads,dim,kvHeads,bits,mm,mr);
+    const elements = mode==='MHA' ? 2*heads*dim*layers : mode==='GQA' ? 2*Math.min(heads,kvHeads)*dim*layers : mode==='MQA' ? 2*dim*layers : (mm+mr)*dim*layers;
+    $('perToken').textContent=humanBytes(chosen); $('totalCache').textContent=humanBytes(chosen*ctx); $('relativeMha').textContent=(chosen/mha).toFixed(3)+'×'; $('elements').textContent=elements.toLocaleString();
+    const max=Math.max(mha,gqa,mqa,mla);
+    [['MHA',mha,'barMHA','txtMHA'],['GQA',gqa,'barGQA','txtGQA'],['MQA',mqa,'barMQA','txtMQA'],['MLA',mla,'barMLA','txtMLA']].forEach(([name,val,bid,tid])=>{ $(bid).style.width=(val/max*100)+'%'; $(tid).textContent=(val/mha).toFixed(2)+'× MHA'; });
+  }
+  updateCalculator();
+
+  $('runContextExperiment').addEventListener('click', () => {
+    const old=+$('ctx').value || 131072; const vals=[32768,131072,524288];
+    const lines=vals.map(v=>{ const bytes=bytesPerToken($('calcMode').value,v,+$('layers').value,+$('heads').value,+$('headDim').value,+$('kvHeads').value,+$('precision').value,+$('mlaMult').value,+$('mlaRope').value); return `${(v/1024).toFixed(0)}K → ${humanBytes(bytes*v)}`; });
+    $('contextExperiment').innerHTML='<b>Observed:</b> '+lines.join(' · ')+'<br><span class="small">For fixed model settings, the cache size scales linearly with context tokens. I changed the context from '+(old/1024).toFixed(0)+'K only to run the thought experiment; your calculator inputs stay unchanged.</span>';
+  });
+
+  // Paged allocator simulation
+  const blocks=Array(12).fill(null), reqs={A:{tokens:0, map:[]},B:{tokens:0,map:[]},C:{tokens:0,map:[]}}, BLOCK_T=4;
+  function renderAllocator(){
+    const pb=$('physicalBlocks'); pb.innerHTML='';
+    for(let i=0;i<blocks.length;i++){
+      const d=document.createElement('div'); d.style.cssText='border:1px solid #cbd5e1;border-radius:8px;min-height:54px;padding:7px;background:'+(blocks[i]?'#eef4ff':'#f8fafc');
+      d.innerHTML='<b style="font-size:11px">P'+i+'</b><br><span style="font-size:11px;color:#667385">'+(blocks[i]?(blocks[i]+' · 4T'):'free')+'</span>'; pb.appendChild(d);
+    }
+    const rm=$('requestMaps'); rm.innerHTML=''; Object.entries(reqs).forEach(([k,r])=>{ const c=document.createElement('div'); c.className='card soft'; c.innerHTML=`<b>Request ${k}</b><div class="small">${r.tokens} tokens → ${r.map.length} physical block(s)</div><div class="pill-row">${r.map.length?r.map.map(x=>`<span class="pill">L→P${x}</span>`).join(''):'<span class="pill">no blocks yet</span>'}</div>`; rm.appendChild(c); });
+    const selected=$('reqSelect').value, r=reqs[selected], free=blocks.filter(x=>!x).length;
+    $('allocatorState').textContent=`Request ${selected}: ${r.tokens} tokens. Physical blocks used: ${blocks.length-free}/${blocks.length}. Each new block is allocated only when the current logical block fills. Free blocks can be reused by any request.`;
+  }
+  function addTokens(n){
+    const key=$('reqSelect').value, r=reqs[key]; for(let i=0;i<n;i++){ const newBlock=(r.tokens%BLOCK_T===0); if(newBlock){ const idx=blocks.findIndex(x=>!x); if(idx<0){ $('allocatorState').textContent='No free physical blocks remain. This is the memory-capacity limit.'; return; } blocks[idx]=key; r.map.push(idx); } r.tokens++; } renderAllocator(); }
+  function freeReq(){ const key=$('reqSelect').value; reqs[key].map.forEach(i=>blocks[i]=null); reqs[key]={tokens:0,map:[]}; renderAllocator(); }
+  $('addToken').addEventListener('click',()=>addTokens(1)); $('addFour').addEventListener('click',()=>addTokens(4)); $('freeReq').addEventListener('click',freeReq); $('reqSelect').addEventListener('change',renderAllocator); $('resetPages').addEventListener('click',()=>{for(let i=0;i<blocks.length;i++)blocks[i]=null;Object.keys(reqs).forEach(k=>reqs[k]={tokens:0,map:[]});renderAllocator();}); renderAllocator();
+
+  // Quantization slider
+  $('bitsRange').addEventListener('input',()=>{
+    const bits=+$('bitsRange').value; $('bitsLabel').textContent=bits; $('quantBytes').textContent=bits; $('quantRaw').textContent=(16/bits).toFixed(2)+'×';
+    $('quantScale').textContent=bits<=4?'scale + metadata are material':'scale overhead is usually smaller, but still implementation-dependent';
+    $('quantWarning').textContent=bits<=3?'accuracy / kernel risk':'dequantization & layout';
+  }); $('bitsRange').dispatchEvent(new Event('input'));
+
+  // CSA2 mode explainer
+  const modeText={full:'Computes main KV and indexer K, then indexes the cache to produce fresh Top-K indices.',reindex:'Reuses global main KV + indexer K from a preceding layer, but uses its own indexer Q to rescore and produce fresh Top-K indices.',reuse:'Reuses both global main KV and Top-K indices from a preceding index-producing layer, then performs sparse attention directly.'};
+  qs('.mode-btn').forEach(btn=>btn.addEventListener('click',()=>{qs('.mode-btn').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false')});btn.classList.add('active');btn.setAttribute('aria-selected','true');$('modeExplain').textContent=modeText[btn.dataset.mode];}));
+
+  // Accordion
+  qs('.acc-row').forEach(row=>{ const btn=row.querySelector('.acc-btn'); const sign=btn.querySelector('span:last-child'); btn.addEventListener('click',()=>{const open=row.classList.toggle('open');btn.setAttribute('aria-expanded',open?'true':'false');sign.textContent=open?'−':'+';}); });
+
+  // Quiz
+  $('gradeQuiz').addEventListener('click',()=>{
+    const cards=qs('.q-card'); let score=0,answered=0;
+    cards.forEach((card,idx)=>{
+      const checked=card.querySelector('input:checked'); const fb=card.querySelector('.feedback'); const ans=card.dataset.answer; fb.className='feedback show';
+      if(checked){answered++; if(checked.value===ans){score++;fb.classList.add('ok');fb.textContent='Correct. '+card.dataset.explain;} else {fb.classList.add('no');fb.textContent='Not quite. '+card.dataset.explain;}}
+      else {fb.classList.add('no');fb.textContent='No answer selected. '+card.dataset.explain;}
+    });
+    $('quizScore').textContent=`Score: ${score}/${cards.length} · ${answered} answered`;
+  });
+  $('resetQuiz').addEventListener('click',()=>{qs('#quizForm input[type=radio]').forEach(i=>i.checked=false);qs('#quizForm .feedback').forEach(f=>{f.className='feedback'});$('quizScore').textContent='';});
+})();
+</script>
+</body>
+</html>

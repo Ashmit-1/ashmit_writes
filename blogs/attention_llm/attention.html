@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attention &amp; KV Caching in LLMs — An Interactive Course</title>
+<style>
+  :root{
+    --bg:#fbfbf9;
+    --surface:#ffffff;
+    --border:#e3e3de;
+    --text:#23241f;
+    --muted:#66685f;
+    --accent:#2f6f5e;
+    --accent-soft:#eaf4f0;
+    --warn:#a8571f;
+    --warn-soft:#fdf1e7;
+    --good:#2f7d4f;
+    --good-soft:#eaf7ef;
+    --bad:#b04040;
+    --bad-soft:#fbecec;
+    --code-bg:#f4f4f0;
+    --radius:10px;
+    --maxw:820px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:17px;
+    line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 1.25rem 6rem;}
+
+  /* ---------- Progress bar ---------- */
+  #progress-track{
+    position:fixed;top:0;left:0;right:0;height:3px;background:transparent;z-index:60;
+  }
+  #progress-fill{height:100%;width:0%;background:var(--accent);transition:width .1s linear;}
+
+  #section-pill{
+    position:fixed;top:12px;right:12px;z-index:60;
+    background:var(--surface);border:1px solid var(--border);border-radius:999px;
+    padding:.3rem .85rem;font-size:.76rem;color:var(--muted);
+    box-shadow:0 1px 3px rgba(0,0,0,.04);max-width:60vw;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  @media(max-width:600px){#section-pill{display:none;}}
+
+  /* ---------- Header ---------- */
+  header{padding:5.5rem 0 1rem;}
+  .kicker{
+    font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;margin-bottom:.9rem;
+  }
+  h1{font-size:2.05rem;line-height:1.22;margin:0 0 .7rem;letter-spacing:-.015em;font-weight:700;}
+  .subtitle{font-size:1.05rem;color:var(--muted);margin:0 0 1.4rem;max-width:60ch;}
+  .meta-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem;}
+  .chip{
+    font-size:.74rem;padding:.28rem .68rem;border-radius:999px;
+    background:var(--accent-soft);color:var(--accent);border:1px solid #d3e7df;font-weight:500;
+  }
+
+  /* ---------- Nav ---------- */
+  nav.toc{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:1rem 1.2rem;margin:1.5rem 0 3rem;
+  }
+  nav.toc h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 .7rem;}
+  nav.toc ol{margin:0;padding-left:1.2rem;columns:2;column-gap:1.5rem;font-size:.92rem;}
+  @media(max-width:600px){nav.toc ol{columns:1;}}
+  nav.toc a{color:var(--text);text-decoration:none;border-bottom:1px solid transparent;}
+  nav.toc a:hover{border-bottom-color:var(--accent);color:var(--accent);}
+
+  /* ---------- Sections ---------- */
+  section{margin:0 0 4rem;scroll-margin-top:3rem;}
+  h2{
+    font-size:1.5rem;margin:0 0 .4rem;letter-spacing:-.01em;font-weight:700;
+    padding-bottom:.55rem;border-bottom:1px solid var(--border);
+  }
+  h2 .lvl{
+    display:inline-block;font-size:.68rem;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--accent);background:var(--accent-soft);
+    padding:.16rem .5rem;border-radius:4px;margin-right:.55rem;vertical-align:middle;
+  }
+  h3{font-size:1.13rem;margin:2.1rem 0 .55rem;font-weight:650;}
+  h4{font-size:.98rem;margin:1.4rem 0 .4rem;font-weight:650;color:var(--accent);}
+  p{margin:.75rem 0;}
+  ul,ol{padding-left:1.35rem;}
+  li{margin:.35rem 0;}
+  strong{font-weight:650;}
+  em{color:var(--muted);font-style:italic;}
+  code{
+    background:var(--code-bg);padding:.1rem .35rem;border-radius:4px;
+    font-size:.87em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  pre{
+    background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+    padding:1rem;overflow-x:auto;font-size:.83rem;line-height:1.55;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  .lede{font-size:1.03rem;color:#3b3d36;}
+
+  /* ---------- Cards & callouts ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:1.15rem 1.3rem;margin:1.2rem 0;
+  }
+  .callout{
+    border-left:3px solid var(--accent);background:var(--accent-soft);
+    border-radius:0 8px 8px 0;padding:.85rem 1.1rem;margin:1.2rem 0;font-size:.95rem;
+  }
+  .callout.warn{border-left-color:var(--warn);background:var(--warn-soft);}
+  .callout .tag{
+    display:block;font-size:.7rem;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;margin-bottom:.3rem;color:var(--accent);
+  }
+  .callout.warn .tag{color:var(--warn);}
+  .callout p:first-of-type{margin-top:0;}
+  .callout p:last-child{margin-bottom:0;}
+
+  /* ---------- Interactive blocks ---------- */
+  .interactive{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:1.3rem 1.35rem;margin:1.5rem 0;
+  }
+  .interactive > .ititle{
+    font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:.9rem;
+  }
+  label{display:block;font-size:.88rem;font-weight:550;margin-bottom:.35rem;}
+  .slider-row{margin-bottom:1.1rem;}
+  .slider-row .val{font-weight:650;color:var(--accent);font-variant-numeric:tabular-nums;}
+  input[type=range]{
+    width:100%;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;
+    background:#dededa;outline:none;margin:.45rem 0 0;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);cursor:pointer;border:2px solid #fff;
+    box-shadow:0 1px 4px rgba(0,0,0,.22);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:16px;height:16px;border-radius:50%;background:var(--accent);
+    cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.22);
+  }
+  input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4px;}
+  select{
+    width:100%;padding:.55rem .6rem;border:1px solid var(--border);border-radius:7px;
+    background:var(--surface);font-size:.92rem;color:var(--text);font-family:inherit;
+  }
+  select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .readout{
+    background:var(--code-bg);border-radius:8px;padding:1rem;text-align:center;margin-top:1rem;
+  }
+  .readout .rl{font-size:.76rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+  .readout .rv{
+    font-size:1.65rem;font-weight:700;color:var(--accent);
+    font-variant-numeric:tabular-nums;line-height:1.25;margin-top:.2rem;
+  }
+  .readout .rs{font-size:.8rem;color:var(--muted);margin-top:.25rem;}
+
+  button{
+    font-family:inherit;font-size:.9rem;cursor:pointer;
+    border:1px solid var(--border);background:var(--surface);color:var(--text);
+    border-radius:7px;padding:.5rem 1rem;transition:background .12s,border-color .12s;
+  }
+  button:hover{background:#f2f2ee;}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;}
+  button.primary:hover{background:#275c4e;}
+  .btnrow{display:flex;gap:.55rem;flex-wrap:wrap;margin-top:.9rem;}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+  .seg button{border:none;border-radius:0;padding:.45rem .9rem;font-size:.84rem;}
+  .seg button+button{border-left:1px solid var(--border);}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:600;}
+
+  /* ---------- Details / reveal ---------- */
+  details{
+    background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    padding:.7rem 1rem;margin:.9rem 0;
+  }
+  details[open]{padding-bottom:1rem;}
+  summary{
+    cursor:pointer;font-weight:600;font-size:.93rem;color:var(--accent);
+    list-style:none;display:flex;align-items:center;gap:.5rem;
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary::before{
+    content:"▸";display:inline-block;transition:transform .15s;font-size:.85rem;
+  }
+  details[open] summary::before{transform:rotate(90deg);}
+  summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px;}
+  details .body{margin-top:.7rem;font-size:.94rem;}
+  details .body p:first-child{margin-top:0;}
+
+  /* ---------- Quiz ---------- */
+  .quiz{margin:1.2rem 0;}
+  .q{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:1.1rem 1.25rem;margin-bottom:1rem;
+  }
+  .q .qtext{font-weight:600;margin:0 0 .8rem;font-size:.97rem;}
+  .opt{
+    display:flex;align-items:flex-start;gap:.6rem;width:100%;text-align:left;
+    background:#fafaf7;border:1px solid var(--border);border-radius:7px;
+    padding:.6rem .8rem;margin-bottom:.45rem;font-size:.91rem;line-height:1.5;
+    transition:background .12s,border-color .12s;
+  }
+  .opt:hover:not([disabled]){background:#f2f2ee;border-color:#d0d0ca;}
+  .opt[disabled]{cursor:default;}
+  .opt .mark{
+    flex:0 0 18px;height:18px;border-radius:50%;border:1.5px solid #c8c8c1;
+    display:flex;align-items:center;justify-content:center;font-size:.7rem;
+    font-weight:700;color:#fff;margin-top:2px;
+  }
+  .opt.correct{background:var(--good-soft);border-color:#b9dcc7;}
+  .opt.correct .mark{background:var(--good);border-color:var(--good);}
+  .opt.incorrect{background:var(--bad-soft);border-color:#e6c3c3;}
+  .opt.incorrect .mark{background:var(--bad);border-color:var(--bad);}
+  .opt.dim{opacity:.5;}
+  .fb{
+    margin-top:.7rem;font-size:.89rem;line-height:1.6;padding:.7rem .85rem;
+    border-radius:7px;background:var(--code-bg);display:none;
+  }
+  .fb.show{display:block;}
+  .fb b.g{color:var(--good);}
+  .fb b.b{color:var(--bad);}
+  .scorebar{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:1.1rem 1.25rem;text-align:center;
+  }
+  .scorebar .num{font-size:1.9rem;font-weight:700;color:var(--accent);}
+  .scorebar .lbl{font-size:.85rem;color:var(--muted);}
+
+  /* ---------- Diagram ---------- */
+  .diagram{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:1.2rem;margin:1.4rem 0;overflow-x:auto;
+  }
+  .diagram svg{display:block;margin:0 auto;max-width:100%;height:auto;}
+  .legend{display:flex;gap:1.1rem;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin-top:.9rem;justify-content:center;}
+  .legend span{display:flex;align-items:center;gap:.35rem;}
+  .swatch{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+  /* ---------- Timeline ---------- */
+  .tl{position:relative;margin:1.6rem 0 1.6rem .4rem;padding-left:1.5rem;border-left:2px solid #e0e0da;}
+  .tl-item{position:relative;margin-bottom:1.5rem;}
+  .tl-item::before{
+    content:"";position:absolute;left:-1.96rem;top:.42rem;width:9px;height:9px;
+    border-radius:50%;background:var(--accent);border:2px solid var(--bg);
+  }
+  .tl-item .yr{font-size:.76rem;font-weight:700;color:var(--accent);letter-spacing:.06em;}
+  .tl-item .ttl{font-weight:650;font-size:.98rem;margin:.1rem 0 .2rem;}
+  .tl-item .dsc{font-size:.9rem;color:#4a4c44;}
+
+  /* ---------- Table ---------- */
+  .tablewrap{overflow-x:auto;margin:1.3rem 0;}
+  table{border-collapse:collapse;width:100%;font-size:.87rem;min-width:560px;}
+  th,td{padding:.6rem .75rem;text-align:left;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;background:#fafaf7;}
+  tbody tr:hover{background:#fafaf7;}
+
+  /* ---------- Steps ---------- */
+  .steps{counter-reset:st;margin:1.2rem 0;}
+  .step{
+    position:relative;padding-left:2.4rem;margin-bottom:1rem;
+    counter-increment:st;
+  }
+  .step::before{
+    content:counter(st);position:absolute;left:0;top:.05rem;
+    width:1.65rem;height:1.65rem;border-radius:50%;background:var(--accent-soft);
+    color:var(--accent);font-size:.82rem;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .step .st{font-weight:650;display:block;margin-bottom:.1rem;}
+  .step .sd{font-size:.92rem;color:#484a42;}
+
+  /* ---------- Takeaways ---------- */
+  .takeaways{list-style:none;padding:0;counter-reset:tk;}
+  .takeaways li{
+    counter-increment:tk;position:relative;padding:.75rem .9rem .75rem 3rem;
+    background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    margin-bottom:.6rem;font-size:.94rem;
+  }
+  .takeaways li::before{
+    content:counter(tk);position:absolute;left:.9rem;top:.8rem;
+    width:1.5rem;height:1.5rem;border-radius:50%;background:var(--accent);color:#fff;
+    font-size:.76rem;font-weight:700;display:flex;align-items:center;justify-content:center;
+  }
+
+  /* ---------- Glossary ---------- */
+  .glossary dt{font-weight:650;margin-top:1rem;font-size:.95rem;color:var(--accent);}
+  .glossary dd{margin:.15rem 0 0;font-size:.91rem;color:#40423b;}
+
+  /* ---------- Sources ---------- */
+  .src{font-size:.88rem;margin-bottom:.85rem;padding-left:1.1rem;text-indent:-1.1rem;color:#3d3f38;}
+  .src .u{color:var(--muted);word-break:break-all;font-size:.83rem;}
+
+  footer{
+    margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);
+    font-size:.83rem;color:var(--muted);
+  }
+
+  /* ---------- Reduced motion ---------- */
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{transition:none !important;animation:none !important;}
+  }
+  @media (max-width:560px){
+    body{font-size:16px;}
+    h1{font-size:1.6rem;}
+    h2{font-size:1.25rem;}
+    .wrap{padding:0 1rem 4rem;}
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-track" aria-hidden="true"><div id="progress-fill"></div></div>
+<div id="section-pill" aria-live="polite">Introduction</div>
+
+<div class="wrap">
+
+<header>
+  <div class="kicker">Interactive Mini-Course</div>
+  <h1>Attention &amp; KV Caching in Large Language Models</h1>
+  <p class="subtitle">Why generating one word at a time is a memory problem — and the six generations of tricks we invented to fix it.</p>
+  <div class="meta-row">
+    <span class="chip">~35 min</span>
+    <span class="chip">Beginner → Advanced</span>
+    <span class="chip">6 interactive exercises</span>
+    <span class="chip">Final quiz</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Table of contents">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s0">Learning objective</a></li>
+    <li><a href="#s1">The big picture</a></li>
+    <li><a href="#s2">Why it matters</a></li>
+    <li><a href="#s3">Core concepts: MHA→MQA→GQA→MLA</a></li>
+    <li><a href="#s4">Interactive memory lab</a></li>
+    <li><a href="#s5">Paged allocation</a></li>
+    <li><a href="#s6">Quantized caches</a></li>
+    <li><a href="#s7">The evolution timeline</a></li>
+    <li><a href="#s8">DeepSeek V4.1 Flash</a></li>
+    <li><a href="#s9">Misconceptions</a></li>
+    <li><a href="#s10">Deeper dive &amp; trade-offs</a></li>
+    <li><a href="#s11">Final quiz</a></li>
+    <li><a href="#s12">The mental model</a></li>
+    <li><a href="#s13">Glossary</a></li>
+    <li><a href="#s14">Sources</a></li>
+  </ol>
+</nav>
+
+<!-- ================= 0 ================= -->
+<section id="s0">
+  <h2><span class="lvl">Objective</span>What you'll be able to do</h2>
+  <p class="lede">By the end of this page you should be able to:</p>
+  <ul>
+    <li>Explain <strong>why</strong> a KV cache exists, in plain language, to someone who has never heard of it.</li>
+    <li>Distinguish <strong>four families</strong> of KV cache reduction — sharing, compressing, organising, and quantizing — and say what each one actually changes.</li>
+    <li>Predict, given a model configuration, roughly how large the KV cache will be and which technique will help most.</li>
+    <li>Describe the <strong>historical progression</strong> from MHA → MQA → GQA → MLA → paged/quantized caches, and why each step happened.</li>
+    <li>State what is publicly documented about <strong>DeepSeek V4.1 Flash</strong>'s KV strategy, and — importantly — <em>where the evidence is thin</em>.</li>
+    <li>Reason about the trade-off triangle: memory vs. speed vs. quality.</li>
+  </ul>
+</section>
+
+<!-- ================= 1 ================= -->
+<section id="s1">
+  <h2><span class="lvl">Level 1</span>The big picture</h2>
+
+  <p class="lede">An LLM generates text one token at a time. To produce token number 5,000, it must "look back" at all 4,999 tokens that came before it. The question that shapes modern inference engineering is: <em>does it have to redo that work every single time?</em></p>
+
+  <p>The answer is no — and the thing that saves us is the <strong>KV cache</strong>.</p>
+
+  <h3>Attention in one paragraph</h3>
+  <p>Inside a transformer, every token produces three vectors: a <strong>Query</strong> (Q), a <strong>Key</strong> (K), and a <strong>Value</strong> (V). To decide how much token <em>A</em> should "pay attention to" token <em>B</em>, the model compares A's Query against B's Key, and uses the resulting weight to blend in B's Value.</p>
+
+  <p>Here's the crucial asymmetry: <strong>once a token has been generated, its Key and Value never change again.</strong> Only its Query changes — and actually, for a token that's already been generated, even its own Query was already used. When we generate a <em>new</em> token, we need <em>its</em> Query, but we need the Keys and Values of <em>everything before it</em>.</p>
+
+  <p>So: cache the K's and V's. Never recompute them. That's the whole idea.</p>
+
+  <div class="callout">
+    <span class="tag">Analogy — and where it breaks</span>
+    <p>The KV cache is like a court stenographer's transcript. Without it, every time a lawyer asks a new question, someone would have to re-interview every previous witness from scratch. With it, you just consult the transcript.</p>
+    <p><strong>Where the analogy breaks:</strong> a transcript is cheap to store. A KV cache is enormous and lives in the fastest, scarcest memory on the GPU. The whole engineering discipline below exists because the "transcript" doesn't fit.</p>
+  </div>
+
+  <h3>Why the cache is a problem, not just a solution</h3>
+  <p>Suppose a model has <code>h</code> attention heads and a head dimension of <code>d</code>. For every single token in the context, it must store:</p>
+  <pre>KV bytes per token = 2 × h × d × (bytes per number)
+                     ↑
+              (one for K, one for V)</pre>
+
+  <p>Now multiply by the number of tokens. Then multiply by the number of users you're serving at once. Then notice that the cache grows <em>during</em> generation, so you can't just pre-allocate it and forget it.</p>
+
+  <p>This is why long-context models are hard. Not because the attention math is expensive — because <em>remembering</em> is expensive.</p>
+
+  <div class="interactive">
+    <div class="ititle">Quick intuition check</div>
+    <p style="margin-top:0;font-size:.94rem;">A model is serving 8 users at once, each with a 32,000-token conversation. If the KV cache for one conversation is 2 GB, how much GPU memory is the cache consuming?</p>
+    <div class="btnrow">
+      <button onclick="reveal('p1a')">Show answer</button>
+    </div>
+    <div class="fb" id="p1a">
+      <b class="g">16 GB.</b> 8 × 2 GB. And that's <em>on top of</em> the model weights. If the model is a 70B-parameter model in 16-bit precision, the weights alone are ~140 GB. This is exactly the arithmetic that motivates every technique on this page.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2 ================= -->
+<section id="s2">
+  <h2><span class="lvl">Level 1</span>Why it matters</h2>
+
+  <p>The KV cache is not a niche optimisation. It sits at the centre of three commercially important problems:</p>
+
+  <div class="steps">
+    <div class="step">
+      <span class="st">Serving cost</span>
+      <span class="sd">The number of concurrent users a GPU can serve is usually limited by KV cache memory, not by compute. Shrink the cache and you serve more users on the same hardware — a direct cost saving.</span>
+    </div>
+    <div class="step">
+      <span class="st">Context length</span>
+      <span class="sd">A 1M-token context window is only usable if you can afford to <em>store</em> 1M tokens' worth of K and V. Long context and cache efficiency are the same problem wearing different hats.</span>
+    </div>
+    <div class="step">
+      <span class="st">Decoding speed</span>
+      <span class="sd">Token generation is typically <em>memory-bandwidth bound</em>, not compute bound. Every byte of KV cache you must read per step costs time. Fewer bytes → faster tokens.</span>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Fact</span>
+    <p>During the <strong>prefill</strong> phase (processing the prompt), the GPU is busy doing arithmetic and is compute-bound. During <strong>decode</strong> (generating tokens one by one), each step does very little arithmetic but must read the entire KV cache — so it's bandwidth-bound. Almost every KV cache technique is really a bandwidth optimisation in disguise.</p>
+  </div>
+</section>
+
+<!-- ================= 3 ================= -->
+<section id="s3">
+  <h2><span class="lvl">Level 2</span>Core concepts: four ways to shrink a cache</h2>
+
+  <p class="lede">Every technique on this page is one of four moves. Learn the four moves and you can place any new paper you read.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Move</th><th>What it changes</th><th>Examples</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Share</strong></td><td>Store fewer <em>distinct</em> K/V heads</td><td>MQA, GQA</td></tr>
+        <tr><td><strong>Compress</strong></td><td>Store a smaller representation of each K/V</td><td>MLA, quantization</td></tr>
+        <tr><td><strong>Organise</strong></td><td>Store the same amount, but without waste</td><td>PagedAttention, PagedEviction</td></tr>
+        <tr><td><strong>Discard</strong></td><td>Don't store (or don't attend to) everything</td><td>Sparse attention, eviction, sliding windows</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Concept 1 — Multi-Head Attention (MHA): the baseline</h3>
+
+  <p><strong>What it is.</strong> The original mechanism from <em>Attention Is All You Need</em> (2017). Each of the <code>h</code> attention heads has its own independent Q, K and V projection.</p>
+
+  <p><strong>Why it matters.</strong> Independent heads give the model multiple simultaneous "points of view" on the same context — one head might track syntax, another coreference, another positional structure. This is a big part of why transformers work.</p>
+
+  <p><strong>The cost.</strong> Every head stores its own K and V. The cache is <code>h</code> times larger than a single-head cache would be.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 560 260" role="img" aria-label="Diagram of Multi-Head Attention: four query heads each paired with their own distinct key and value head, stored separately in the cache.">
+      <text x="0" y="16" font-size="12" font-weight="700" fill="#2f6f5e">MHA — every head owns its own K and V</text>
+      <!-- queries -->
+      <g font-size="11" fill="#23241f">
+        <rect x="10" y="40" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/>
+        <text x="45" y="58" text-anchor="middle">Q₁</text>
+        <rect x="10" y="80" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/>
+        <text x="45" y="98" text-anchor="middle">Q₂</text>
+        <rect x="10" y="120" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/>
+        <text x="45" y="138" text-anchor="middle">Q₃</text>
+        <rect x="10" y="160" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/>
+        <text x="45" y="178" text-anchor="middle">Q₄</text>
+      </g>
+      <!-- lines -->
+      <g stroke="#b9c9c3" stroke-width="1.4" fill="none">
+        <path d="M80 54 H170"/><path d="M80 94 H170"/><path d="M80 134 H170"/><path d="M80 174 H170"/>
+      </g>
+      <!-- KV pairs -->
+      <g font-size="11" fill="#23241f">
+        <rect x="170" y="40" width="80" height="28" rx="5" fill="#fff" stroke="#dededa"/><text x="210" y="58" text-anchor="middle">K₁ V₁</text>
+        <rect x="170" y="80" width="80" height="28" rx="5" fill="#fff" stroke="#dededa"/><text x="210" y="98" text-anchor="middle">K₂ V₂</text>
+        <rect x="170" y="120" width="80" height="28" rx="5" fill="#fff" stroke="#dededa"/><text x="210" y="138" text-anchor="middle">K₃ V₃</text>
+        <rect x="170" y="160" width="80" height="28" rx="5" fill="#fff" stroke="#dededa"/><text x="210" y="178" text-anchor="middle">K₄ V₄</text>
+      </g>
+      <text x="210" y="215" text-anchor="middle" font-size="11" fill="#66685f">4 distinct K/V heads in cache</text>
+    </svg>
+  </div>
+
+  <h3>Concept 2 — Multi-Query Attention (MQA): share everything</h3>
+
+  <p><strong>What it is.</strong> Proposed by Noam Shazeer in 2019. All query heads share <em>one single</em> K head and <em>one single</em> V head.</p>
+
+  <p><strong>The intuition.</strong> Instead of every head keeping its own private notebook of the past, they all read from one shared notebook. The heads still differ — because they still have different <em>Queries</em>, so they ask different questions of the same memory.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 560 260" role="img" aria-label="Diagram of Multi-Query Attention: four query heads all converging on one single shared key and value head.">
+      <text x="0" y="16" font-size="12" font-weight="700" fill="#2f6f5e">MQA — all heads share one K and one V</text>
+      <g font-size="11" fill="#23241f">
+        <rect x="10" y="40" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/><text x="45" y="58" text-anchor="middle">Q₁</text>
+        <rect x="10" y="80" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/><text x="45" y="98" text-anchor="middle">Q₂</text>
+        <rect x="10" y="120" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/><text x="45" y="138" text-anchor="middle">Q₃</text>
+        <rect x="10" y="160" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/><text x="45" y="178" text-anchor="middle">Q₄</text>
+      </g>
+      <g stroke="#b9c9c3" stroke-width="1.4" fill="none">
+        <path d="M80 54 C130 54 150 115 195 125"/>
+        <path d="M80 94 C130 94 155 118 195 126"/>
+        <path d="M80 134 C130 134 160 130 195 128"/>
+        <path d="M80 174 C130 174 150 140 195 130"/>
+      </g>
+      <rect x="195" y="110" width="90" height="34" rx="5" fill="#fff" stroke="#2f6f5e" stroke-width="1.6"/>
+      <text x="240" y="131" text-anchor="middle" font-size="11" fill="#23241f">K V</text>
+      <text x="240" y="175" text-anchor="middle" font-size="11" fill="#66685f">1 shared K/V head in cache</text>
+    </svg>
+  </div>
+
+  <p><strong>The trade-off.</strong> Memory drops by roughly a factor of <code>h</code> — dramatic. But the heads lose their independent memories of the past, and published results have repeatedly shown a quality cost. MQA tends to be the most aggressive and the most damaging to quality.</p>
+
+  <h3>Concept 3 — Grouped-Query Attention (GQA): the practical middle</h3>
+
+  <p><strong>What it is.</strong> Introduced by Ainslie et al. (2023). Query heads are divided into <code>g</code> groups. Each group shares one K head and one V head, but different groups keep separate memories.</p>
+
+  <p><strong>The intuition.</strong> MQA was too blunt an instrument. GQA asks: what if heads that do <em>similar</em> things share memory, but groups doing different things stay separate? It turns out you can interpolate between MHA (<code>g = h</code>) and MQA (<code>g = 1</code>) and find a sweet spot.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 560 260" role="img" aria-label="Diagram of Grouped-Query Attention: four query heads split into two groups, each group sharing one key and value head.">
+      <text x="0" y="16" font-size="12" font-weight="700" fill="#2f6f5e">GQA — groups of heads share (here: 2 groups)</text>
+      <g font-size="11" fill="#23241f">
+        <rect x="10" y="40" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/><text x="45" y="58" text-anchor="middle">Q₁</text>
+        <rect x="10" y="80" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/><text x="45" y="98" text-anchor="middle">Q₂</text>
+        <rect x="10" y="150" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/><text x="45" y="168" text-anchor="middle">Q₃</text>
+        <rect x="10" y="190" width="70" height="28" rx="5" fill="#eaf4f0" stroke="#c9e0d8"/><text x="45" y="208" text-anchor="middle">Q₄</text>
+      </g>
+      <g stroke="#b9c9c3" stroke-width="1.4" fill="none">
+        <path d="M80 54 C130 54 150 72 195 76"/>
+        <path d="M80 94 C130 94 155 82 195 80"/>
+        <path d="M80 164 C130 164 150 152 195 148"/>
+        <path d="M80 204 C130 204 155 160 195 152"/>
+      </g>
+      <rect x="195" y="62" width="90" height="32" rx="5" fill="#fff" stroke="#2f6f5e" stroke-width="1.6"/>
+      <text x="240" y="82" text-anchor="middle" font-size="11">K₁ V₁</text>
+      <rect x="195" y="134" width="90" height="32" rx="5" fill="#fff" stroke="#2f6f5e" stroke-width="1.6"/>
+      <text x="240" y="154" text-anchor="middle" font-size="11">K₂ V₂</text>
+      <text x="240" y="205" text-anchor="middle" font-size="11" fill="#66685f">2 distinct K/V heads in cache</text>
+    </svg>
+  </div>
+
+  <p><strong>The trade-off.</strong> Memory is reduced by a factor of <code>h / g</code>. Quality sits much closer to MHA than MQA does. This is why GQA became the de facto standard in the Llama 2/3, Mistral, and Qwen families, and remains the most common choice in open models today.</p>
+
+  <div class="interactive">
+    <div class="ititle">Check your understanding</div>
+    <p style="margin-top:0;font-size:.94rem;">A model has <strong>64 query heads</strong> and uses GQA with <strong>8 groups</strong>. How many distinct K/V heads are stored, and what's the memory reduction versus MHA?</p>
+    <details>
+      <summary>Reveal answer &amp; reasoning</summary>
+      <div class="body">
+        <p><strong>8 distinct K/V heads; 8× reduction versus MHA.</strong></p>
+        <p>The number of stored K/V heads equals the number of <em>groups</em>, not the number of query heads. Each group contains 64/8 = 8 query heads, and all 8 of those query heads read from the same K/V pair.</p>
+        <p>Memory reduction factor = (number of query heads) / (number of groups) = 64/8 = 8×.</p>
+      </div>
+    </details>
+  </div>
+
+  <h3>Concept 4 — Multi-Head Latent Attention (MLA): compress, don't share</h3>
+
+  <p><strong>What it is.</strong> Introduced in the DeepSeek-V2 paper (2024). Instead of reducing the <em>number</em> of K/V heads, MLA reduces the <em>size</em> of each one.</p>
+
+  <p><strong>The intuition.</strong> MQA and GQA are like having fewer filing cabinets. MLA is like microfilming the contents: you store a compressed representation, and reconstruct the full K and V only at the moment you need them for attention.</p>
+
+  <p><strong>The mechanism, in three steps:</strong></p>
+  <div class="steps">
+    <div class="step">
+      <span class="st">Compress on write</span>
+      <span class="sd">When a token is generated, its K and V are projected down into a much smaller <em>latent</em> vector. Only this latent is written to the cache.</span>
+    </div>
+    <div class="step">
+      <span class="st">Reconstruct on read</span>
+      <span class="sd">At each decode step, the latent is projected back up to full K and V dimensions — but only for the tokens actually needed.</span>
+    </div>
+    <div class="step">
+      <span class="st">Absorb at inference time</span>
+      <span class="sd">In the DeepSeek implementation, the up-projection matrices can be algebraically folded into the query and output projections, so decoding avoids an explicit decompression step in the hot path. This is why MLA can be <em>faster</em>, not just smaller.</span>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Fact — and it's counterintuitive</span>
+    <p>MLA stores roughly the equivalent of <strong>2.25 K/V heads</strong> worth of data per token in DeepSeek-V2, versus 8 for an 8-group GQA — yet DeepSeek reported that MLA <em>outperformed</em> MHA on quality in their ablations, not merely approached it. Compression here is not purely lossy in the way quantization is; it's a learned, low-rank reparameterisation, and it can act as a regulariser.</p>
+  </div>
+
+  <p><strong>Where it's used.</strong> DeepSeek-V2, V3, R1; and adopted in Kimi K2, GLM-5 and other large open models.</p>
+
+  <div class="interactive">
+    <div class="ititle">Distinguish the moves</div>
+    <p style="margin-top:0;font-size:.94rem;">For each technique, decide whether it works by <em>sharing</em> or by <em>compressing</em>.</p>
+    <div class="btnrow">
+      <button onclick="reveal('p4a')">Show answers</button>
+    </div>
+    <div class="fb" id="p4a">
+      <p style="margin:0 0 .4rem;"><b class="g">MQA</b> — sharing. One K/V head total.</p>
+      <p style="margin:0 0 .4rem;"><b class="g">GQA</b> — sharing. One K/V head per group.</p>
+      <p style="margin:0 0 .4rem;"><b class="g">MLA</b> — compressing. Full head count is kept conceptually; the stored vectors are low-dimensional latents.</p>
+      <p style="margin:0;"><b class="g">FP8 / INT4 KV cache</b> — compressing. Same vectors, fewer bits each.</p>
+      <p style="margin:.6rem 0 0;">Because sharing and compressing are orthogonal, they stack: DeepSeek uses MLA <em>and</em> FP8 (and in V4.1, FP4) on top of it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4 ================= -->
+<section id="s4">
+  <h2><span class="lvl">Interactive</span>The memory lab</h2>
+
+  <p class="lede">Change the configuration and watch the cache size move. This calculator uses the standard formula with a head dimension of 128 and 16-bit storage — the shape of the curve is what matters, not the exact digits.</p>
+
+  <div class="interactive">
+    <div class="ititle">KV cache size estimator</div>
+
+    <div class="slider-row">
+      <label for="seq">Context length: <span class="val" id="seqv">8,192</span> tokens</label>
+      <input type="range" id="seq" min="1024" max="131072" step="1024" value="8192" aria-describedby="seqv">
+    </div>
+
+    <div class="slider-row">
+      <label for="batch">Concurrent sequences: <span class="val" id="batchv">4</span></label>
+      <input type="range" id="batch" min="1" max="64" step="1" value="4" aria-describedby="batchv">
+    </div>
+
+    <div class="slider-row">
+      <label for="heads">Query heads: <span class="val" id="headsv">32</span></label>
+      <input type="range" id="heads" min="8" max="128" step="8" value="32" aria-describedby="headsv">
+    </div>
+
+    <div class="slider-row">
+      <label for="strat">Strategy</label>
+      <select id="strat">
+        <option value="mha">MHA — one K/V head per query head</option>
+        <option value="gqa8" selected>GQA — 8 groups</option>
+        <option value="gqa4">GQA — 4 groups</option>
+        <option value="mqa">MQA — 1 shared K/V head</option>
+        <option value="mla">MLA — latent compression (≈2.25 heads equiv.)</option>
+        <option value="mla8">MLA + FP8 (≈2.25 heads, 8-bit)</option>
+        <option value="mla4">MLA + FP4 (≈2.25 heads, 4-bit)</option>
+      </select>
+    </div>
+
+    <div class="readout">
+      <div class="rl">Total KV cache across all sequences</div>
+      <div class="rv" id="result">—</div>
+      <div class="rs" id="resultsub">—</div>
+    </div>
+
+    <div class="btnrow">
+      <button onclick="resetLab()">Reset</button>
+    </div>
+
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:0;margin-top:1rem;">
+      Note: this counts only the KV cache. Model weights, activations, and fragmentation overhead are separate. Real serving systems typically waste 20–40% of allocated cache memory to fragmentation unless they use paging.
+    </p>
+  </div>
+
+  <div class="interactive">
+    <div class="ititle">Predict before you scroll</div>
+    <p style="margin-top:0;font-size:.94rem;">Using the calculator, set strategy to <strong>GQA — 8 groups</strong> and note the number. Now switch to <strong>MQA</strong>. <em>Before you look</em> — by what factor do you expect the cache to shrink?</p>
+    <details>
+      <summary>Reveal</summary>
+      <div class="body">
+        <p><strong>By 8×.</strong> Going from 8 groups to 1 group is an 8-fold reduction in stored K/V heads.</p>
+        <p>The lesson: sharing-based reductions are <em>linear in the group count</em>. That's clean and predictable. Compression-based reductions (MLA, quantization) multiply on top of that, which is why the combination in modern models is so dramatic.</p>
+        <p>Notice also that MQA is the theoretical floor for sharing: you can't go below one K/V head. To go further you must compress.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ================= 5 ================= -->
+<section id="s5">
+  <h2><span class="lvl">Level 3</span>Paged allocation: solving waste, not size</h2>
+
+  <p class="lede">Everything so far reduces <em>how much</em> cache you need. PagedAttention attacks a different problem: <em>how much of the memory you allocated is actually usable.</em></p>
+
+  <h3>The fragmentation problem</h3>
+
+  <p>In a naive serving system, when a request arrives you reserve a contiguous block of GPU memory sized for the <em>maximum possible</em> output length. Two bad things follow:</p>
+
+  <ul>
+    <li><strong>Internal fragmentation.</strong> A request that produces 200 tokens still holds a block sized for 4,000. Most of it is wasted.</li>
+    <li><strong>External fragmentation.</strong> Even if you have 10 GB free in total, it may be split into 2 GB chunks that no single request fits into.</li>
+  </ul>
+
+  <p>Published work on vLLM's PagedAttention reported that naive systems waste the majority of KV cache memory — utilisation figures in the range of 20–40% are commonly cited, versus 90%+ with paging.</p>
+
+  <h3>The OS analogy — and this one holds up well</h3>
+
+  <div class="callout">
+    <span class="tag">Analogy</span>
+    <p>PagedAttention treats the KV cache exactly like an operating system treats virtual memory. The cache is divided into fixed-size <strong>blocks</strong> (think: pages). A sequence's K/V data can live in <em>any</em> blocks, anywhere in GPU memory. The system keeps a <strong>block table</strong> per sequence mapping logical positions to physical blocks — just like a page table.</p>
+    <p><strong>Where it holds up:</strong> the mechanism genuinely is the same idea, and the implementation borrows the terminology deliberately.</p>
+    <p><strong>Where it differs:</strong> there's no disk to swap to. Everything lives in GPU memory. And blocks can be <em>shared</em> between sequences — for example, many conversations starting with the same system prompt can share those prefix blocks, with copy-on-write if they diverge.</p>
+  </div>
+
+  <h3>What paging buys you</h3>
+
+  <div class="steps">
+    <div class="step">
+      <span class="st">Near-elimination of internal fragmentation</span>
+      <span class="sd">You allocate blocks as they're actually needed, not up front for a worst case.</span>
+    </div>
+    <div class="step">
+      <span class="st">No external fragmentation</span>
+      <span class="sd">Any free block fits any sequence. There's no "large enough contiguous region" requirement.</span>
+    </div>
+    <div class="step">
+      <span class="st">Prefix sharing</span>
+      <span class="sd">Multiple requests with a common prefix (system prompts, few-shot examples) share the same physical blocks. A large real-world win in chat and RAG serving.</span>
+    </div>
+    <div class="step">
+      <span class="st">Enables eviction and offloading</span>
+      <span class="sd">Because blocks are discrete and indexed, you can move them to CPU memory or evict them as a unit. PagedEviction (2026) extends this with structured block-wise pruning.</span>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <span class="tag">Be precise about what it doesn't do</span>
+    <p>PagedAttention does <strong>not</strong> reduce the theoretical size of the KV cache. If your model produces 2 GB of cache, it produces 2 GB of cache. What paging changes is how much of your <em>GPU's memory budget</em> goes to useful cache versus wasted gaps. It's a utilisation technique, not a compression technique — and it composes with all the compression techniques.</p>
+  </div>
+
+  <div class="interactive">
+    <div class="ititle">Illustration — fragmentation vs. paging</div>
+    <div class="seg" style="margin-bottom:1rem;">
+      <button id="btnNaive" aria-pressed="true" onclick="setFrag('naive')">Naive allocation</button>
+      <button id="btnPaged" aria-pressed="false" onclick="setFrag('paged')">Paged allocation</button>
+    </div>
+
+    <div style="background:var(--code-bg);border-radius:8px;padding:1.1rem;">
+      <div id="fragGrid" style="display:grid;grid-template-columns:repeat(16,1fr);gap:3px;margin-bottom:.9rem;"></div>
+      <div id="fragCaption" style="font-size:.88rem;color:#44463f;min-height:3.4rem;"></div>
+      <div class="legend" style="justify-content:flex-start;margin-top:.7rem;">
+        <span><span class="swatch" style="background:#2f6f5e"></span> In use</span>
+        <span><span class="swatch" style="background:#e0e0da"></span> Wasted</span>
+        <span><span class="swatch" style="background:#f4f4f0;border:1px solid #e0e0da"></span> Free</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 6 ================= -->
+<section id="s6">
+  <h2><span class="lvl">Level 3</span>Quantized caches: fewer bits per number</h2>
+
+  <p class="lede">Instead of storing K and V as 16-bit floats, store them as 8-bit or 4-bit values. Same structure, half or a quarter of the bytes.</p>
+
+  <p><strong>Why this is not free.</strong> Attention scores are computed by comparing Q against K. If K has been rounded, the comparison is slightly wrong. Crucially, errors in K propagate into the attention <em>weights</em>, which then reweight all the values — so the effect isn't a simple "small noise added to the output."</p>
+
+  <h3>Why K and V are quantized differently</h3>
+
+  <p>Keys and Values have measurably different distributions:</p>
+
+  <ul>
+    <li><strong>Keys</strong> contain <em>outlier channels</em> — a small number of dimensions with values far larger than the rest. Naively quantizing with a single scale factor destroys the small values. The standard fix is <em>per-channel</em> scaling for keys, or isolating the outlier channels and keeping them in higher precision.</li>
+    <li><strong>Values</strong> are more uniform, so <em>per-token</em> scaling works better for V.</li>
+  </ul>
+
+  <p>Research systems like KIVI and KVQuant exploit exactly this asymmetry. Production runtimes (vLLM, TensorRT-LLM, SGLang) have converged on <strong>FP8 (E4M3)</strong> as the practical default because it has hardware support on Hopper-and-later GPUs and needs no calibration.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Format</th><th>Bits/value</th><th>Memory vs. FP16</th><th>Typical quality impact</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>FP16 / BF16</td><td>16</td><td>1× (baseline)</td><td>—</td><td>Universal</td></tr>
+        <tr><td>FP8 E4M3</td><td>8</td><td>0.5×</td><td>Small; often sub-1-point on long-context benchmarks</td><td>Production default in vLLM, TRT-LLM, SGLang</td></tr>
+        <tr><td>INT8</td><td>8</td><td>0.5×</td><td>Comparable to FP8, needs calibration for best results</td><td>Widely available</td></tr>
+        <tr><td>INT4 / FP4</td><td>4</td><td>0.25×</td><td>Larger and more task-dependent</td><td>Active research; entering production</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <span class="tag">Uncertainty — read this before trusting a number</span>
+    <p>Quality impacts of quantization are <strong>highly task dependent</strong>. A model with an FP8 KV cache may show no measurable degradation on conversational benchmarks and a clear degradation on a needle-in-a-haystack retrieval task. Any single "X% quality loss" figure you see should be treated as applying to the specific benchmark it was measured on. Always re-evaluate on <em>your</em> workload.</p>
+  </div>
+
+  <div class="interactive">
+    <div class="ititle">Reason it out</div>
+    <p style="margin-top:0;font-size:.94rem;">You have a model using MLA and you want to reduce KV cache memory further. Should you switch to a more aggressive GQA configuration, or add FP8 quantization?</p>
+    <details>
+      <summary>Reveal a reasonable answer</summary>
+      <div class="body">
+        <p><strong>Add FP8 quantization.</strong> The model was <em>trained</em> with MLA. Changing the attention structure at inference time isn't something you can just do — GQA groups aren't a runtime knob, they're baked into the trained weights. Switching would require retraining.</p>
+        <p>Quantization, by contrast, is largely a runtime decision. You can apply FP8 to the cache of an existing checkpoint and evaluate whether quality holds.</p>
+        <p>This is a general principle: <strong>architectural choices are locked at training time; precision choices are (mostly) made at serving time.</strong> Knowing which bucket a technique falls into tells you who can actually use it.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ================= 7 ================= -->
+<section id="s7">
+  <h2><span class="lvl">Level 3</span>How it evolved</h2>
+
+  <p class="lede">Each step was a response to a specific limitation of the previous one. Follow the chain of reasoning, not just the dates.</p>
+
+  <div class="tl">
+    <div class="tl-item">
+      <div class="yr">2017</div>
+      <div class="ttl">MHA — Multi-Head Attention</div>
+      <div class="dsc">The original transformer. Maximum representational richness, maximum memory cost. Fine for research-scale sequences; untenable at serving scale.</div>
+    </div>
+    <div class="tl-item">
+      <div class="yr">2019</div>
+      <div class="ttl">MQA — Multi-Query Attention</div>
+      <div class="dsc">Shazeer's insight: the K/V cache, not the compute, is what limits batch size. Collapse all heads to one shared K/V. Huge memory win, real quality cost. <em>Problem it created:</em> quality loss made people reluctant to adopt it for flagship models.</div>
+    </div>
+    <div class="tl-item">
+      <div class="yr">2023</div>
+      <div class="ttl">GQA — Grouped-Query Attention</div>
+      <div class="dsc">Ainslie et al. showed you can <em>uptrain</em> an existing MHA checkpoint into GQA, recovering most of the quality at a fraction of the memory. <em>Why it won:</em> it's a smooth dial, not a cliff. Became standard in Llama 2/3, Mistral, Qwen.</div>
+    </div>
+    <div class="tl-item">
+      <div class="yr">2023</div>
+      <div class="ttl">PagedAttention (vLLM)</div>
+      <div class="dsc">Kwon et al. attacked a different axis: memory <em>utilisation</em>. A serving-system contribution rather than a model-architecture one, which is why it composes with everything else.</div>
+    </div>
+    <div class="tl-item">
+      <div class="yr">2024</div>
+      <div class="ttl">MLA — Multi-Head Latent Attention</div>
+      <div class="dsc">DeepSeek-V2. Instead of sharing heads, compress them. Reported to <em>beat</em> MHA on quality at GQA-like memory cost. Broke the assumption that cache reduction must cost quality. <em>Cost:</em> architectural complexity and kernel work.</div>
+    </div>
+    <div class="tl-item">
+      <div class="yr">2024–25</div>
+      <div class="ttl">Quantized KV caches reach production</div>
+      <div class="dsc">FP8 KV cache becomes a checkbox in vLLM, TensorRT-LLM and SGLang. Another 2×, largely free, on top of whatever architectural choice you made.</div>
+    </div>
+    <div class="tl-item">
+      <div class="yr">2026</div>
+      <div class="ttl">DeepSeek V4.1 Flash</div>
+      <div class="dsc">Stacks everything: sparse attention, FP4, bounded replay, and a new compressed sparse attention variant. Reports ~4× reduction versus V4-Flash and ~437× versus V1. <em>See the caveat section below.</em></div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">The pattern</span>
+    <p>The field moved from <strong>sharing</strong> (cheap, effective, quality-limited) to <strong>compressing</strong> (more complex, quality-preserving) to <strong>stacking</strong> (combine everything). Each generation didn't replace the last — it added another multiplicative factor. GQA is still the right answer for many models; MLA is the right answer when you can afford the training complexity; quantization applies regardless.</p>
+  </div>
+</section>
+
+<!-- ================= 8 ================= -->
+<section id="s8">
+  <h2><span class="lvl">Level 4</span>DeepSeek V4.1 Flash</h2>
+
+  <div class="callout warn">
+    <span class="tag">Read this first — evidence quality</span>
+    <p>DeepSeek V4.1 Flash is a very recent release (September 2026). The claims below come from DeepSeek's own technical report and launch documentation. <strong>Independent third-party verification and reproducible benchmarks are still limited.</strong> Treat the specific numbers as vendor-reported rather than independently confirmed, and treat the architectural descriptions as summaries of the published documentation rather than as verified implementation details.</p>
+    <p>Where I'm uncertain about a mechanism, I say so explicitly rather than filling the gap.</p>
+  </div>
+
+  <h3>The headline claims</h3>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Claim</th><th>Value</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>Per-token global KV cache reduction vs. DeepSeek-V4-Flash</td><td>~4×</td><td>DeepSeek technical report</td></tr>
+        <tr><td>Reduction vs. DeepSeek-V1</td><td>~437×</td><td>DeepSeek technical report</td></tr>
+        <tr><td>HBM requirement vs. previous generation</td><td>~1/4</td><td>DeepSeek technical report</td></tr>
+        <tr><td>SSD requirement vs. previous generation</td><td>~1/8</td><td>DeepSeek technical report</td></tr>
+        <tr><td>Context window</td><td>1M tokens</td><td>Launch documentation</td></tr>
+        <tr><td>Parameters (MoE)</td><td>~552B</td><td>Launch documentation</td></tr>
+        <tr><td>KV cache data format</td><td>FP4</td><td>Launch documentation</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>The named components, and what each one is actually doing</h3>
+
+  <div class="steps">
+    <div class="step">
+      <span class="st">Compressed Sparse Attention 2 (CSA-2)</span>
+      <span class="sd">An evolution of the MLA lineage with sparsity layered in. The name suggests two things happening at once: the <em>compression</em> of MLA (store latents, not full K/V) and <em>sparsity</em> (not every cached position is attended to at every step). DeepSeek's documentation describes it as refining how data is utilised across layers. <strong>Uncertainty:</strong> the precise sparsity pattern and selection criterion aren't fully specified in the public material I could verify.</span>
+    </div>
+    <div class="step">
+      <span class="st">NSA-style sparse MLA</span>
+      <span class="sd">Native Sparse Attention combined with MLA. Sparse attention reduces <em>compute</em>; MLA reduces <em>memory</em>. These are orthogonal bottlenecks, which is why combining them makes sense — but it also means the engineering complexity compounds.</span>
+    </div>
+    <div class="step">
+      <span class="st">FP4 KV cache</span>
+      <span class="sd">Four bits per value, versus FP8 in V3.2. This is a further 2× on top of MLA's compression. FP4 for KV cache is genuinely aggressive — the quality implications at 1M context are not yet well characterised in the public literature.</span>
+    </div>
+    <div class="step">
+      <span class="st">SWA Bounded Replay</span>
+      <span class="sd">Sliding-Window Attention with selective recomputation. Rather than storing every intermediate state forever, the system discards some and <em>recomputes</em> the small portions it needs later. This trades compute for memory — a classic and sound trade when you're bandwidth-bound and have spare FLOPs, but it makes latency less predictable.</span>
+    </div>
+    <div class="step">
+      <span class="st">Causal encoder–decoder asymmetry</span>
+      <span class="sd">Input processing activates ~80B parameters; output generation activates ~160B. This is a prefill/decode asymmetry — cheaper to read a prompt than to generate from it. It targets prefill cost specifically, which is a different axis from KV cache size.</span>
+    </div>
+  </div>
+
+  <h3>How it compares to the alternatives</h3>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Move</th><th>Approx. cache vs. FP16 MHA</th><th>Quality</th><th>Maturity</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>MHA</td><td>—</td><td>1×</td><td>Reference</td><td>Universal</td></tr>
+        <tr><td>MQA</td><td>Share</td><td>~1/h</td><td>Measurable degradation</td><td>Production</td></tr>
+        <tr><td>GQA (8 groups)</td><td>Share</td><td>~1/4 to 1/8</td><td>Close to MHA</td><td>Production default</td></tr>
+        <tr><td>MLA</td><td>Compress</td><td>~1/3 to 1/8 depending on config</td><td>Reported ≈ or &gt; MHA</td><td>Production (DeepSeek, Kimi, GLM)</td></tr>
+        <tr><td>MLA + FP8</td><td>Compress ×2</td><td>~2× better than MLA</td><td>Small additional cost</td><td>Production (V3.2)</td></tr>
+        <tr><td>MLA + FP4 + sparsity</td><td>Compress ×4 + discard</td><td>Far smaller again</td><td>Not independently characterised</td><td>Cutting edge (V4.1 Flash)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Interpretation — my read, clearly labelled as such</span>
+    <p>V4.1 Flash is best understood not as a single invention but as an <strong>aggressive stacking</strong> of techniques that were individually already known. The genuinely novel parts appear to be (a) making FP4 viable for KV cache at 1M context, and (b) the recompute-instead-of-store trade in SWA Bounded Replay.</p>
+    <p>That stacking has a cost that doesn't show up in the memory figures: a serving stack that must simultaneously implement sparse attention selection, latent decompression, FP4 kernels, and bounded replay is far harder to debug, profile, and port to new hardware than a GQA model with an FP8 cache. If you're choosing a strategy for a product, "what's the simplest thing that fits my memory budget" is usually the right question — not "what's the smallest possible cache."</p>
+  </div>
+
+  <div class="interactive">
+    <div class="ititle">Think critically</div>
+    <p style="margin-top:0;font-size:.94rem;">The reported figure is "437× reduction versus V1." V1 used a different, older architecture entirely. Is that a fair comparison?</p>
+    <details>
+      <summary>Reveal a discussion</summary>
+      <div class="body">
+        <p><strong>It's a fair <em>historical</em> comparison and a misleading <em>competitive</em> one.</strong></p>
+        <p>As a statement about how far the field has come across several architecture generations, 437× is a legitimate and striking summary. It's the kind of number that's meaningful when you plot the trend over years.</p>
+        <p>But if you're deciding what to deploy <em>today</em>, the relevant comparison is against the current alternative — a GQA or MLA model with an FP8 cache — not against a 2024-era baseline. The 4× figure versus V4-Flash is the more decision-relevant number, and it's much less dramatic.</p>
+        <p>This is a general habit worth building: when you see a big multiplier, check what the baseline is and whether that baseline is something anyone would actually choose today.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ================= 9 ================= -->
+<section id="s9">
+  <h2><span class="lvl">Level 5</span>Common misconceptions</h2>
+
+  <div class="quiz" id="myths">
+
+    <div class="q">
+      <p class="qtext">1. "MLA is basically GQA with compression bolted on."</p>
+      <div class="opt" data-correct="false" data-exp="MLA reduces the <em>dimensionality</em> of every K/V via a learned low-rank projection. GQA reduces the <em>count</em> of K/V heads by grouping. They are structurally different and can be combined, but neither is a special case of the other. The practical consequence: MLA can be trained to exceed MHA quality, while GQA typically shows a small but real quality cost versus MHA.">
+        <span class="mark">?</span><span>True — they're the same idea at different settings</span>
+      </div>
+      <div class="opt" data-correct="true" data-exp="MLA reduces the <em>dimensionality</em> of every K/V via a learned low-rank projection. GQA reduces the <em>count</em> of K/V heads by grouping. They are structurally different and can be combined, but neither is a special case of the other. The practical consequence: MLA can be trained to exceed MHA quality, while GQA typically shows a small but real quality cost versus MHA.">
+        <span class="mark">?</span><span>False — they reduce different things</span>
+      </div>
+      <div class="fb"></div>
+    </div>
+
+    <div class="q">
+      <p class="qtext">2. "FP8 KV cache is lossless because 8 bits is plenty."</p>
+      <div class="opt" data-correct="false" data-exp="FP8 quantization is a lossy operation. It's usually <em>cheap</em> in quality terms on conversational benchmarks, but it is not lossless. The degradation is most visible on tasks requiring precise retrieval from long contexts, where small errors in the keys shift attention weights enough to miss the relevant passage.">
+        <span class="mark">?</span><span>True — 8 bits is enough for anything practical</span>
+      </div>
+      <div class="opt" data-correct="true" data-exp="FP8 quantization is a lossy operation. It's usually <em>cheap</em> in quality terms on conversational benchmarks, but it is not lossless. The degradation is most visible on tasks requiring precise retrieval from long contexts, where small errors in the keys shift attention weights enough to miss the relevant passage.">
+        <span class="mark">?</span><span>False — it's lossy, just usually cheap</span>
+      </div>
+      <div class="fb"></div>
+    </div>
+
+    <div class="q">
+      <p class="qtext">3. "PagedAttention reduces the total size of the KV cache."</p>
+      <div class="opt" data-correct="false" data-exp="PagedAttention is a memory-<em>management</em> technique, not a compression technique. It reduces <em>waste</em>, so more of your GPU's memory goes to useful cache — but the cache for a given sequence is the same size as before. It's orthogonal to sharing/compressing and composes with both.">
+        <span class="mark">?</span><span>True — that's why it's so important</span>
+      </div>
+      <div class="opt" data-correct="true" data-exp="PagedAttention is a memory-<em>management</em> technique, not a compression technique. It reduces <em>waste</em>, so more of your GPU's memory goes to useful cache — but the cache for a given sequence is the same size as before. It's orthogonal to sharing/compressing and composes with both.">
+        <span class="mark">?</span><span>False — it reduces waste, not size</span>
+      </div>
+      <div class="fb"></div>
+    </div>
+
+    <div class="q">
+      <p class="qtext">4. "More compression always means worse quality."</p>
+      <div class="opt" data-correct="false" data-exp="This is the intuition, and MLA is the counterexample. DeepSeek reported that MLA <em>outperformed</em> MHA on quality in their ablations, at a fraction of the cache size. The reason: MLA is a <em>learned</em> low-rank reparameterisation, not a rounding operation. It can act as a regulariser. Quantization, by contrast, is genuinely lossy — so the relationship depends entirely on <em>which kind</em> of compression you mean.">
+        <span class="mark">?</span><span>True — it's a fundamental trade-off</span>
+      </div>
+      <div class="opt" data-correct="true" data-exp="This is the intuition, and MLA is the counterexample. DeepSeek reported that MLA <em>outperformed</em> MHA on quality in their ablations, at a fraction of the cache size. The reason: MLA is a <em>learned</em> low-rank reparameterisation, not a rounding operation. It can act as a regulariser. Quantization, by contrast, is genuinely lossy — so the relationship depends entirely on <em>which kind</em> of compression you mean.">
+        <span class="mark">?</span><span>False — it depends on the kind of compression</span>
+      </div>
+      <div class="fb"></div>
+    </div>
+
+    <div class="q">
+      <p class="qtext">5. "Sparse attention and KV cache optimization solve the same problem."</p>
+      <div class="opt" data-correct="false" data-exp="They attack different bottlenecks. KV cache techniques reduce <em>memory capacity and bandwidth</em> pressure. Sparse attention reduces <em>compute</em> by attending to fewer positions. You can have a small cache and still do dense attention, or a large cache and still do sparse attention. Modern models like V4.1 Flash use both precisely because they're complementary.">
+        <span class="mark">?</span><span>True — they're two names for the same thing</span>
+      </div>
+      <div class="opt" data-correct="true" data-exp="They attack different bottlenecks. KV cache techniques reduce <em>memory capacity and bandwidth</em> pressure. Sparse attention reduces <em>compute</em> by attending to fewer positions. You can have a small cache and still do dense attention, or a large cache and still do sparse attention. Modern models like V4.1 Flash use both precisely because they're complementary.">
+        <span class="mark">?</span><span>False — memory vs. compute</span>
+      </div>
+      <div class="fb"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= 10 ================= -->
+<section id="s10">
+  <h2><span class="lvl">Level 5</span>Deeper dive: the trade-off triangle</h2>
+
+  <p class="lede">Every technique on this page moves you around a three-way trade. You cannot optimise all three at once.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 460 300" role="img" aria-label="Triangle diagram showing the three-way trade-off between memory, speed, and quality, with techniques positioned along the edges.">
+      <polygon points="230,30 40,270 420,270" fill="none" stroke="#dededa" stroke-width="2"/>
+      <text x="230" y="20" text-anchor="middle" font-size="13" font-weight="700" fill="#2f6f5e">MEMORY</text>
+      <text x="30" y="288" text-anchor="middle" font-size="13" font-weight="700" fill="#2f6f5e">SPEED</text>
+      <text x="430" y="288" text-anchor="middle" font-size="13" font-weight="700" fill="#2f6f5e">QUALITY</text>
+
+      <circle cx="230" cy="90" r="5" fill="#a8571f"/>
+      <text x="245" y="94" font-size="11" fill="#23241f">MQA — memory ↓↓ speed ↑↑ quality ↓</text>
+
+      <circle cx="160" cy="160" r="5" fill="#a8571f"/>
+      <text x="60" y="150" font-size="11" fill="#23241f">GQA — balanced</text>
+
+      <circle cx="290" cy="150" r="5" fill="#2f7d4f"/>
+      <text x="300" y="140" font-size="11" fill="#23241f">MLA — memory ↓↓ quality ≈/↑</text>
+
+      <circle cx="330" cy="215" r="5" fill="#2f6f5e"/>
+      <text x="250" y="235" font-size="11" fill="#23241f">FP8 / FP4 — memory ↓ quality ↓ (small)</text>
+
+      <circle cx="130" cy="225" r="5" fill="#66685f"/>
+      <text x="30" y="222" font-size="11" fill="#23241f">Paging — utilisation ↑</text>
+    </svg>
+  </div>
+
+  <p>Read the triangle like this: a technique that pushes you toward one vertex necessarily pulls you away from the opposite edge.</p>
+
+  <ul>
+    <li><strong>MQA</strong> buys memory and speed at a real quality cost. It sits nearest the MEMORY–SPEED edge.</li>
+    <li><strong>GQA</strong> sits comfortably in the middle. That's why it won: it doesn't excel at anything but it doesn't hurt anything much either.</li>
+    <li><strong>MLA</strong> is unusual because it moves toward the MEMORY vertex <em>without</em> moving away from QUALITY. This is the closest thing to a free lunch in the field — but you pay in architectural complexity and the need for custom kernels.</li>
+    <li><strong>Quantization</strong> is a small, cheap step in the memory direction with a small quality cost. It stacks on everything.</li>
+    <li><strong>Paging</strong> sits off the triangle entirely — it improves utilisation without moving you along any edge.</li>
+  </ul>
+
+  <h3>Nuances worth knowing</h3>
+
+  <h4>Compression ratio isn't constant across layers</h4>
+  <p>Not all layers need the same amount of KV precision. Some layers are highly sensitive to cache errors; others tolerate aggressive compression with no measurable effect. Research on layer-wise and head-wise mixed-precision caching exploits this, but it adds tuning burden that most teams don't take on.</p>
+
+  <h4>The decode bottleneck is bandwidth, not capacity</h4>
+  <p>This distinction matters more than it first appears. If you're bandwidth-bound, a smaller cache helps <em>even if it fits in memory already</em> — because you read less per token. If you're capacity-bound (too many users), a smaller cache lets you serve more users. The same technique helps in both cases but for different reasons, and the correct optimization depends on which regime you're in.</p>
+
+  <h4>KV cache and training are linked</h4>
+  <p>You can't retrofit GQA onto an MHA model at inference time — the weights have to be trained or uptrained. MLA likewise must be trained in. This is why architecture choices have long half-lives: once a model family commits, it's committed for that generation.</p>
+
+  <h4>Long-context evaluation is harder than it looks</h4>
+  <p>A model can look fine on a 4K-token benchmark and fail badly at 128K with the same compression. The standard failure mode is losing the ability to retrieve a specific fact from deep in the context. If you care about long context, benchmark at the length you actually need.</p>
+
+  <h3>Application exercise</h3>
+  <div class="interactive">
+    <div class="ititle">Scenario</div>
+    <p style="margin-top:0;font-size:.94rem;">You're deploying a 70B open-weights model for a document-QA product. Users paste ~50,000-token documents and ask questions. You need to serve at least 8 concurrent users on a single 80 GB GPU. The model ships with GQA using 8 groups, 64 query heads, head dim 128, BF16.</p>
+    <p style="font-size:.94rem;"><strong>Question:</strong> What's the first thing you'd try, and what would you measure?</p>
+    <details>
+      <summary>Reveal a worked answer</summary>
+      <div class="body">
+        <p><strong>First, do the arithmetic.</strong> KV per token = 2 (K and V) × 8 heads × 128 dim × 2 bytes = 4,096 bytes ≈ 4 KB. For 50,000 tokens: ~200 MB per sequence. For 8 users: ~1.6 GB. That's <em>small</em> relative to 80 GB.</p>
+        <p><strong>So the cache is not your bottleneck.</strong> The model weights are: a 70B model in BF16 is ~140 GB, which doesn't fit on one 80 GB GPU at all. You'd need quantization of the <em>weights</em> (4-bit gets you to ~35 GB) before KV cache is even a consideration.</p>
+        <p><strong>What I'd actually do:</strong> quantize the weights to 4-bit, use paged KV cache to avoid waste, and measure quality on the document-QA task specifically — because 4-bit weight quantization plus long-context retrieval is exactly the combination where degradation shows up.</p>
+        <p><strong>What I'd measure:</strong> not perplexity. Perplexity is insensitive to the failure mode that matters here. I'd measure answer accuracy on questions whose answers are buried at varying depths in the 50K context, at several positions, and compare against the unquantized model.</p>
+        <p>The meta-lesson: <em>do the arithmetic before reaching for a technique.</em> The most sophisticated KV cache method in the world won't help if your cache is 2% of your memory budget.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ================= 11 ================= -->
+<section id="s11">
+  <h2><span class="lvl">Level 6</span>Final quiz</h2>
+  <p class="lede">Five questions. Answer all of them, then submit to see your score and explanations.</p>
+
+  <div class="quiz" id="finalquiz">
+
+    <div class="q" data-qid="1">
+      <p class="qtext">1. What exactly does the KV cache store?</p>
+      <div class="opt" data-correct="false" data-exp="Queries are computed fresh for each new token. Only K and V are cached, because only K and V for already-generated tokens are reused unchanged.">
+        <span class="mark">?</span><span>The Query and Key tensors for previous tokens</span>
+      </div>
+      <div class="opt" data-correct="true" data-exp="Correct. Key and Value tensors for tokens already processed. Q is recomputed each step because each new token needs its own query — but it needs the cached K and V of everything before it.">
+        <span class="mark">?</span><span>The Key and Value tensors for previous tokens</span>
+      </div>
+      <div class="opt" data-correct="false" data-exp="Attention weights are the <em>output</em> of comparing Q against K. They're recomputed each step and aren't what's cached.">
+        <span class="mark">?</span><span>The full attention weight matrix</span>
+      </div>
+      <div class="opt" data-correct="false" data-exp="Gradients are a training-time concept. Inference doesn't compute or store them.">
+        <span class="mark">?</span><span>Model gradients from the forward pass</span>
+      </div>
+      <div class="fb"></div>
+    </div>
+
+    <div class="q" data-qid="2">
+      <p class="qtext">2. Which technique reduces the <em>count</em> of distinct K/V heads to exactly one?</p>
+      <div class="opt" data-correct="false" data-exp="MHA is the baseline — one K/V head <em>per query head</em>, the maximum.">
+        <span class="mark">?</span><span>MHA</span>
+      </div>
+      <div class="opt" data-correct="false" data-exp="GQA reduces the count to the number of groups, which is more than one unless you set groups = 1 — in which case you've just built MQA.">
+        <span class="mark">?</span><span>GQA</span>
+      </div>
+      <div class="opt" data-correct="true" data-exp="Correct. MQA collapses all query heads onto a single shared K/V head — the theoretical floor for sharing-based reduction. You cannot go below one head by sharing; further reduction requires compression.">
+        <span class="mark">?</span><span>MQA</span>
+      </div>
+      <div class="opt" data-correct="false" data-exp="MLA doesn't reduce the <em>count</em> of heads. It reduces the <em>size</em> of what's stored for each, by projecting into a low-dimensional latent space.">
+        <span class="mark">?</span><span>MLA</span>
+      </div>
+      <div class="fb"></div>
+    </div>
+
+    <div class="q" data-qid="3">
+      <p class="qtext">3. Why can MLA be <em>faster</em> at inference than GQA, despite needing to reconstruct K and V?</p>
+      <div class="opt" data-correct="false" data-exp="Reconstruction does cost something. The reason MLA still wins is that decoding is bandwidth-bound, not compute-bound — so reading fewer bytes matters more than doing extra arithmetic.">
+        <span class="mark">?</span><span>Because GPUs are fast enough that the reconstruction is free</span>
+      </div>
+      <div class="opt" data-correct="true" data-exp="Correct. Decode is memory-bandwidth bound. MLA stores smaller latents, so each step reads fewer bytes from HBM. The up-projection matrices can also be algebraically absorbed into the query and output projections, avoiding an explicit decompression in the hot path. Reading less beats computing more.">
+        <span class="mark">?</span><span>Because decode is bandwidth-bound, so reading fewer bytes wins</span>
+      </div>
+      <div class="opt" data-correct="false" data-exp="MLA doesn't reduce the number of attention operations — that's what sparsity does. MLA reduces the bytes moved.">
+        <span class="mark">?</span><span>Because it performs fewer attention operations</span>
+      </div>
+      <div class="opt" data-correct="false" data-exp="MLA is used at inference in production (DeepSeek V3, R1, Kimi K2). It's not training-only.">
+        <span class="mark">?</span><span>Because it only applies during training, not inference</span>
+      </div>
+      <div class="fb"></div>
+    </div>
+
+    <div class="q" data-qid="4">
+      <p class="qtext">4. A serving system reports that it went from 30% to 92% KV cache memory utilisation. Which technique most likely caused this?</p>
+      <div class="opt" data-correct="false" data-exp="GQA reduces the cache size. It doesn't change what fraction of <em>allocated</em> memory is useful — you'd just allocate less.">
+        <span class="mark">?</span><span>Switching from MHA to GQA</span>
+      </div>
+      <div class="opt" data-correct="false" data-exp="FP8 quantization reduces size, not utilisation. The fragmentation pattern would be the same shape, just smaller.">
+        <span class="mark">?</span><span>Enabling FP8 KV cache quantization</span>
+      </div>
+      <div class="opt" data-correct="true" data-exp="Correct. Utilisation is a management metric. PagedAttention allocates fixed-size blocks on demand and links them non-contiguously, eliminating both internal and external fragmentation. It doesn't shrink the cache; it stops wasting the memory you have.">
+        <span class="mark">?</span><span>Adopting PagedAttention</span>
+      </div>
+      <div class="opt" data-correct="false" data-exp="MLA reduces size. Utilisation would rise slightly as a side effect of smaller allocations being easier to place, but not from 30% to 92%.">
+        <span class="mark">?</span><span>Switching from MHA to MLA</span>
+      </div>
+      <div class="fb"></div>
+    </div>
+
+    <div class="q" data-qid="5">
+      <p class="qtext">5. DeepSeek reports V4.1 Flash reduces per-token global KV cache ~437× versus V1. What is the most important thing to understand about this number?</p>
+      <div class="opt" data-correct="false" data-exp="The number is not a measurement error — it's a legitimate comparison against a historical baseline. The issue is relevance, not accuracy.">
+        <span class="mark">?</span><span>It's probably a measurement error</span>
+      </div>
+      <div class="opt" data-correct="true" data-exp="Correct. It's a fair historical comparison across several architecture generations, but V1 is not something anyone would deploy today. The decision-relevant figure is the ~4× versus V4-Flash. When you see a large multiplier, always check the baseline.">
+        <span class="mark">?</span><span>The baseline (V1) isn't a realistic alternative today, so the number is historically meaningful but not decision-relevant</span>
+      </div>
+      <div class="opt" data-correct="false" data-exp="It is vendor-reported and awaiting independent verification — that's a real caveat — but the primary issue with the 437× figure is the choice of baseline, not the source.">
+        <span class="mark">?</span><span>It comes from a vendor, so it should be ignored entirely</span>
+      </div>
+      <div class="opt" data-correct="false" data-exp="The figure is specifically about KV cache size, not overall speed or quality. Conflating them would be a misreading.">
+        <span class="mark">?</span><span>It means V4.1 Flash is 437× faster in wall-clock time</span>
+      </div>
+      <div class="fb"></div>
+    </div>
+
+  </div>
+
+  <div class="scorebar">
+    <div class="btnrow" style="justify-content:center;margin-top:0;">
+      <button class="primary" id="submitQuiz">Submit quiz</button>
+      <button id="resetQuiz">Reset</button>
+    </div>
+    <div id="scoreOut" style="margin-top:1rem;"></div>
+  </div>
+</section>
+
+<!-- ================= 12 ================= -->
+<section id="s12">
+  <h2><span class="lvl">Synthesis</span>The mental model</h2>
+
+  <p class="lede">If you remember nothing else from this page, remember this framework.</p>
+
+  <div class="card">
+    <h3 style="margin-top:0;">The one-paragraph version</h3>
+    <p>A transformer generating text must look back at every previous token. Recomputing those lookups every step is wasteful, so we cache the Key and Value vectors. That cache grows linearly with context length and concurrency, and it — not compute — is what limits how many users you can serve and how long a context you can afford. Every technique in the field is one of four moves: <strong>share</strong> fewer K/V heads (MQA, GQA), <strong>compress</strong> what you store (MLA, quantization), <strong>organise</strong> it without waste (paging), or <strong>discard</strong> parts of it (sparsity, eviction, recomputation). These moves are orthogonal and stack multiplicatively. The field's trajectory has been from sharing (cheap but quality-limited) to compressing (complex but quality-preserving) to stacking everything at once — with DeepSeek V4.1 Flash as the current extreme, combining MLA-lineage compression, FP4 precision, sparsity, and selective recomputation.</p>
+  </div>
+
+  <h3>5–10 things to remember</h3>
+  <ol class="takeaways">
+    <li>The KV cache exists because K and V for a generated token never change — only the new token's Q does. Caching them removes redundant work.</li>
+    <li>The cache is the bottleneck for long context and high concurrency, and decoding is <strong>bandwidth-bound</strong>, not compute-bound. Almost every technique is really a bandwidth optimisation.</li>
+    <li>There are exactly four moves: <strong>share</strong>, <strong>compress</strong>, <strong>organise</strong>, <strong>discard</strong>. Place any new paper into one of these and you'll understand it faster.</li>
+    <li><strong>MQA</strong> shares one K/V across all heads — maximum memory win, real quality cost. <strong>GQA</strong> shares within groups — the pragmatic default in most open models.</li>
+    <li><strong>MLA compresses rather than shares</strong>, and reported quality can <em>exceed</em> MHA while using far less memory. It's the closest thing to a free lunch in the field, paid for in architectural complexity.</li>
+    <li><strong>PagedAttention reduces waste, not size.</strong> It's an OS-style memory manager for the cache and composes with everything else.</li>
+    <li><strong>Quantization stacks on top of architectural choices</strong> and is mostly a serving-time decision, unlike GQA/MLA which are locked in at training time. FP8 is the production default; FP4 is the frontier.</li>
+    <li><strong>Quality impact is task-dependent.</strong> Any single "X% degradation" figure applies to the benchmark it was measured on. Always re-evaluate on your own workload at your own context length.</li>
+    <li><strong>DeepSeek V4.1 Flash</strong> stacks compression, FP4, sparsity and recomputation for ~4× reduction versus V4-Flash. Treat the headline numbers as vendor-reported pending independent verification, and remember that complexity itself is a cost.</li>
+    <li><strong>Do the arithmetic first.</strong> The most sophisticated cache technique is worthless if your cache is 2% of your memory budget and your weights are 98%.</li>
+  </ol>
+</section>
+
+<!-- ================= 13 ================= -->
+<section id="s13">
+  <h2><span class="lvl">Reference</span>Glossary</h2>
+  <dl class="glossary">
+    <dt>Attention</dt>
+    <dd>The mechanism by which a transformer decides how much each token should influence each other token, by comparing Queries against Keys and blending Values.</dd>
+
+    <dt>KV Cache</dt>
+    <dd>Stored Key and Value tensors for tokens already processed, so they aren't recomputed at each generation step.</dd>
+
+    <dt>Prefill</dt>
+    <dd>The phase where the model processes the input prompt. Compute-bound — lots of arithmetic per byte read.</dd>
+
+    <dt>Decode</dt>
+    <dd>The phase where the model generates tokens one at a time. Memory-bandwidth bound — little arithmetic, but the whole KV cache must be read each step.</dd>
+
+    <dt>MHA — Multi-Head Attention</dt>
+    <dd>The original mechanism: each attention head has its own independent Q, K and V projections. Baseline memory cost.</dd>
+
+    <dt>MQA — Multi-Query Attention</dt>
+    <dd>All query heads share a single K and V head. Maximum sharing-based reduction; measurable quality cost.</dd>
+
+    <dt>GQA — Grouped-Query Attention</dt>
+    <dd>Query heads are divided into groups; each group shares one K and V head. Interpolates between MHA and MQA. The current production default.</dd>
+
+    <dt>MLA — Multi-Head Latent Attention</dt>
+    <dd>K and V are projected into a low-dimensional latent space for storage and reconstructed for attention. Compression rather than sharing. Introduced by DeepSeek-V2.</dd>
+
+    <dt>PagedAttention</dt>
+    <dd>Memory management for the KV cache using fixed-size blocks and per-sequence block tables, eliminating fragmentation. Introduced by the vLLM team.</dd>
+
+    <dt>KV Cache Quantization</dt>
+    <dd>Storing cache values in lower precision (FP8, INT8, INT4/FP4) to reduce bytes per value. Lossy but often cheap.</dd>
+
+    <dt>Sparse Attention</dt>
+    <dd>Attending to only a subset of positions rather than all of them. Reduces <em>compute</em>, which is a different bottleneck from cache memory.</dd>
+
+    <dt>Fragmentation</dt>
+    <dd>Wasted memory caused by allocation patterns — gaps too small to be useful, or space reserved for a worst case that never materialises.</dd>
+
+    <dt>MoE — Mixture of Experts</dt>
+    <dd>An architecture where only a subset of parameters is activated per token, reducing compute per token at the cost of higher total memory.</dd>
+
+    <dt>HBM — High-Bandwidth Memory</dt>
+    <dd>The fast memory attached to a GPU, where weights and KV cache live. Its bandwidth is often the limiting factor during decoding.</dd>
+  </dl>
+</section>
+
+<!-- ================= 14 ================= -->
+<section id="s14">
+  <h2><span class="lvl">Reference</span>Sources &amp; further reading</h2>
+
+  <div class="callout warn">
+    <span class="tag">Honest note on sourcing</span>
+    <p>I was not able to retrieve and verify full citation metadata for every item below during the preparation of this page. The foundational papers (MHA, MQA, GQA, MLA, PagedAttention) are well-established and I'm confident in their attribution. The DeepSeek V4.1 Flash material is recent and vendor-reported. Where I've given a general pointer rather than a precise citation, that reflects genuine uncertainty rather than laziness — please verify anything you intend to rely on.</p>
+  </div>
+
+  <h3>Foundational papers</h3>
+
+  <p class="src">Vaswani, A. et al. (2017). <em>Attention Is All You Need.</em> NeurIPS. — The original transformer and MHA.</p>
+
+  <p class="src">Shazeer, N. (2019). <em>Fast Transformer Decoding: One Write-Head is All You Need.</em> arXiv:1911.02150. — Introduced MQA.</p>
+
+  <p class="src">Ainslie, J. et al. (2023). <em>GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints.</em> arXiv:2305.13245. — Introduced GQA and the uptraining recipe.</p>
+
+  <p class="src">Kwon, W. et al. (2023). <em>Efficient Memory Management for Large Language Model Serving with PagedAttention.</em> SOSP. — Introduced PagedAttention and vLLM.</p>
+
+  <p class="src">DeepSeek-AI (2024). <em>DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model.</em> — Introduced MLA.</p>
+
+  <h3>KV cache optimization surveys</h3>
+
+  <p class="src"><em>Towards Efficient Large Language Model Serving: A Survey on System-Aware KV Cache Optimization.</em> ACL Findings, 2026. — Broad survey covering sharing, compression, paging and eviction.</p>
+
+  <p class="src"><em>A Survey on Optimization Techniques for On-Device Large Language Model Inference.</em> IEEE, 2026. — Includes KV cache optimization and quantization in the on-device setting.</p>
+
+  <h3>Quantization</h3>
+
+  <p class="src">Liu, Z. et al. <em>KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache.</em> — Exploits the per-channel structure of K versus the per-token structure of V.</p>
+
+  <p class="src">Hooper, C. et al. <em>KVQuant: Towards 10 Million Context Length LLM Inference with KV Cache Quantization.</em> — Aggressive KV quantization with outlier handling.</p>
+
+  <p class="src">vLLM documentation — <em>FP8 KV cache and quantization support.</em> Practical guidance on production FP8 cache configuration.</p>
+
+  <h3>DeepSeek V4.1 Flash</h3>
+
+  <p class="src">DeepSeek V4.1-Flash Technical Report (September 2026). — The primary source for the KV cache reduction figures and the named architectural components (Compressed Sparse Attention 2, SWA Bounded Replay, FP4 cache). Vendor-published; independent verification limited at the time of writing.</p>
+
+  <p class="src">DeepSeek-V3.2 / FlashMLA FP8 documentation. — Details of the FP8 decoding kernel that V4.1's FP4 work builds on.</p>
+
+  <p class="src">DeepSeek V4 sparse MLA backend documentation (as implemented in vLLM and SGLang). — Implementation-level detail on sparse MLA serving.</p>
+
+  <h3>Eviction and sparsity</h3>
+
+  <p class="src"><em>PagedEviction: Structured Block-wise KV Cache Pruning.</em> EACL Findings, 2026. — Extends paging with structured block-level eviction.</p>
+
+  <p class="src">Xiao, G. et al. <em>Efficient Streaming Language Models with Attention Sinks.</em> — StreamingLLM; the origin of the observation that a few initial tokens act as attention sinks and must be retained.</p>
+
+  <h3>Accessible explanations</h3>
+
+  <p class="src">Raschka, S. <em>Multi-Head Latent Attention (MLA)</em> and accompanying transformer architecture writing. — A clear technical walkthrough of MLA's mechanism and adoption; useful as a second explanation of the compression idea.</p>
+
+</section>
+
+<footer>
+  <p>Built as a self-contained interactive lesson. All calculations run locally in your browser; no data leaves the page. If you spot an inaccuracy, particularly in the DeepSeek V4.1 Flash section where public detail is thin, treat the primary source as authoritative over this summary.</p>
+</footer>
+
+</div>
+
+<script>
+/* ============================================================
+   Generic reveal helper
+   ============================================================ */
+function reveal(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('show');
+}
+
+/* ============================================================
+   Memory lab calculator
+   ============================================================ */
+(function(){
+  var seq   = document.getElementById('seq');
+  var batch = document.getElementById('batch');
+  var heads = document.getElementById('heads');
+  var strat = document.getElementById('strat');
+  if(!seq) return;
+
+  var seqv   = document.getElementById('seqv');
+  var batchv = document.getElementById('batchv');
+  var headsv = document.getElementById('headsv');
+  var result = document.getElementById('result');
+  var sub    = document.getElementById('resultsub');
+
+  var HEAD_DIM = 128;
+
+  function fmt(n){
+    if(n >= 1024*1024*1024) return (n/(1024*1024*1024)).toFixed(2) + ' GB';
+    if(n >= 1024*1024)      return (n/(1024*1024)).toFixed(1) + ' MB';
+    if(n >= 1024)           return (n/1024).toFixed(1) + ' KB';
+    return n.toFixed(0) + ' B';
+  }
+
+  function update(){
+    var s = parseInt(seq.value,10);
+    var b = parseInt(batch.value,10);
+    var h = parseInt(heads.value,10);
+    var k = strat.value;
+
+    seqv.textContent   = s.toLocaleString();
+    batchv.textContent = b;
+    headsv.textContent = h;
+
+    var kvHeads, bits;
+    switch(k){
+      case 'mha':  kvHeads = h;               bits = 16; break;
+      case 'gqa8': kvHeads = Math.min(8,h);   bits = 16; break;
+      case 'gqa4': kvHeads = Math.min(4,h);   bits = 16; break;
+      case 'mqa':  kvHeads = 1;               bits = 16; break;
+      case 'mla':  kvHeads = 2.25;            bits = 16; break;
+      case 'mla8': kvHeads = 2.25;            bits = 8;  break;
+      case 'mla4': kvHeads = 2.25;            bits = 4;  break;
+      default:     kvHeads = h;               bits = 16;
+    }
+
+    var bytesPerValue = bits / 8;
+    var total = s * b * kvHeads * HEAD_DIM * 2 * bytesPerValue;
+
+    result.textContent = fmt(total);
+
+    var baseline = s * b * h * HEAD_DIM * 2 * 2; /* MHA FP16 */
+    var ratio = baseline / total;
+    sub.textContent = (ratio >= 1.05)
+      ? ratio.toFixed(1) + '× smaller than FP16 MHA with the same head count'
+      : 'roughly the FP16 MHA baseline';
+  }
+
+  seq.addEventListener('input', update);
+  batch.addEventListener('input', update);
+  heads.addEventListener('input', update);
+  strat.addEventListener('change', update);
+  update();
+})();
+
+function resetLab(){
+  document.getElementById('seq').value = 8192;
+  document.getElementById('batch').value = 4;
+  document.getElementById('heads').value = 32;
+  document.getElementById('strat').value = 'gqa8';
+  ['seq','batch','heads','strat'].forEach(function(id){
+    document.getElementById(id).dispatchEvent(new Event('input'));
+  });
+  document.getElementById('strat').dispatchEvent(new Event('change'));
+}
+
+/* ============================================================
+   Fragmentation illustration
+   ============================================================ */
+(function(){
+  var grid = document.getElementById('fragGrid');
+  var cap  = document.getElementById('fragCaption');
+  var bn   = document.getElementById('btnNaive');
+  var bp   = document.getElementById('btnPaged');
+  if(!grid) return;
+
+  var COLORS = {
+    used: '#2f6f5e',
+    waste:'#e0e0da',
+    free:'#f4f4f0'
+  };
+
+  function cell(color, border){
+    var d = document.createElement('div');
+    d.style.height = '20px';
+    d.style.borderRadius = '3px';
+    d.style.background = color;
+    if(border) d.style.border = '1px solid #e0e0da';
+    return d;
+  }
+
+  function drawNaive(){
+    grid.innerHTML = '';
+    /* 4 sequences, each reserving a contiguous run of 12 cells for a 4000-token max,
+       but only actually using ~3. Simulates internal + external fragmentation. */
+    var layout = [
+      'u','u','u','w','w','w','w','w','w','w','w','w',
+      'u','u','w','w','w','w','w','w','f','f','f','f',
+      'u','u','u','u','w','w','w','w','w','w','f','f',
+      'u','w','w','w','w','w','w','w','w','w','w','w'
+    ];
+    layout.forEach(function(t){
+      var c = t === 'u' ? COLORS.used : (t === 'w' ? COLORS.waste : COLORS.free);
+      grid.appendChild(cell(c, t === 'f'));
+    });
+    cap.innerHTML = '<strong>Naive allocation.</strong> Four requests, each reserving a contiguous block sized for the maximum output length. Only the solid green cells hold real data. Everything pale grey is reserved but unused — internal fragmentation. The scattered free cells at the end are external fragmentation: there may be enough total free memory, but no contiguous run large enough for a new request.';
+    bn.setAttribute('aria-pressed','true');
+    bp.setAttribute('aria-pressed','false');
+  }
+
+  function drawPaged(){
+    grid.innerHTML = '';
+    /* Same 4 sequences, same actual data, but blocks are allocated on demand
+       and packed into whatever free blocks exist. */
+    var layout = [
+      'u','u','u','u','u','u','u','u','u','u','u','u',
+      'f','f','f','f',
+      'u','u','u','u','u','u','u','u','u','u','u','u',
+      'f','f','f','f'
+    ];
+    layout.forEach(function(t){
+      var c = t === 'u' ? COLORS.used : COLORS.free;
+      grid.appendChild(cell(c, t === 'f'));
+    });
+    cap.innerHTML = '<strong>Paged allocation.</strong> The same data, stored in fixed-size blocks placed wherever space is available. No reserved-but-unused cells. Two full blocks of capacity remain free and usable — and because blocks need not be contiguous, either can be handed to a new request immediately. Utilisation rises from roughly a third to over ninety percent.';
+    bp.setAttribute('aria-pressed','true');
+    bn.setAttribute('aria-pressed','false');
+  }
+
+  window.setFrag = function(mode){
+    if(mode === 'paged') drawPaged(); else drawNaive();
+  };
+
+  drawNaive();
+})();
+
+/* ============================================================
+   Quiz engine (used by both misconceptions and final quiz)
+   ============================================================ */
+(function(){
+  function wireQuiz(container, {singleAttempt, showMarks}){
+    if(!container) return;
+    var questions = container.querySelectorAll('.q');
+
+    questions.forEach(function(q){
+      var opts = q.querySelectorAll('.opt');
+      var fb   = q.querySelector('.fb');
+      var answered = false;
+
+      opts.forEach(function(opt){
+        opt.setAttribute('role','button');
+        opt.setAttribute('tabindex','0');
+
+        function choose(){
+          if(answered && singleAttempt) return;
+          if(answered) return;
+          answered = true;
+
+          var isCorrect = opt.dataset.correct === 'true';
+
+          opts.forEach(function(o){
+            o.setAttribute('disabled','true');
+            o.removeAttribute('tabindex');
+          });
+
+          /* mark every correct option */
+          opts.forEach(function(o){
+            if(o.dataset.correct === 'true'){
+              o.classList.add('correct');
+              o.querySelector('.mark').textContent = '✓';
+            }
+          });
+
+          if(!isCorrect){
+            opt.classList.add('incorrect');
+            opt.querySelector('.mark').textContent = '✕';
+          } else {
+            opt.classList.add('correct');
+            opt.querySelector('.mark').textContent = '✓';
+          }
+
+          var prefix = isCorrect
+            ? '<b class="g">Correct.</b> '
+            : '<b class="b">Not quite.</b> ';
+
+          fb.innerHTML = prefix + (opt.dataset.exp || '');
+          fb.classList.add('show');
+        }
+
+        opt.addEventListener('click', choose);
+        opt.addEventListener('keydown', function(e){
+          if(e.key === 'Enter' || e.key === ' '){
+            e.preventDefault();
+            choose();
+          }
+        });
+      });
+    });
+  }
+
+  /* Misconception quiz — immediate feedback per question */
+  wireQuiz(document.getElementById('myths'), {singleAttempt:true, showMarks:true});
+
+  /* Final quiz — same interaction model, plus a score summary */
+  wireQuiz(document.getElementById('finalquiz'), {singleAttempt:true, showMarks:true});
+
+  var submit = document.getElementById('submitQuiz');
+  var reset  = document.getElementById('resetQuiz');
+  var out    = document.getElementById('scoreOut');
+
+  if(submit){
+    submit.addEventListener('click', function(){
+      var qs = document.querySelectorAll('#finalquiz .q');
+      var correct = 0, answeredCount = 0;
+
+      qs.forEach(function(q){
+        var picked = q.querySelector('.opt.correct');
+        var wrong  = q.querySelector('.opt.incorrect');
+        if(picked || wrong) answeredCount++;
+        if(picked && !wrong) correct++;
+      });
+
+      var total = qs.length;
+      var pct   = Math.round((correct/total)*100);
+      var msg;
+
+      if(pct === 100)      msg = 'Excellent — you have the full framework.';
+      else if(pct >= 80)   msg = 'Strong understanding. Re-read the sections behind anything you missed.';
+      else if(pct >= 60)   msg = 'Solid foundation. The mental model section at the end is worth another pass.';
+      else if(pct >= 40)   msg = 'Worth revisiting the four moves (share / compress / organise / discard) — most answers follow from them.';
+      else                 msg = 'Go back to the big picture and core concepts sections; everything else builds on them.';
+
+      out.innerHTML =
+        '<div class="num">' + correct + ' / ' + total + '</div>' +
+        '<div class="lbl">' + pct + '% correct &nbsp;·&nbsp; ' + answeredCount + ' of ' + total + ' questions attempted</div>' +
+        '<p style="font-size:.9rem;margin:.8rem 0 0;">' + msg + '</p>';
+    });
+  }
+
+  if(reset){
+    reset.addEventListener('click', function(){
+      var qs = document.querySelectorAll('#finalquiz .q');
+      qs.forEach(function(q){
+        q.querySelectorAll('.opt').forEach(function(o){
+          o.classList.remove('correct','incorrect','dim');
+          o.removeAttribute('disabled');
+          o.setAttribute('tabindex','0');
+          var m = o.querySelector('.mark');
+          if(m) m.textContent = '?';
+        });
+        var fb = q.querySelector('.fb');
+        if(fb){ fb.classList.remove('show'); fb.innerHTML = ''; }
+      });
+      out.innerHTML = '';
+      /* re-wire after reset */
+      location.hash = '';
+    });
+  }
+})();
+
+/* ============================================================
+   Progress bar + current section indicator
+   ============================================================ */
+(function(){
+  var fill = document.getElementById('progress-fill');
+  var pill = document.getElementById('section-pill');
+  var sections = Array.prototype.slice.call(document.querySelectorAll('section'));
+
+  var NAMES = {
+    s0:'Learning objective',
+    s1:'The big picture',
+    s2:'Why it matters',
+    s3:'Core concepts',
+    s4:'Memory lab',
+    s5:'Paged allocation',
+    s6:'Quantized caches',
+    s7:'Evolution timeline',
+    s8:'DeepSeek V4.1 Flash',
+    s9:'Misconceptions',
+    s10:'Trade-offs',
+    s11:'Final quiz',
+    s12:'Mental model',
+    s13:'Glossary',
+    s14:'Sources'
+  };
+
+  function onScroll(){
+    var h = document.documentElement;
+    var scrolled = h.scrollTop;
+    var height = h.scrollHeight - h.clientHeight;
+    var pct = height > 0 ? (scrolled / height) * 100 : 0;
+    fill.style.width = pct.toFixed(1) + '%';
+
+    var current = sections[0];
+    for(var i=0;i<sections.length;i++){
+      if(sections[i].getBoundingClientRect().top <= 140){
+        current = sections[i];
+      } else break;
+    }
+    if(current && NAMES[current.id]){
+      pill.textContent = NAMES[current.id];
+    }
+  }
+
+  var ticking = false;
+  window.addEventListener('scroll', function(){
+    if(!ticking){
+      window.requestAnimationFrame(function(){ onScroll(); ticking = false; });
+      ticking = true;
+    }
+  }, {passive:true});
+
+  onScroll();
+})();
+</script>
+
+</body>
+</html>

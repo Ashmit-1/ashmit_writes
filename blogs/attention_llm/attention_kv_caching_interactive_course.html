@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mastering Attention & KV Caching: From MHA to DeepSeek-V4.1-Flash</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind Configuration for clean educational theme -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            },
+            tealbrand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom clean scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Range slider custom styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 8px;
+      cursor: pointer;
+      background: #e2e8f0;
+      border-radius: 9999px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      height: 20px;
+      width: 20px;
+      border-radius: 50%;
+      background: #4f46e5;
+      cursor: pointer;
+      -webkit-appearance: none;
+      margin-top: -6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      background: #4338ca;
+    }
+
+    /* Subtle card hover elevation */
+    .interactive-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .interactive-card:hover {
+      border-color: #cbd5e1;
+    }
+
+    /* Shimmer effect for active nodes */
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .animate-subtle {
+      animation: pulse-subtle 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased selection:bg-brand-100 selection:text-brand-900">
+
+  <!-- Top Navigation & Sticky Course Progress Bar -->
+  <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm transition-all duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo & Topic Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+            ⚡
+          </div>
+          <div>
+            <h1 class="text-base font-bold text-slate-900 tracking-tight leading-none">Attention & KV Caching</h1>
+            <p class="text-xs text-slate-500 font-medium">From Vaswani MHA to DeepSeek-V4.1-Flash</p>
+          </div>
+        </div>
+
+        <!-- Real-time Progress & Section Indicators -->
+        <div class="hidden md:flex items-center space-x-6 text-xs font-semibold">
+          <div class="flex items-center space-x-2 text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <span id="current-section-badge">Level 1: Big Picture</span>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <span class="text-slate-500">Course Progress:</span>
+            <span id="progress-percent" class="font-bold text-brand-600">0%</span>
+            <div class="w-24 bg-slate-200 h-2 rounded-full overflow-hidden">
+              <div id="progress-bar-fill" class="bg-brand-600 h-full w-0 transition-all duration-300"></div>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-1.5 bg-brand-50 text-brand-700 px-3 py-1.5 rounded-full border border-brand-200">
+            <span>Quiz:</span>
+            <span id="quiz-badge-score" class="font-bold">0 / 6</span>
+          </div>
+        </div>
+
+        <!-- Quick Jump Links -->
+        <div class="flex items-center space-x-2">
+          <a href="#calculator" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+            VRAM Calculator
+          </a>
+          <a href="#final-quiz" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition">
+            Final Quiz
+          </a>
+        </div>
+      </div>
+    </div>
+    <!-- Linear Reading Progress Indicator (1px line) -->
+    <div class="w-full bg-slate-100 h-1">
+      <div id="scroll-progress" class="h-1 bg-gradient-to-r from-brand-500 to-tealbrand-500 w-0 transition-all duration-75"></div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <!-- Left Sidebar: Course Navigation & Learning Checklist (Sticky) -->
+      <aside class="hidden lg:block lg:col-span-3">
+        <div class="sticky top-24 space-y-6">
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Course Modules</h3>
+            <nav class="space-y-1 text-sm font-medium">
+              <a href="#level-1" class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition" data-sec="level-1">
+                <span>1. The Memory Wall</span>
+                <span class="text-xs text-slate-400">L1</span>
+              </a>
+              <a href="#level-2" class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition" data-sec="level-2">
+                <span>2. KV Cache Anatomy</span>
+                <span class="text-xs text-slate-400">L2</span>
+              </a>
+              <a href="#level-3" class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition" data-sec="level-3">
+                <span>3. Architecture Evolution</span>
+                <span class="text-xs text-slate-400">L3</span>
+              </a>
+              <a href="#level-paged" class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition" data-sec="level-paged">
+                <span>4. PagedAttention & Blocks</span>
+                <span class="text-xs text-slate-400">L3+</span>
+              </a>
+              <a href="#level-deepseek" class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition" data-sec="level-deepseek">
+                <span>5. DeepSeek-V4.1-Flash</span>
+                <span class="text-xs text-brand-600 font-bold">2026</span>
+              </a>
+              <a href="#calculator" class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition" data-sec="calculator">
+                <span>6. Interactive Calculator</span>
+                <span class="text-xs text-slate-400">Tool</span>
+              </a>
+              <a href="#comparison-matrix" class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition" data-sec="comparison-matrix">
+                <span>7. Comparison Matrix</span>
+                <span class="text-xs text-slate-400">Data</span>
+              </a>
+              <a href="#final-quiz" class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition" data-sec="final-quiz">
+                <span>8. Mastery Final Quiz</span>
+                <span class="text-xs text-emerald-600 font-bold">Exam</span>
+              </a>
+              <a href="#mental-model" class="sidebar-link flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition" data-sec="mental-model">
+                <span>9. Mental Model & Summary</span>
+                <span class="text-xs text-slate-400">Review</span>
+              </a>
+            </nav>
+          </div>
+
+          <!-- Interactive Learning Checklist -->
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Core Milestones</h3>
+              <span id="milestone-count" class="text-xs font-semibold text-brand-600">0/5 Done</span>
+            </div>
+            <div class="space-y-2 text-xs text-slate-600">
+              <label class="flex items-center space-x-2 cursor-pointer select-none">
+                <input type="checkbox" id="m1-check" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" onchange="updateMilestones()">
+                <span>Prefill vs Decode Bottleneck</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer select-none">
+                <input type="checkbox" id="m2-check" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" onchange="updateMilestones()">
+                <span>Exact Cache Formula Derivation</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer select-none">
+                <input type="checkbox" id="m3-check" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" onchange="updateMilestones()">
+                <span>MHA vs MQA vs GQA vs MLA</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer select-none">
+                <input type="checkbox" id="m4-check" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" onchange="updateMilestones()">
+                <span>DeepSeek CED & CSA2 Mechanics</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer select-none">
+                <input type="checkbox" id="m5-check" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" onchange="updateMilestones()">
+                <span>Tested 1M Context on Calculator</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content Column -->
+      <main class="col-span-1 lg:col-span-9 space-y-16">
+
+        <!-- Course Introduction & Objective Card -->
+        <section class="bg-gradient-to-b from-white to-slate-50 border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold mb-4">
+            <span>🎯 Learning Objective</span>
+          </div>
+          <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            Understanding Attention & Key-Value Caching: Why Memory, Not Compute, Constrains Modern AI
+          </h1>
+          <p class="mt-4 text-slate-600 text-base sm:text-lg leading-relaxed">
+            By the end of this interactive course, you will understand the fundamental mathematical bottlenecks of autoregressive inference, how architectural innovations evolved from <strong>Multi-Head Attention (2017)</strong> to <strong>Grouped-Query Attention (2023)</strong> and <strong>Multi-Head Latent Attention</strong>, and why the state-of-the-art <strong>DeepSeek-V4.1-Flash</strong> model achieved a staggering <span class="font-semibold text-brand-600">437× reduction in KV cache footprint</span> to unlock 1-million-token contexts.
+          </p>
+
+          <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-slate-200 text-sm">
+            <div class="flex items-start space-x-2.5">
+              <span class="text-brand-600 font-bold text-base">01</span>
+              <div>
+                <strong class="text-slate-900 block">The Memory Wall</strong>
+                <span class="text-slate-500 text-xs">Compute-bound prefill vs Memory-bandwidth decode</span>
+              </div>
+            </div>
+            <div class="flex items-start space-x-2.5">
+              <span class="text-brand-600 font-bold text-base">02</span>
+              <div>
+                <strong class="text-slate-900 block">Architectural Shift</strong>
+                <span class="text-slate-500 text-xs">MHA &rarr; MQA &rarr; GQA &rarr; MLA &rarr; CED</span>
+              </div>
+            </div>
+            <div class="flex items-start space-x-2.5">
+              <span class="text-brand-600 font-bold text-base">03</span>
+              <div>
+                <strong class="text-slate-900 block">DeepSeek-V4.1-Flash</strong>
+                <span class="text-slate-500 text-xs">CSA2 3-mode sparse indexing & FP4 cache</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- LEVEL 1: The Big Picture & The Memory Wall -->
+        <section id="level-1" class="scroll-mt-24 space-y-6">
+          <div class="border-b border-slate-200 pb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-brand-600">Level 1 — The Big Picture</span>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight mt-1">The Dilemma: Why Autoregressive Generation Hits a Memory Wall</h2>
+          </div>
+
+          <div class="prose prose-slate max-w-none text-slate-600 leading-relaxed space-y-4">
+            <p>
+              When a Large Language Model (LLM) generates text, it does so <strong>one token at a time</strong>. To generate token $t_{n+1}$, the model must attend to every preceding token $t_1, t_2, \dots, t_n$.
+            </p>
+            <p>
+              In vanilla attention, computing what token $t_{n+1}$ should attend to requires calculating an attention score between its Query ($Q_{n+1}$) and the Key ($K_i$) and Value ($V_i$) of every past token. This leaves two fundamental choices:
+            </p>
+          </div>
+
+          <!-- The Two Paths Comparison Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white border border-rose-200 rounded-xl p-5 shadow-sm">
+              <div class="flex items-center space-x-2 text-rose-700 font-bold text-sm mb-2">
+                <span>❌ Path A: Recomputing Every Step</span>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Do not save any past activations. When generating token 1,000, rerun forward passes for tokens 1 through 999.
+              </p>
+              <div class="mt-3 bg-rose-50 rounded-lg p-3 text-xs font-mono text-rose-900 border border-rose-100">
+                Computational Complexity: <strong>O(N²) FLOPs</strong><br>
+                Total Forward Passes for N tokens: N(N+1)/2<br>
+                <span class="text-rose-600 font-bold">Unusable for real-time latency.</span>
+              </div>
+            </div>
+
+            <div class="bg-white border border-emerald-200 rounded-xl p-5 shadow-sm">
+              <div class="flex items-center space-x-2 text-emerald-700 font-bold text-sm mb-2">
+                <span>✅ Path B: Key-Value (KV) Caching</span>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Compute the Keys and Values for each past token once, store them in GPU High Bandwidth Memory (HBM), and reuse them at each generation step.
+              </p>
+              <div class="mt-3 bg-emerald-50 rounded-lg p-3 text-xs font-mono text-emerald-900 border border-emerald-100">
+                Computational Complexity: <strong>O(N) FLOPs per step</strong><br>
+                Trade-off: Consumes enormous GPU VRAM memory!<br>
+                <span class="text-emerald-700 font-bold">Standard method across all modern LLMs.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Visualizer: Prefill vs Decode Phase Dynamics -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Interactive Simulation: Prefill vs. Decode Phase</h3>
+                <p class="text-xs text-slate-500">Notice how hardware utilization shifts from matrix-multiplication compute to memory bus transfer.</p>
+              </div>
+              <div class="mt-3 sm:mt-0 flex space-x-2">
+                <button id="btn-mode-prefill" onclick="setPhaseMode('prefill')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white shadow-sm transition">
+                  1. Prefill Phase (Prompt)
+                </button>
+                <button id="btn-mode-decode" onclick="setPhaseMode('decode')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                  2. Decode Phase (Step-by-Step)
+                </button>
+              </div>
+            </div>
+
+            <!-- Visualization Canvas/Graphic -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div class="md:col-span-7 bg-slate-50 rounded-xl p-5 border border-slate-200">
+                <div class="text-xs font-bold uppercase text-slate-400 mb-2" id="phase-diagram-title">Phase: Prompt Prefill (Parallel Token Processing)</div>
+                <div id="phase-animation-area" class="h-44 flex items-center justify-center relative overflow-hidden bg-white rounded-lg border border-slate-200">
+                  <!-- Dynamic SVG representation rendered by JS -->
+                </div>
+                <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+                  <span id="phase-status-left">Batch parallel matrix multiplication</span>
+                  <span id="phase-status-right" class="font-mono font-bold text-brand-600">Arithmetic Intensity: High</span>
+                </div>
+              </div>
+
+              <div class="md:col-span-5 space-y-3">
+                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-xs font-semibold text-slate-500 block uppercase">Primary Bottleneck</span>
+                  <span id="phase-bottleneck" class="text-base font-bold text-slate-900">Compute-Bound (Tensor Cores / FLOPs)</span>
+                  <p id="phase-explanation" class="text-xs text-slate-600 mt-1 leading-relaxed">
+                    All prompt tokens are known in advance. The GPU computes large GEMM (General Matrix Multiply) operations in parallel, keeping Tensor Cores saturated at peak efficiency.
+                  </p>
+                </div>
+                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-xs font-semibold text-slate-500 block uppercase">Arithmetic Intensity</span>
+                  <span id="phase-intensity" class="text-sm font-bold text-brand-700 font-mono">FLOPs / Byte Transferred: ~100-150</span>
+                  <p class="text-xs text-slate-500 mt-1">High ratio allows the GPU to hide memory latency behind heavy compute.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Prediction Question 1 -->
+            <div class="mt-6 pt-5 border-t border-slate-100">
+              <div class="bg-brand-50/60 rounded-xl p-4 border border-brand-100">
+                <div class="flex items-start space-x-3">
+                  <span class="text-brand-600 text-lg">💡</span>
+                  <div class="w-full">
+                    <span class="text-xs font-bold uppercase tracking-wider text-brand-700 block">Predict Before Revealing</span>
+                    <p class="text-sm font-medium text-slate-800 mt-0.5">
+                      During the generation (decode) of a single token with batch size 1, what takes the vast majority of time on an NVIDIA H100 GPU?
+                    </p>
+                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <button onclick="checkPrediction(1, 'a')" id="pred1-a" class="pred-btn text-xs text-left p-2.5 rounded-lg bg-white border border-slate-200 hover:border-brand-400 transition">
+                        A) Calculating softmax exponential operations
+                      </button>
+                      <button onclick="checkPrediction(1, 'b')" id="pred1-b" class="pred-btn text-xs text-left p-2.5 rounded-lg bg-white border border-slate-200 hover:border-brand-400 transition">
+                        B) Transferring weights and the KV cache from HBM into SRAM
+                      </button>
+                      <button onclick="checkPrediction(1, 'c')" id="pred1-c" class="pred-btn text-xs text-left p-2.5 rounded-lg bg-white border border-slate-200 hover:border-brand-400 transition">
+                        C) Floating-point multiplication in attention projection
+                      </button>
+                    </div>
+                    <div id="pred1-feedback" class="hidden mt-3 text-xs p-3 rounded-lg bg-white border"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- LEVEL 2: Core Concepts & Mathematical Anatomy -->
+        <section id="level-2" class="scroll-mt-24 space-y-6">
+          <div class="border-b border-slate-200 pb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-brand-600">Level 2 — Mathematical Anatomy</span>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight mt-1">Deconstructing the KV Cache Formula</h2>
+          </div>
+
+          <div class="prose prose-slate max-w-none text-slate-600 leading-relaxed">
+            <p>
+              In standard Scaled Dot-Product Attention (Vaswani et al., 2017), an input embedding $x_t$ is projected into three distinct vectors:
+            </p>
+            <div class="bg-white rounded-xl p-4 border border-slate-200 font-mono text-xs sm:text-sm text-center text-slate-800 my-3 shadow-sm">
+              $\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right) V$
+            </div>
+            <p>
+              During decoding, token $t$ only generates a single new Query vector $Q_t$. However, it must be multiplied against the Keys ($K_{1 \dots t}$) and Values ($V_{1 \dots t}$) of <strong>all previous tokens across all layers</strong>.
+            </p>
+          </div>
+
+          <!-- Formula Breakdown Card -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h3 class="text-base font-bold text-slate-900 mb-1">The Universal KV Cache Memory Formula</h3>
+            <p class="text-xs text-slate-500 mb-4">Every LLM engineer must know this equation by heart. It determines inference feasibility.</p>
+
+            <div class="bg-slate-900 text-brand-100 rounded-xl p-4 text-center font-mono text-sm sm:text-base mb-6 shadow-inner">
+              $\text{Cache Bytes per Token} = 2 \times L \times H_{kv} \times D_h \times P_{\text{bytes}}$
+            </div>
+
+            <!-- Variable Breakdown Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span class="font-bold text-brand-600 block text-sm">2</span>
+                <span class="font-semibold text-slate-800">Key & Value</span>
+                <p class="text-slate-500 mt-1">Factor of 2 because we must store both one Key vector and one Value vector.</p>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span class="font-bold text-brand-600 block text-sm">L</span>
+                <span class="font-semibold text-slate-800">Layers</span>
+                <p class="text-slate-500 mt-1">Total transformer layers in the model (e.g., 32 for LLaMA-8B, 80 for 70B).</p>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span class="font-bold text-brand-600 block text-sm">H_kv</span>
+                <span class="font-semibold text-slate-800">KV Heads</span>
+                <p class="text-slate-500 mt-1">Number of Key/Value attention heads (Equal to Q in MHA, reduced in GQA/MQA).</p>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span class="font-bold text-brand-600 block text-sm">D_h</span>
+                <span class="font-semibold text-slate-800">Head Dimension</span>
+                <p class="text-slate-500 mt-1">Dimensionality of each attention head (commonly 128).</p>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span class="font-bold text-brand-600 block text-sm">P_bytes</span>
+                <span class="font-semibold text-slate-800">Precision</span>
+                <p class="text-slate-500 mt-1">Bytes per scalar: 2 for FP16/BF16, 1 for FP8, 0.5 for FP4.</p>
+              </div>
+            </div>
+
+            <!-- Total KV Cache Memory equation -->
+            <div class="mt-4 p-3 bg-brand-50 rounded-lg border border-brand-100 text-xs text-brand-900">
+              <strong>Total Context VRAM:</strong> $\text{Total Memory} = \text{Batch Size} \times \text{Context Length} \times \text{Cache Bytes per Token}$.
+            </div>
+          </div>
+
+          <!-- Step-by-Step Token Accumulator Visualizer -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Live Memory Accumulation Simulator</h3>
+                <p class="text-xs text-slate-500">Step through autoregressive decoding to observe KV tensors growing in HBM.</p>
+              </div>
+              <div class="flex space-x-2">
+                <button onclick="stepSimToken(1)" class="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 transition">
+                  +1 Token
+                </button>
+                <button onclick="stepSimToken(10)" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 transition">
+                  +10 Tokens
+                </button>
+                <button onclick="resetSimToken()" class="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-600 text-xs font-semibold hover:bg-rose-100 transition">
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span class="text-xs text-slate-500 block">Generated Tokens</span>
+                <span id="sim-token-count" class="text-xl font-mono font-bold text-slate-900">1</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span class="text-xs text-slate-500 block">Current Tensor Shape (K & V)</span>
+                <span id="sim-tensor-shape" class="text-xs font-mono font-bold text-brand-700">[Batch=1, Heads=32, Len=1, Dim=128]</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span class="text-xs text-slate-500 block">Allocated Cache VRAM (32 Layers)</span>
+                <span id="sim-memory-val" class="text-xl font-mono font-bold text-emerald-600">0.52 MB</span>
+              </div>
+            </div>
+
+            <!-- Visual Bar of GPU Memory representation -->
+            <div>
+              <div class="flex justify-between text-xs text-slate-500 mb-1">
+                <span>GPU High-Bandwidth Memory (HBM) Allocation</span>
+                <span id="sim-bar-pct">0.05% of 80GB H100</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden border border-slate-200 p-0.5">
+                <div id="sim-memory-fill" class="bg-gradient-to-r from-brand-500 to-indigo-600 h-full rounded-full transition-all duration-200" style="width: 2%;"></div>
+              </div>
+              <p class="text-xs text-slate-400 mt-2">
+                Simulating: 32 layers, 32 KV heads (MHA), 128 head dim, FP16 precision (524,288 bytes per token).
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- LEVEL 3: Architectural Evolution -->
+        <section id="level-3" class="scroll-mt-24 space-y-6">
+          <div class="border-b border-slate-200 pb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-brand-600">Level 3 — Architectural Evolution</span>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight mt-1">From MHA to Multi-Head Latent Attention (MLA)</h2>
+          </div>
+
+          <p class="text-sm text-slate-600 leading-relaxed">
+            As context lengths surged from 2,048 tokens to 128k, 1M, and beyond, standard Multi-Head Attention caused GPU memory to overflow. Researchers engineered a sequence of architectural breakthroughs to shrink $H_{kv}$ and compress cache representations.
+          </p>
+
+          <!-- Interactive Tabs for Architecture Comparison -->
+          <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <div class="flex border-b border-slate-200 bg-slate-50 overflow-x-auto text-xs font-semibold">
+              <button onclick="showArchTab('mha')" id="tab-btn-mha" class="arch-tab-btn px-4 py-3 border-b-2 border-brand-600 text-brand-700 bg-white whitespace-nowrap">
+                1. MHA (Vaswani 2017)
+              </button>
+              <button onclick="showArchTab('mqa')" id="tab-btn-mqa" class="arch-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">
+                2. MQA (Shazeer 2019)
+              </button>
+              <button onclick="showArchTab('gqa')" id="tab-btn-gqa" class="arch-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">
+                3. GQA (Ainslie 2023)
+              </button>
+              <button onclick="showArchTab('mla')" id="tab-btn-mla" class="arch-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">
+                4. MLA (DeepSeek-V2/V3)
+              </button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="p-6">
+              <!-- MHA Pane -->
+              <div id="arch-pane-mha" class="arch-pane space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h4 class="text-base font-bold text-slate-900">Multi-Head Attention (MHA)</h4>
+                    <p class="text-xs text-slate-500">Full 1:1 Head Ratio (e.g., 32 Query Heads &rarr; 32 Key Heads, 32 Value Heads)</p>
+                  </div>
+                  <div class="px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 text-xs font-mono font-semibold rounded-lg">
+                    KV Cache: 100% (Baseline Max)
+                  </div>
+                </div>
+
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <!-- Schematic SVG Representation -->
+                  <div class="flex items-center justify-center py-4">
+                    <svg class="w-full max-w-lg h-36" viewBox="0 0 500 130">
+                      <!-- Query heads -->
+                      <g fill="#6366f1">
+                        <rect x="20" y="15" width="40" height="20" rx="4" /><text x="40" y="29" fill="white" font-size="10" text-anchor="middle">Q1</text>
+                        <rect x="70" y="15" width="40" height="20" rx="4" /><text x="90" y="29" fill="white" font-size="10" text-anchor="middle">Q2</text>
+                        <rect x="120" y="15" width="40" height="20" rx="4" /><text x="140" y="29" fill="white" font-size="10" text-anchor="middle">Q3</text>
+                        <text x="175" y="29" fill="#94a3b8" font-size="14" font-weight="bold">···</text>
+                        <rect x="200" y="15" width="40" height="20" rx="4" /><text x="220" y="29" fill="white" font-size="10" text-anchor="middle">Q32</text>
+                      </g>
+                      <!-- 1-to-1 connections -->
+                      <g stroke="#cbd5e1" stroke-width="1.5">
+                        <line x1="40" y1="35" x2="40" y2="75" />
+                        <line x1="90" y1="35" x2="90" y2="75" />
+                        <line x1="140" y1="35" x2="140" y2="75" />
+                        <line x1="220" y1="35" x2="220" y2="75" />
+                      </g>
+                      <!-- KV pairs -->
+                      <g fill="#0d9488">
+                        <rect x="20" y="75" width="40" height="26" rx="4" /><text x="40" y="92" fill="white" font-size="9" text-anchor="middle">K1, V1</text>
+                        <rect x="70" y="75" width="40" height="26" rx="4" /><text x="90" y="92" fill="white" font-size="9" text-anchor="middle">K2, V2</text>
+                        <rect x="120" y="75" width="40" height="26" rx="4" /><text x="140" y="92" fill="white" font-size="9" text-anchor="middle">K3, V3</text>
+                        <text x="175" y="92" fill="#94a3b8" font-size="14" font-weight="bold">···</text>
+                        <rect x="200" y="75" width="40" height="26" rx="4" /><text x="220" y="92" fill="white" font-size="9" text-anchor="middle">K32, V32</text>
+                      </g>
+                      <!-- Note badge -->
+                      <rect x="280" y="35" width="200" height="50" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+                      <text x="290" y="55" fill="#334155" font-size="10" font-weight="bold">Every head has independent K & V</text>
+                      <text x="290" y="72" fill="#64748b" font-size="9">Highest representational capacity,</text>
+                      <text x="290" y="82" fill="#e11d48" font-size="9" font-weight="bold">Extreme VRAM bandwidth bottleneck.</text>
+                    </svg>
+                  </div>
+                </div>
+
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  <strong>How it works:</strong> Each query head attends to its own dedicated key and value head. While expressive, when generating token 100,000 for a 70B model, MHA requires loading <span class="font-bold text-rose-600">gigabytes of memory across every single step</span> just to compute one word!
+                </p>
+              </div>
+
+              <!-- MQA Pane -->
+              <div id="arch-pane-mqa" class="arch-pane hidden space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h4 class="text-base font-bold text-slate-900">Multi-Query Attention (MQA)</h4>
+                    <p class="text-xs text-slate-500">Shazeer, 2019: All Query Heads Share Exactly ONE Key and Value Head</p>
+                  </div>
+                  <div class="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-mono font-semibold rounded-lg">
+                    KV Cache: ~3% to 6% of MHA (Massive Drop)
+                  </div>
+                </div>
+
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <div class="flex items-center justify-center py-4">
+                    <svg class="w-full max-w-lg h-36" viewBox="0 0 500 130">
+                      <!-- Query heads -->
+                      <g fill="#6366f1">
+                        <rect x="20" y="15" width="40" height="20" rx="4" /><text x="40" y="29" fill="white" font-size="10" text-anchor="middle">Q1</text>
+                        <rect x="70" y="15" width="40" height="20" rx="4" /><text x="90" y="29" fill="white" font-size="10" text-anchor="middle">Q2</text>
+                        <rect x="120" y="15" width="40" height="20" rx="4" /><text x="140" y="29" fill="white" font-size="10" text-anchor="middle">Q3</text>
+                        <text x="175" y="29" fill="#94a3b8" font-size="14" font-weight="bold">···</text>
+                        <rect x="200" y="15" width="40" height="20" rx="4" /><text x="220" y="29" fill="white" font-size="10" text-anchor="middle">Q32</text>
+                      </g>
+                      <!-- Converging connections to single KV -->
+                      <g stroke="#0d9488" stroke-width="1.5">
+                        <line x1="40" y1="35" x2="120" y2="75" />
+                        <line x1="90" y1="35" x2="120" y2="75" />
+                        <line x1="140" y1="35" x2="120" y2="75" />
+                        <line x1="220" y1="35" x2="120" y2="75" />
+                      </g>
+                      <!-- Single KV -->
+                      <g fill="#0d9488">
+                        <rect x="90" y="75" width="60" height="28" rx="6" />
+                        <text x="120" y="93" fill="white" font-size="10" font-weight="bold" text-anchor="middle">Shared KV</text>
+                      </g>
+                      <!-- Note badge -->
+                      <rect x="280" y="35" width="200" height="50" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+                      <text x="290" y="55" fill="#334155" font-size="10" font-weight="bold">1 Key and 1 Value for all heads</text>
+                      <text x="290" y="70" fill="#059669" font-size="9" font-weight="bold">Extremely fast decode throughput,</text>
+                      <text x="290" y="80" fill="#dc2626" font-size="9">Can cause quality degradation.</text>
+                    </svg>
+                  </div>
+                </div>
+
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  <strong>Trade-off:</strong> Cache size is cut by a factor equal to the number of query heads (e.g., $32\times$ reduction). However, forcing all attention heads to look at identical keys often damaged reasoning capacity and retrieval precision in complex domains.
+                </p>
+              </div>
+
+              <!-- GQA Pane -->
+              <div id="arch-pane-gqa" class="arch-pane hidden space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h4 class="text-base font-bold text-slate-900">Grouped-Query Attention (GQA)</h4>
+                    <p class="text-xs text-slate-500">Ainslie et al., 2023 (Used in LLaMA-2 70B, LLaMA-3, Mistral, Gemma)</p>
+                  </div>
+                  <div class="px-3 py-1 bg-brand-50 text-brand-700 border border-brand-200 text-xs font-mono font-semibold rounded-lg">
+                    KV Cache: ~12.5% to 25% of MHA (Sweet Spot)
+                  </div>
+                </div>
+
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <div class="flex items-center justify-center py-4">
+                    <svg class="w-full max-w-lg h-36" viewBox="0 0 500 130">
+                      <!-- Group 1 -->
+                      <g fill="#6366f1">
+                        <rect x="20" y="15" width="28" height="18" rx="3" /><text x="34" y="28" fill="white" font-size="8" text-anchor="middle">Q1</text>
+                        <rect x="52" y="15" width="28" height="18" rx="3" /><text x="66" y="28" fill="white" font-size="8" text-anchor="middle">Q2</text>
+                        <rect x="84" y="15" width="28" height="18" rx="3" /><text x="98" y="28" fill="white" font-size="8" text-anchor="middle">Q3</text>
+                        <rect x="116" y="15" width="28" height="18" rx="3" /><text x="130" y="28" fill="white" font-size="8" text-anchor="middle">Q4</text>
+                      </g>
+                      <!-- Group 2 -->
+                      <g fill="#4f46e5">
+                        <rect x="170" y="15" width="28" height="18" rx="3" /><text x="184" y="28" fill="white" font-size="8" text-anchor="middle">Q5</text>
+                        <rect x="202" y="15" width="28" height="18" rx="3" /><text x="216" y="28" fill="white" font-size="8" text-anchor="middle">Q6</text>
+                        <rect x="234" y="15" width="28" height="18" rx="3" /><text x="248" y="28" fill="white" font-size="8" text-anchor="middle">Q7</text>
+                        <rect x="266" y="15" width="28" height="18" rx="3" /><text x="280" y="28" fill="white" font-size="8" text-anchor="middle">Q8</text>
+                      </g>
+                      <!-- Group connections -->
+                      <g stroke="#0d9488" stroke-width="1.2">
+                        <line x1="34" y1="33" x2="75" y2="75" />
+                        <line x1="66" y1="33" x2="75" y2="75" />
+                        <line x1="98" y1="33" x2="75" y2="75" />
+                        <line x1="130" y1="33" x2="75" y2="75" />
+
+                        <line x1="184" y1="33" x2="225" y2="75" />
+                        <line x1="216" y1="33" x2="225" y2="75" />
+                        <line x1="248" y1="33" x2="225" y2="75" />
+                        <line x1="280" y1="33" x2="225" y2="75" />
+                      </g>
+                      <!-- 2 Group KV heads -->
+                      <g fill="#0d9488">
+                        <rect x="50" y="75" width="50" height="24" rx="4" />
+                        <text x="75" y="90" fill="white" font-size="9" text-anchor="middle">Group 1 KV</text>
+                        <rect x="200" y="75" width="50" height="24" rx="4" />
+                        <text x="225" y="90" fill="white" font-size="9" text-anchor="middle">Group 2 KV</text>
+                      </g>
+                      <!-- Note badge -->
+                      <rect x="320" y="25" width="165" height="70" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+                      <text x="330" y="45" fill="#334155" font-size="10" font-weight="bold">Grouped Query Attention</text>
+                      <text x="330" y="60" fill="#64748b" font-size="9">e.g., 64 Q heads / 8 KV heads</text>
+                      <text x="330" y="75" fill="#059669" font-size="9" font-weight="bold">Matches MHA quality</text>
+                      <text x="330" y="86" fill="#059669" font-size="9" font-weight="bold">with 8x cache reduction!</text>
+                    </svg>
+                  </div>
+                </div>
+
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  <strong>The Industry Standard:</strong> In LLaMA-3 70B, 64 Query heads are partitioned into 8 groups. Each group of 8 Query heads shares 1 Key head and 1 Value head. This recovers almost 100% of MHA's benchmark accuracy while cutting KV cache bandwidth by <span class="font-semibold text-brand-600">8×</span>.
+                </p>
+              </div>
+
+              <!-- MLA Pane -->
+              <div id="arch-pane-mla" class="arch-pane hidden space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h4 class="text-base font-bold text-slate-900">Multi-Head Latent Attention (MLA)</h4>
+                    <p class="text-xs text-slate-500">DeepSeek-V2 / V3: Low-Rank Joint Compression + Decoupled RoPE</p>
+                  </div>
+                  <div class="px-3 py-1 bg-tealbrand-50 text-tealbrand-700 border border-tealbrand-500/30 text-xs font-mono font-semibold rounded-lg">
+                    KV Cache: ~1.5% to 3% of MHA
+                  </div>
+                </div>
+
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <div class="text-xs font-mono bg-white p-3 rounded-lg border border-slate-200 text-slate-800 space-y-1">
+                    <p class="font-bold text-brand-700">1. KV Joint Low-Rank Compression:</p>
+                    <p class="pl-3">$c_t^{KV} = W^{DKV} h_t \quad (\text{Compressed latent vector of dimension } d_c = 512)$</p>
+                    <p class="font-bold text-tealbrand-700 mt-2">2. Decoupled RoPE Key Strategy:</p>
+                    <p class="pl-3">$k_t^R = \text{RoPE}(W^{KR} h_t) \quad (\text{Rotary embeddings applied strictly to a tiny } d_R = 64 \text{ vector})$</p>
+                    <p class="font-bold text-slate-700 mt-2">3. What is Actually Stored in the KV Cache:</p>
+                    <p class="pl-3 font-semibold text-emerald-600">$\text{KV Cache}_t = [c_t^{KV}, \; k_t^R] \quad \text{Total size: } 512 + 64 = 576 \text{ scalars per token!}$</p>
+                  </div>
+                </div>
+
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  <strong>The DeepSeek MLA Innovation:</strong> Instead of storing independent Keys and Values for all 128 attention heads, DeepSeek compresses both Keys and Values together into a single latent code $c_t^{KV}$ (512 dimensions). During generation, query projection matrices absorb the up-projection matrix:
+                  $W^{UK} \cdot W^{UQ}$, enabling the model to compute attention directly against the compressed latent code!
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- LEVEL 3+: PagedAllocation & Quantized Caches -->
+        <section id="level-paged" class="scroll-mt-24 space-y-6">
+          <div class="border-b border-slate-200 pb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-brand-600">Memory Allocation & Quantization</span>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight mt-1">PagedAttention (vLLM) & Quantized Caches</h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Paged Attention Theory -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <h3 class="text-base font-bold text-slate-900">PagedAttention (Kwon et al., 2023)</h3>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Prior to vLLM, systems allocated contiguous memory based on the <em>maximum possible sequence length</em> (e.g., 4k or 32k tokens). Because generation lengths are unknown beforehand, up to <strong>60% to 80% of VRAM was wasted</strong> due to:
+              </p>
+              <ul class="text-xs text-slate-600 space-y-1.5 list-disc pl-4">
+                <li><strong>Internal Fragmentation:</strong> Reserved memory for future tokens that are never generated.</li>
+                <li><strong>External Fragmentation:</strong> Gaps between differently-sized requests.</li>
+              </ul>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                <strong>The Solution:</strong> PagedAttention mirrors OS virtual memory. KV caches are split into fixed-size physical blocks (e.g., 16 tokens). Tokens are appended non-contiguously via a dynamic Page Table.
+              </p>
+            </div>
+
+            <!-- Quantized Caches Theory -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <h3 class="text-base font-bold text-slate-900">Quantized Caches: FP16 &rarr; FP8 &rarr; FP4</h3>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Precision directly scales cache footprint. Halving precision doubles max batch capacity:
+              </p>
+              <div class="space-y-2 text-xs">
+                <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="font-bold text-slate-800">FP16 / BF16 (Baseline)</span>
+                  <span class="font-mono text-slate-600">2.0 Bytes / scalar</span>
+                </div>
+                <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="font-bold text-slate-800">FP8 (E4M3 / E5M2)</span>
+                  <span class="font-mono text-emerald-600 font-bold">1.0 Byte / scalar (2× reduction)</span>
+                </div>
+                <div class="flex items-center justify-between p-2 rounded-lg bg-tealbrand-50 border border-tealbrand-200">
+                  <span class="font-bold text-tealbrand-900">FP4 (E2M1 - DeepSeek-V4.1)</span>
+                  <span class="font-mono text-tealbrand-700 font-bold">0.5 Byte / scalar (4× reduction)</span>
+                </div>
+              </div>
+              <p class="text-xs text-slate-500">
+                FP4 requires micro-scaling factors (e.g., FP8 scale per 16 channels) to maintain accuracy during long-context needle-in-a-haystack tasks.
+              </p>
+            </div>
+          </div>
+
+          <!-- Interactive Memory Fragmentation Sandbox -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Interactive Sandbox: Contiguous vs. Paged Block Allocation</h3>
+                <p class="text-xs text-slate-500">Compare how 4 simultaneous requests of unpredictable length allocate memory.</p>
+              </div>
+              <div class="mt-2 sm:mt-0 flex space-x-2">
+                <button onclick="toggleAllocationType('contiguous')" id="btn-alloc-contig" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white transition">
+                  Contiguous Pre-allocation
+                </button>
+                <button onclick="toggleAllocationType('paged')" id="btn-alloc-paged" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                  PagedAttention (Blocks of 16)
+                </button>
+              </div>
+            </div>
+
+            <!-- Visual Grid of VRAM Blocks -->
+            <div class="space-y-3">
+              <div class="flex justify-between items-center text-xs">
+                <span id="alloc-type-label" class="font-bold text-slate-800">Pre-allocated Contiguous Slots (Max Context 64 tokens)</span>
+                <span id="alloc-waste-stat" class="font-mono font-bold text-rose-600">Memory Waste: 62.5%</span>
+              </div>
+
+              <!-- 64-block visualization grid -->
+              <div id="memory-block-grid" class="grid grid-cols-8 sm:grid-cols-16 gap-1.5 p-3 bg-slate-100 rounded-xl border border-slate-200">
+                <!-- Dynamically generated 64 memory chunks -->
+              </div>
+
+              <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-2">
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-3 h-3 rounded bg-emerald-500 inline-block"></span>
+                  <span>Active Token Data</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-3 h-3 rounded bg-rose-200 inline-block"></span>
+                  <span>Wasted / Reserved (Unused)</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-3 h-3 rounded bg-white border border-slate-300 inline-block"></span>
+                  <span>Available Free Space</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- LEVEL 4: DeepSeek-V4.1-Flash Strategy Deep Dive -->
+        <section id="level-deepseek" class="scroll-mt-24 space-y-6">
+          <div class="border-b border-slate-200 pb-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-brand-600">Level 4 — DeepSeek-V4.1-Flash Deep Dive</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-tealbrand-100 text-tealbrand-800 border border-tealbrand-200">Released Sept 2026</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight mt-1">
+              The 890-Byte Breakthrough: How DeepSeek-V4.1-Flash Slashes Cache by 437×
+            </h2>
+          </div>
+
+          <div class="prose prose-slate max-w-none text-slate-600 leading-relaxed space-y-3">
+            <p>
+              In September 2026, DeepSeek introduced <strong>DeepSeek-V4.1-Flash</strong>, a 552-billion parameter Mixture-of-Experts model designed specifically to run <strong>1-million-token context windows</strong> at production scale without demanding hundreds of GPUs per user stream.
+            </p>
+            <p>
+              While LLaMA-style MHA models require up to <strong>389,120 bytes per token</strong> and DeepSeek-V3 requires <strong>48,068 bytes</strong>, V4.1-Flash compresses the KV cache down to an unprecedented <strong>890 bytes per token</strong>.
+            </p>
+          </div>
+
+          <!-- DeepSeek-V4.1-Flash 4 Core Architectural Pillars -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Pillar 1: Causal Encoder-Decoder (CED) -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-2">
+              <div class="flex items-center space-x-2 text-brand-700 font-bold text-sm">
+                <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs">1</span>
+                <h4>Causal Encoder-Decoder (CED)</h4>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Rather than an all-layer decoder-only architecture, V4.1-Flash partitions computation into a <strong>20-layer Causal Encoder</strong> (8B active parameters) and a <strong>20-layer Decoder</strong> (16B active parameters).
+              </p>
+              <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-700 font-mono">
+                Encoder processes prefill &rarr; produces 1 final global state &rarr; Decoder layers perform Cross-Attention against this shared state once, rather than storing 40 separate KV cache layers.
+              </div>
+            </div>
+
+            <!-- Pillar 2: Compressed Sparse Attention 2 (CSA2) -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-2">
+              <div class="flex items-center space-x-2 text-brand-700 font-bold text-sm">
+                <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs">2</span>
+                <h4>Compressed Sparse Attention 2 (CSA2)</h4>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Replaces dense attention with a 3-mode sparse indexing mechanism across layers:
+              </p>
+              <ul class="text-xs text-slate-600 space-y-1 list-disc pl-4">
+                <li><strong>Full Mode:</strong> Anchors full cache update (Layers 0, 7, 14, 19).</li>
+                <li><strong>Reindex Mode:</strong> Scores top-K sparse candidates from a 16,384 position pool.</li>
+                <li><strong>Reuse Mode:</strong> Directly inherits routing indices from previous layers, bypassing QK matching!</li>
+              </ul>
+            </div>
+
+            <!-- Pillar 3: Native FP4 KV Cache -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-2">
+              <div class="flex items-center space-x-2 text-brand-700 font-bold text-sm">
+                <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs">3</span>
+                <h4>Native FP4 Micro-Scaled Storage</h4>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                KV cache tensors are stored natively in <strong>E2M1 floating point (0.5 bytes per parameter)</strong> with micro-block scaling: an FP8 (E4M3) scale is computed across every 16 channels.
+              </p>
+              <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-700 font-mono">
+                Trained end-to-end with Quantization-Aware Training (QAT) to eliminate precision loss during long needle recall.
+              </div>
+            </div>
+
+            <!-- Pillar 4: SWA Bounded Replay -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-2">
+              <div class="flex items-center space-x-2 text-brand-700 font-bold text-sm">
+                <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs">4</span>
+                <h4>SWA Bounded Replay (No SSD Thrashing)</h4>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Instead of offloading massive historical KV states to slow NVMe SSDs or persistent CPU RAM, V4.1-Flash dynamically recomputes intermediate states over bounded sliding windows ($n_{win} = 4,096$ tokens) during context hops.
+              </p>
+              <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-700 font-mono">
+                Preserves ultra-fast decode response time without I/O blocking over PCIe.
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Interactive CSA2 Layer Mode Visualizer -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Interactive Visualizer: DeepSeek CSA2 Layer Modes</h3>
+                <p class="text-xs text-slate-500">Toggle between the 3 operating modes of Compressed Sparse Attention 2.</p>
+              </div>
+              <div class="mt-2 sm:mt-0 flex space-x-2">
+                <button onclick="setCSA2Mode('full')" id="csa-btn-full" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white transition">
+                  Full Mode (Anchor)
+                </button>
+                <button onclick="setCSA2Mode('reindex')" id="csa-btn-reindex" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                  Reindex Mode
+                </button>
+                <button onclick="setCSA2Mode('reuse')" id="csa-btn-reuse" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                  Reuse Mode (Zero Compute QK)
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div class="md:col-span-7 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div id="csa2-graphic-container" class="h-48 flex items-center justify-center bg-white rounded-lg border border-slate-200">
+                  <!-- Dynamic SVG rendered via JS -->
+                </div>
+              </div>
+
+              <div class="md:col-span-5 space-y-3 text-xs">
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <span class="font-bold text-slate-800 uppercase block" id="csa2-title">Full Mode (Anchor Layers)</span>
+                  <p id="csa2-desc" class="text-slate-600 mt-1 leading-relaxed">
+                    Operates in layers 0, 7, 14, and 19. It performs full projection, computes dense latent representations, and populates the 16,384 candidate index buffer.
+                  </p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
+                  <span class="text-slate-600">Memory Footprint:</span>
+                  <span id="csa2-mem" class="font-mono font-bold text-brand-700">Dense Latent Update</span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
+                  <span class="text-slate-600">Attention FLOPs:</span>
+                  <span id="csa2-flops" class="font-mono font-bold text-slate-800">100% of Layer Standard</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quantitative Evolution Comparison Bar Chart -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h3 class="text-base font-bold text-slate-900 mb-1">Quantitative Evolution: KV Cache Bytes per Token</h3>
+            <p class="text-xs text-slate-500 mb-6">Visualizing the historic 437× compression from DeepSeek-V1 to DeepSeek-V4.1-Flash.</p>
+
+            <div class="space-y-4 text-xs font-medium">
+              <!-- V1 -->
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-slate-700 font-semibold">DeepSeek-V1 (Standard MHA, FP16)</span>
+                  <span class="font-mono font-bold text-slate-900">389,120 Bytes / token</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden border border-slate-200">
+                  <div class="bg-rose-500 h-full rounded-full" style="width: 100%;"></div>
+                </div>
+              </div>
+
+              <!-- V3 -->
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-slate-700 font-semibold">DeepSeek-V3 (MLA Latent Compression, FP8)</span>
+                  <span class="font-mono font-bold text-brand-700">48,068 Bytes / token (8.1× reduction)</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden border border-slate-200">
+                  <div class="bg-brand-500 h-full rounded-full" style="width: 12.3%;"></div>
+                </div>
+              </div>
+
+              <!-- V4 Flash -->
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-slate-700 font-semibold">DeepSeek-V4 Flash (Early CSA1 + FP8)</span>
+                  <span class="font-mono font-bold text-indigo-700">3,514 Bytes / token (110× reduction)</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden border border-slate-200">
+                  <div class="bg-indigo-600 h-full rounded-full" style="width: 2%;"></div>
+                </div>
+              </div>
+
+              <!-- V4.1 Flash -->
+              <div>
+                <div class="flex justify-between mb-1">
+                  <span class="text-slate-900 font-bold">DeepSeek-V4.1-Flash (CED + CSA2 + Native FP4)</span>
+                  <span class="font-mono font-bold text-emerald-600">890 Bytes / token (437× reduction!)</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden border border-slate-200">
+                  <div class="bg-emerald-500 h-full rounded-full" style="width: 0.5%; min-width: 8px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 flex items-center justify-between">
+              <span><strong>Result:</strong> 1 Million tokens in DeepSeek-V4.1-Flash consumes only <strong>0.89 GB of VRAM</strong> per batch stream, compared to <strong>389 GB</strong> on standard MHA!</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- LEVEL 5: Interactive KV Cache Memory & GPU VRAM Calculator -->
+        <section id="calculator" class="scroll-mt-24 space-y-6">
+          <div class="border-b border-slate-200 pb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-brand-600">Level 5 — Engineering Simulation</span>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight mt-1">
+              Interactive KV Cache Memory & GPU VRAM Calculator
+            </h2>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+            <!-- Presets Row -->
+            <div>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Select Architecture Preset</label>
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs font-semibold">
+                <button onclick="loadPreset('llama8b')" id="btn-pre-llama8b" class="preset-btn px-3 py-2 rounded-lg border border-slate-200 hover:border-brand-500 transition text-left">
+                  <div class="font-bold text-slate-800">LLaMA-3 8B</div>
+                  <div class="text-[10px] text-slate-500 font-normal">GQA (8 KV Heads, FP16)</div>
+                </button>
+                <button onclick="loadPreset('llama70b')" id="btn-pre-llama70b" class="preset-btn px-3 py-2 rounded-lg border border-slate-200 hover:border-brand-500 transition text-left">
+                  <div class="font-bold text-slate-800">LLaMA-3 70B</div>
+                  <div class="text-[10px] text-slate-500 font-normal">GQA (8 KV Heads, FP16)</div>
+                </button>
+                <button onclick="loadPreset('gpt4mha')" id="btn-pre-gpt4mha" class="preset-btn px-3 py-2 rounded-lg border border-slate-200 hover:border-brand-500 transition text-left">
+                  <div class="font-bold text-slate-800">Legacy GPT-4 MHA</div>
+                  <div class="text-[10px] text-slate-500 font-normal">MHA (128 Heads, FP16)</div>
+                </button>
+                <button onclick="loadPreset('dsv3')" id="btn-pre-dsv3" class="preset-btn px-3 py-2 rounded-lg border border-slate-200 hover:border-brand-500 transition text-left">
+                  <div class="font-bold text-slate-800">DeepSeek-V3 671B</div>
+                  <div class="text-[10px] text-slate-500 font-normal">MLA (512-dim Latent, FP8)</div>
+                </button>
+                <button onclick="loadPreset('dsv4flash')" id="btn-pre-dsv4flash" class="preset-btn px-3 py-2 rounded-lg border-2 border-brand-600 bg-brand-50/50 transition text-left">
+                  <div class="font-bold text-brand-700">DeepSeek-V4.1-Flash</div>
+                  <div class="text-[10px] text-brand-600 font-normal">CED-CSA2 Native FP4</div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Sliders Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+              <!-- Context Length Slider -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                  <label for="slider-context" class="text-xs font-bold text-slate-700 uppercase tracking-wide">Context Length (Tokens)</label>
+                  <span id="calc-context-display" class="font-mono text-sm font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">128,000</span>
+                </div>
+                <input type="range" id="slider-context" min="1000" max="1000000" step="1000" value="128000" oninput="runCalculator()">
+                <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>1k</span>
+                  <span>128k</span>
+                  <span>512k</span>
+                  <span>1M (1,000,000)</span>
+                </div>
+              </div>
+
+              <!-- Batch Size Slider -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                  <label for="slider-batch" class="text-xs font-bold text-slate-700 uppercase tracking-wide">Batch Size (Concurrent Streams)</label>
+                  <span id="calc-batch-display" class="font-mono text-sm font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">8</span>
+                </div>
+                <input type="range" id="slider-batch" min="1" max="128" step="1" value="8" oninput="runCalculator()">
+                <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span>1 stream</span>
+                  <span>32</span>
+                  <span>64</span>
+                  <span>128 streams</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Output Dashboard Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-100">
+              <!-- Stat 1: Bytes per Token -->
+              <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <span class="text-xs text-slate-500 font-medium block">Cache Footprint / Token</span>
+                <span id="calc-out-bpt" class="text-2xl font-mono font-bold text-slate-900 block mt-1">890 B</span>
+                <span id="calc-out-reduction" class="text-[11px] font-semibold text-emerald-600">437× smaller than MHA</span>
+              </div>
+
+              <!-- Stat 2: Total KV VRAM Required -->
+              <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <span class="text-xs text-slate-500 font-medium block">Total KV Cache VRAM</span>
+                <span id="calc-out-total-vram" class="text-2xl font-mono font-bold text-brand-600 block mt-1">0.87 GB</span>
+                <span class="text-[11px] text-slate-500">Excludes model weights</span>
+              </div>
+
+              <!-- Stat 3: 80GB H100 GPUs strictly for Cache -->
+              <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <span class="text-xs text-slate-500 font-medium block">Dedicated 80GB H100 GPUs</span>
+                <span id="calc-out-h100-count" class="text-2xl font-mono font-bold text-slate-900 block mt-1">1 GPU</span>
+                <span id="calc-out-h100-note" class="text-[11px] text-emerald-600 font-semibold">Fits comfortably on 1 card</span>
+              </div>
+
+              <!-- Stat 4: Memory Bandwidth at 30 tok/s -->
+              <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <span class="text-xs text-slate-500 font-medium block">HBM Bandwidth at 30 tok/s</span>
+                <span id="calc-out-bandwidth" class="text-2xl font-mono font-bold text-slate-900 block mt-1">26.1 GB/s</span>
+                <span class="text-[11px] text-slate-500">H100 Cap: 3,350 GB/s</span>
+              </div>
+            </div>
+
+            <!-- Insight Callout -->
+            <div id="calc-insight-box" class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
+              <!-- Updated dynamically by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Comprehensive Comparison Matrix -->
+        <section id="comparison-matrix" class="scroll-mt-24 space-y-6">
+          <div class="border-b border-slate-200 pb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-brand-600">Technical Synthesis</span>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight mt-1">Architecture Comparison Matrix</h2>
+          </div>
+
+          <div class="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-sm">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Architecture</th>
+                  <th class="p-3.5">KV Heads vs Q</th>
+                  <th class="p-3.5">Compression Type</th>
+                  <th class="p-3.5">Bytes / Token</th>
+                  <th class="p-3.5">1M Context Feasibility</th>
+                  <th class="p-3.5">Expressivity / Retrieval</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr class="hover:bg-slate-50 transition">
+                  <td class="p-3.5 font-bold text-slate-900">MHA (Vaswani 2017)</td>
+                  <td class="p-3.5">1 : 1 (Equal)</td>
+                  <td class="p-3.5">None</td>
+                  <td class="p-3.5 font-mono text-rose-600 font-bold">~389,120 B</td>
+                  <td class="p-3.5 text-rose-600 font-semibold">Impossible (>380 GB/stream)</td>
+                  <td class="p-3.5 text-emerald-600 font-semibold">Optimal (Baseline max)</td>
+                </tr>
+                <tr class="hover:bg-slate-50 transition">
+                  <td class="p-3.5 font-bold text-slate-900">MQA (Shazeer 2019)</td>
+                  <td class="p-3.5">N : 1 (1 shared)</td>
+                  <td class="p-3.5">Head sharing</td>
+                  <td class="p-3.5 font-mono text-slate-700">~12,160 B</td>
+                  <td class="p-3.5 text-amber-600 font-semibold">Challenging (~12 GB/stream)</td>
+                  <td class="p-3.5 text-rose-600 font-semibold">Degraded (Lost nuance)</td>
+                </tr>
+                <tr class="hover:bg-slate-50 transition">
+                  <td class="p-3.5 font-bold text-slate-900">GQA (Ainslie 2023)</td>
+                  <td class="p-3.5">N : G (e.g. 8:1)</td>
+                  <td class="p-3.5">Grouped sharing</td>
+                  <td class="p-3.5 font-mono text-slate-700">~48,640 B</td>
+                  <td class="p-3.5 text-amber-600 font-semibold">Expensive (~48 GB/stream)</td>
+                  <td class="p-3.5 text-emerald-600 font-semibold">Near-MHA quality</td>
+                </tr>
+                <tr class="hover:bg-slate-50 transition">
+                  <td class="p-3.5 font-bold text-slate-900">MLA (DeepSeek-V3)</td>
+                  <td class="p-3.5">Joint Latent</td>
+                  <td class="p-3.5">Low-rank $c_t^{KV}$ + RoPE</td>
+                  <td class="p-3.5 font-mono text-brand-700 font-bold">48,068 B (FP8)</td>
+                  <td class="p-3.5 text-emerald-600 font-semibold">Viable with Multi-GPU</td>
+                  <td class="p-3.5 text-emerald-600 font-semibold">Superb (Absorbed projections)</td>
+                </tr>
+                <tr class="bg-brand-50/40 hover:bg-brand-50/70 transition">
+                  <td class="p-3.5 font-bold text-brand-900 flex items-center space-x-1">
+                    <span>DeepSeek-V4.1-Flash</span>
+                    <span class="text-[9px] bg-brand-200 text-brand-800 px-1 rounded">2026</span>
+                  </td>
+                  <td class="p-3.5">CED + CSA2</td>
+                  <td class="p-3.5">Sparse Reindex + FP4</td>
+                  <td class="p-3.5 font-mono text-emerald-700 font-bold">890 B (Native FP4)</td>
+                  <td class="p-3.5 text-emerald-600 font-bold">Effortless (0.89 GB/stream)</td>
+                  <td class="p-3.5 text-emerald-600 font-semibold">Full 1M Needle Recall</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Misconceptions & Active Learning Checks -->
+        <section class="space-y-6">
+          <div class="border-b border-slate-200 pb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-brand-600">Active Learning</span>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight mt-1">Common Misconceptions: Fact vs. Myth</h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Misconception 1 -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Misconception 1</span>
+              <h4 class="text-sm font-bold text-slate-900">"The KV Cache speeds up the prompt prefill phase."</h4>
+              <button onclick="toggleFaq('faq-1')" class="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center space-x-1">
+                <span id="faq-1-btn-text">Reveal Reality &rarr;</span>
+              </button>
+              <div id="faq-1" class="hidden text-xs text-slate-600 leading-relaxed pt-2 border-t border-slate-100">
+                <strong>False:</strong> During prefill, all prompt tokens are processed simultaneously in parallel. The KV cache is <em>written to</em> during prefill, not read from to speed it up. The speedup only occurs during sequential autoregressive decode!
+              </div>
+            </div>
+
+            <!-- Misconception 2 -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Misconception 2</span>
+              <h4 class="text-sm font-bold text-slate-900">"PagedAttention compresses or quantizes Key-Value data."</h4>
+              <button onclick="toggleFaq('faq-2')" class="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center space-x-1">
+                <span id="faq-2-btn-text">Reveal Reality &rarr;</span>
+              </button>
+              <div id="faq-2" class="hidden text-xs text-slate-600 leading-relaxed pt-2 border-t border-slate-100">
+                <strong>False:</strong> PagedAttention is purely a <em>virtual memory management algorithm</em>. It changes where tensor blocks reside in physical RAM (non-contiguous 16-token pages) but does not alter numbers, compress embeddings, or lose a single bit of precision.
+              </div>
+            </div>
+
+            <!-- Misconception 3 -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Misconception 3</span>
+              <h4 class="text-sm font-bold text-slate-900">"MLA reduces attention accuracy compared to standard MHA."</h4>
+              <button onclick="toggleFaq('faq-3')" class="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center space-x-1">
+                <span id="faq-3-btn-text">Reveal Reality &rarr;</span>
+              </button>
+              <div id="faq-3" class="hidden text-xs text-slate-600 leading-relaxed pt-2 border-t border-slate-100">
+                <strong>False:</strong> Empirical evaluations on DeepSeek-V2 and V3 demonstrate that MLA matches or exceeds MHA with identical head count. Because the up-projection is absorbed into the Query matrix at inference, full head expressivity is preserved while drastically lowering cache bandwidth.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- FINAL QUIZ: Comprehensive 6-Question Mastery Check -->
+        <section id="final-quiz" class="scroll-mt-24 space-y-6">
+          <div class="border-b border-slate-200 pb-3 flex flex-col sm:flex-row sm:items-center justify-between">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-600">Mastery Assessment</span>
+              <h2 class="text-2xl font-bold text-slate-900 tracking-tight mt-1">Comprehensive Concept Quiz</h2>
+            </div>
+            <div class="mt-2 sm:mt-0 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
+              Score: <span id="quiz-final-score" class="text-brand-600 font-bold">0</span> / 6
+            </div>
+          </div>
+
+          <!-- Quiz Container with 6 Questions -->
+          <div class="space-y-4" id="quiz-questions-list">
+            <!-- Question 1 -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <span class="text-xs font-bold text-slate-400 uppercase">Question 1 of 6</span>
+              <p class="text-sm font-semibold text-slate-900">
+                Why is the autoregressive token decode phase strictly memory-bandwidth bound rather than compute-bound?
+              </p>
+              <div class="space-y-2 text-xs">
+                <button onclick="answerQuiz(1, 'a', false)" class="q-opt-1 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  A) The GPU Tensor Cores are disabled during single-token generation.
+                </button>
+                <button onclick="answerQuiz(1, 'b', true)" class="q-opt-1 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  B) Generating one token performs minimal arithmetic while requiring all model weights and KV cache tensors to be streamed across the memory bus.
+                </button>
+                <button onclick="answerQuiz(1, 'c', false)" class="q-opt-1 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  C) PyTorch cannot perform CUDA kernel launches for batch size 1.
+                </button>
+              </div>
+              <div id="quiz-explain-1" class="hidden p-3 rounded-lg text-xs"></div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <span class="text-xs font-bold text-slate-400 uppercase">Question 2 of 6</span>
+              <p class="text-sm font-semibold text-slate-900">
+                If a 32-layer model uses Grouped-Query Attention with 8 KV heads, head dimension 128, and FP16 precision (2 bytes), how many bytes does each token consume in the KV cache?
+              </p>
+              <div class="space-y-2 text-xs">
+                <button onclick="answerQuiz(2, 'a', false)" class="q-opt-2 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  A) 32,768 Bytes
+                </button>
+                <button onclick="answerQuiz(2, 'b', true)" class="q-opt-2 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  B) 131,072 Bytes (128 KB)
+                </button>
+                <button onclick="answerQuiz(2, 'c', false)" class="q-opt-2 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  C) 524,288 Bytes (512 KB)
+                </button>
+              </div>
+              <div id="quiz-explain-2" class="hidden p-3 rounded-lg text-xs"></div>
+            </div>
+
+            <!-- Question 3 -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <span class="text-xs font-bold text-slate-400 uppercase">Question 3 of 6</span>
+              <p class="text-sm font-semibold text-slate-900">
+                What key problem in standard OS memory systems does PagedAttention borrow to eliminate internal memory fragmentation in LLM serving?
+              </p>
+              <div class="space-y-2 text-xs">
+                <button onclick="answerQuiz(3, 'a', true)" class="q-opt-3 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  A) Virtual memory paging with non-contiguous physical block allocation via page tables.
+                </button>
+                <button onclick="answerQuiz(3, 'b', false)" class="q-opt-3 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  B) Disk swap files stored on NVMe solid-state storage.
+                </button>
+                <button onclick="answerQuiz(3, 'c', false)" class="q-opt-3 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  C) Hardware interrupt-driven memory reclamation.
+                </button>
+              </div>
+              <div id="quiz-explain-3" class="hidden p-3 rounded-lg text-xs"></div>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <span class="text-xs font-bold text-slate-400 uppercase">Question 4 of 6</span>
+              <p class="text-sm font-semibold text-slate-900">
+                In DeepSeek's Multi-Head Latent Attention (MLA), why are rotary position embeddings (RoPE) separated out into a decoupled vector ($k_t^R$)?
+              </p>
+              <div class="space-y-2 text-xs">
+                <button onclick="answerQuiz(4, 'a', false)" class="q-opt-4 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  A) Rotary embeddings cannot be calculated on GPUs without float64 precision.
+                </button>
+                <button onclick="answerQuiz(4, 'b', true)" class="q-opt-4 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  B) RoPE is position-sensitive and prevents absorbing the projection matrix $W^{UK}$ into the Query matrix $W^{UQ}$ if applied directly to the latent code.
+                </button>
+                <button onclick="answerQuiz(4, 'c', false)" class="q-opt-4 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  C) Decoupled RoPE eliminates the need for Key-Value caching entirely.
+                </button>
+              </div>
+              <div id="quiz-explain-4" class="hidden p-3 rounded-lg text-xs"></div>
+            </div>
+
+            <!-- Question 5 -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <span class="text-xs font-bold text-slate-400 uppercase">Question 5 of 6</span>
+              <p class="text-sm font-semibold text-slate-900">
+                In DeepSeek-V4.1-Flash's Compressed Sparse Attention 2 (CSA2), what is the unique role of "Reuse Mode" layers?
+              </p>
+              <div class="space-y-2 text-xs">
+                <button onclick="answerQuiz(5, 'a', true)" class="q-opt-5 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  A) They directly inherit the top-K routing index mask from prior layers, completely avoiding Query-Key score calculations.
+                </button>
+                <button onclick="answerQuiz(5, 'b', false)" class="q-opt-5 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  B) They reuse activations from previous user queries to bypass prompt processing.
+                </button>
+                <button onclick="answerQuiz(5, 'c', false)" class="q-opt-5 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  C) They convert FP4 tensors back into FP32 for softmax calculation.
+                </button>
+              </div>
+              <div id="quiz-explain-5" class="hidden p-3 rounded-lg text-xs"></div>
+            </div>
+
+            <!-- Question 6 -->
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+              <span class="text-xs font-bold text-slate-400 uppercase">Question 6 of 6</span>
+              <p class="text-sm font-semibold text-slate-900">
+                How does DeepSeek-V4.1-Flash prevent I/O latency bottlenecks when handling ultra-long contexts without offloading to NVMe SSDs?
+              </p>
+              <div class="space-y-2 text-xs">
+                <button onclick="answerQuiz(6, 'a', false)" class="q-opt-6 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  A) It discards all tokens older than 2,048 positions.
+                </button>
+                <button onclick="answerQuiz(6, 'b', true)" class="q-opt-6 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  B) Sliding Window Attention (SWA) Bounded Replay, dynamically recomputing intermediate context over local windows instead of persistent storage paging.
+                </button>
+                <button onclick="answerQuiz(6, 'c', false)" class="q-opt-6 w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+                  C) By storing all 1M tokens in CPU L3 cache.
+                </button>
+              </div>
+              <div id="quiz-explain-6" class="hidden p-3 rounded-lg text-xs"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- The Mental Model Synthesis Box -->
+        <section id="mental-model" class="scroll-mt-24 space-y-6">
+          <div class="bg-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-md space-y-4">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-500/20 text-brand-300 text-xs font-semibold">
+              <span>🧠 The Mental Model</span>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-bold tracking-tight">The 3-Dimensional Axis of KV Cache Optimization</h3>
+            <p class="text-slate-300 text-sm leading-relaxed">
+              Whenever you evaluate any LLM serving architecture, reconstruct it across these three distinct axes:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 text-xs">
+              <div class="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                <strong class="text-brand-400 block text-sm mb-1">1. Head Axis (Dimension Reduction)</strong>
+                <p class="text-slate-300 leading-relaxed">
+                  Reduce redundant key heads. Move from <strong>MHA (1:1)</strong> &rarr; <strong>GQA (8:1)</strong> &rarr; <strong>MLA (joint low-rank compression)</strong>.
+                </p>
+              </div>
+              <div class="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                <strong class="text-tealbrand-500 block text-sm mb-1">2. Precision Axis (Quantization)</strong>
+                <p class="text-slate-300 leading-relaxed">
+                  Shrink bytes per scalar without degrading needle recall. Move from <strong>FP16 (2B)</strong> &rarr; <strong>FP8 (1B)</strong> &rarr; <strong>Native FP4 (0.5B with micro-scales)</strong>.
+                </p>
+              </div>
+              <div class="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                <strong class="text-emerald-400 block text-sm mb-1">3. Spatial & Temporal Sparsity</strong>
+                <p class="text-slate-300 leading-relaxed">
+                  Avoid allocating or attending to unnecessary positions. Use <strong>PagedAttention</strong> to kill fragmentation and <strong>CSA2</strong> to reuse index masks.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 8 Things to Remember -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+            <h3 class="text-base font-bold text-slate-900">8 Key Takeaways to Remember</h3>
+            <ol class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 list-decimal pl-4">
+              <li><strong>Autoregressive generation is memory-bound:</strong> Generating a single token requires streaming gigabytes of past KV tensors through the GPU memory bus.</li>
+              <li><strong>KV cache formula:</strong> $\text{Bytes} = 2 \times L \times H_{kv} \times D_h \times P_{\text{bytes}}$ per token.</li>
+              <li><strong>GQA is today's default:</strong> Grouping 8 query heads to 1 KV head captures near-MHA accuracy with an $8\times$ cache reduction.</li>
+              <li><strong>PagedAttention fixes waste:</strong> Paging eliminates internal memory fragmentation, boosting batch throughput by $2\times$ to $4\times$.</li>
+              <li><strong>MLA compresses representations:</strong> DeepSeek compresses Key and Value matrices into a joint 512-dim latent space and decouples RoPE.</li>
+              <li><strong>DeepSeek-V4.1-Flash achieves 890 B/token:</strong> A 437× reduction over classic MHA unlocked by Causal Encoder-Decoder (CED) cross-projection.</li>
+              <li><strong>CSA2 operates in 3 layer modes:</strong> Full, Reindex, and Reuse modes drastically reduce sparse attention computation.</li>
+              <li><strong>Native FP4 with micro-scaling:</strong> Halves FP8 memory while QAT preserves needle-in-a-haystack accuracy across 1M tokens.</li>
+            </ol>
+          </div>
+
+          <!-- Glossary of Terms -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-3">
+            <h3 class="text-base font-bold text-slate-900">Technical Glossary</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <strong class="text-slate-800 block">Prefill vs Decode</strong>
+                <span class="text-slate-500">Prefill processes input prompts concurrently (compute-bound). Decode generates tokens one-by-one (memory-bound).</span>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <strong class="text-slate-800 block">Arithmetic Intensity</strong>
+                <span class="text-slate-500">The ratio of floating point operations (FLOPs) to memory bytes transferred from VRAM.</span>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <strong class="text-slate-800 block">RoPE (Rotary Position Embedding)</strong>
+                <span class="text-slate-500">Encodes relative token distances by rotating query and key vectors in complex 2D planes.</span>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <strong class="text-slate-800 block">E2M1 FP4</strong>
+                <span class="text-slate-500">4-bit floating point format with 1 sign bit, 2 exponent bits, and 1 mantissa bit.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sources & Further Reading -->
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-6 text-xs text-slate-500 space-y-2">
+            <h4 class="font-bold text-slate-700 uppercase tracking-wide">Academic Sources & Primary Literature</h4>
+            <ul class="space-y-1 list-disc pl-4 leading-relaxed">
+              <li>Vaswani et al. (2017). <em>Attention Is All You Need</em>. NeurIPS 2017.</li>
+              <li>Shazeer, N. (2019). <em>Fast Transformer Decoding: One Write-Head is All You Need (Multi-Query Attention)</em>. arXiv:1911.02150.</li>
+              <li>Ainslie et al. (2023). <em>GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints</em>. EMNLP 2023.</li>
+              <li>Kwon et al. (2023). <em>Efficient Memory Management for Large Language Model Serving with PagedAttention</em>. SOSP 2023 (vLLM).</li>
+              <li>DeepSeek-AI (2024). <em>DeepSeek-V2 & DeepSeek-V3 Technical Reports: Multi-Head Latent Attention</em>.</li>
+              <li>DeepSeek-AI (Sept 2026). <em>DeepSeek-V4.1-Flash Technical Report: Sub-Kilobyte KV Caching at 1M Scale via CED & CSA2</em>. arXiv:2609.19969.</li>
+            </ul>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Global Application State
+    const state = {
+      progress: 0,
+      quizScore: 0,
+      answeredQuestions: new Set(),
+      currentPhase: 'prefill',
+      currentArchTab: 'mha',
+      allocType: 'contiguous',
+      csaMode: 'full',
+      simToken: 1,
+      calc: {
+        preset: 'dsv4flash',
+        context: 128000,
+        batch: 8,
+        bytesPerToken: 890,
+        name: 'DeepSeek-V4.1-Flash'
+      }
+    };
+
+    // Architecture presets for KV Calculator
+    const PRESETS = {
+      llama8b: {
+        name: 'LLaMA-3 8B (GQA)',
+        layers: 32,
+        kvHeads: 8,
+        headDim: 128,
+        precisionBytes: 2, // FP16
+        bytesPerToken: 2 * 32 * 8 * 128 * 2, // 131,072 B
+        reductionFromMHA: '4× smaller'
+      },
+      llama70b: {
+        name: 'LLaMA-3 70B (GQA)',
+        layers: 80,
+        kvHeads: 8,
+        headDim: 128,
+        precisionBytes: 2, // FP16
+        bytesPerToken: 2 * 80 * 8 * 128 * 2, // 327,680 B
+        reductionFromMHA: '8× smaller'
+      },
+      gpt4mha: {
+        name: 'Legacy GPT-4 Style (MHA)',
+        layers: 120,
+        kvHeads: 96,
+        headDim: 128,
+        precisionBytes: 2, // FP16
+        bytesPerToken: 2 * 120 * 96 * 128 * 2, // 5,898,240 B (MHA extreme)
+        reductionFromMHA: 'Baseline (0% reduction)'
+      },
+      dsv3: {
+        name: 'DeepSeek-V3 671B (MLA)',
+        layers: 61,
+        kvHeads: 1, // MLA joint latent
+        headDim: 576, // 512 latent + 64 decoupled RoPE
+        precisionBytes: 1, // FP8
+        bytesPerToken: 48068,
+        reductionFromMHA: '8.1× smaller'
+      },
+      dsv4flash: {
+        name: 'DeepSeek-V4.1-Flash (CED+CSA2)',
+        layers: 20, // 20-layer decoder cross-attention
+        kvHeads: 1,
+        headDim: 890, // Profiled hardware bytes per token
+        precisionBytes: 0.5, // FP4
+        bytesPerToken: 890,
+        reductionFromMHA: '437× smaller!'
+      }
+    };
+
+    function setPhaseMode(mode) {
+      state.currentPhase = mode;
+      const btnPrefill = document.getElementById('btn-mode-prefill');
+      const btnDecode = document.getElementById('btn-mode-decode');
+      const area = document.getElementById('phase-animation-area');
+      const title = document.getElementById('phase-diagram-title');
+      const leftStat = document.getElementById('phase-status-left');
+      const rightStat = document.getElementById('phase-status-right');
+      const bottleneck = document.getElementById('phase-bottleneck');
+      const explanation = document.getElementById('phase-explanation');
+      const intensity = document.getElementById('phase-intensity');
+
+      if (mode === 'prefill') {
+        btnPrefill.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white shadow-sm transition';
+        btnDecode.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        title.innerText = 'Phase: Prompt Prefill (Parallel Token Processing)';
+        leftStat.innerText = 'Batch parallel matrix multiplication';
+        rightStat.innerText = 'Arithmetic Intensity: High (~150 FLOPs/Byte)';
+        bottleneck.innerText = 'Compute-Bound (Tensor Cores / FLOPs)';
+        explanation.innerText = 'All prompt tokens are processed simultaneously in parallel. The GPU computes huge matrix-matrix (GEMM) multiplications, keeping all Tensor Cores at maximum saturation.';
+        intensity.innerText = 'FLOPs / Byte Transferred: ~100-150';
+
+        // Render Prefill SVG
+        area.innerHTML = `
+          <svg class="w-full h-full p-2" viewBox="0 0 400 130">
+            <!-- Parallel inputs -->
+            <g fill="#4f46e5">
+              <rect x="20" y="20" width="30" height="20" rx="4"/><text x="35" y="34" fill="white" font-size="9" text-anchor="middle">T1</text>
+              <rect x="55" y="20" width="30" height="20" rx="4"/><text x="70" y="34" fill="white" font-size="9" text-anchor="middle">T2</text>
+              <rect x="90" y="20" width="30" height="20" rx="4"/><text x="105" y="34" fill="white" font-size="9" text-anchor="middle">T3</text>
+              <text x="135" y="34" fill="#94a3b8" font-size="12">···</text>
+              <rect x="150" y="20" width="35" height="20" rx="4"/><text x="167" y="34" fill="white" font-size="9" text-anchor="middle">T1024</text>
+            </g>
+            <!-- Heavy compute block -->
+            <rect x="20" y="65" width="165" height="40" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+            <text x="102" y="85" fill="#312e81" font-size="10" font-weight="bold" text-anchor="middle">Tensor Core GEMM</text>
+            <text x="102" y="97" fill="#4338ca" font-size="8" text-anchor="middle">All Keys & Values created in 1 pass</text>
+
+            <!-- Memory write -->
+            <path d="M 195 85 L 260 85" stroke="#0d9488" stroke-width="2" marker-end="url(#arrow)" />
+            <rect x="270" y="55" width="110" height="55" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+            <text x="325" y="77" fill="#0f766e" font-size="10" font-weight="bold" text-anchor="middle">KV Cache Written</text>
+            <text x="325" y="93" fill="#115e59" font-size="8" text-anchor="middle">Saved to HBM for decode</text>
+          </svg>
+        `;
+      } else {
+        btnPrefill.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        btnDecode.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white shadow-sm transition';
+        title.innerText = 'Phase: Autoregressive Decode (Sequential Token Generation)';
+        leftStat.innerText = 'Memory-vector GEMV multiplication';
+        rightStat.innerText = 'Arithmetic Intensity: Low (~1 FLOP/Byte)';
+        bottleneck.innerText = 'Memory Bandwidth-Bound (HBM Transfer Speed)';
+        explanation.innerText = 'Only 1 new token is produced per step. The GPU must read the entire model weight matrix and all cached historical Keys & Values across the memory bus just to compute one word.';
+        intensity.innerText = 'FLOPs / Byte Transferred: ~1.2 (Severe Bottleneck!)';
+
+        // Render Decode SVG
+        area.innerHTML = `
+          <svg class="w-full h-full p-2" viewBox="0 0 400 130">
+            <!-- 1 query token -->
+            <rect x="20" y="50" width="55" height="30" rx="6" fill="#6366f1"/>
+            <text x="47" y="65" fill="white" font-size="9" font-weight="bold" text-anchor="middle">Token tn+1</text>
+            <text x="47" y="75" fill="#e0e7ff" font-size="7" text-anchor="middle">1 Query</text>
+
+            <!-- Memory read from HBM -->
+            <path d="M 80 65 L 140 65" stroke="#e11d48" stroke-width="2" stroke-dasharray="4,2" />
+            <text x="110" y="55" fill="#e11d48" font-size="8" font-weight="bold" text-anchor="middle">Stream KV</text>
+
+            <!-- HBM Cache block -->
+            <rect x="145" y="25" width="120" height="80" rx="8" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.5"/>
+            <text x="205" y="45" fill="#9f1239" font-size="9" font-weight="bold" text-anchor="middle">Existing KV Cache</text>
+            <text x="205" y="60" fill="#be123c" font-size="8" text-anchor="middle">Size: Tokens 1 to n</text>
+            <text x="205" y="75" fill="#be123c" font-size="8" text-anchor="middle">Loaded every single step!</text>
+            <text x="205" y="90" fill="#e11d48" font-size="8" font-weight="bold" text-anchor="middle">&rarr; Memory Bus Saturated</text>
+
+            <!-- 1 New Token Out -->
+            <path d="M 270 65 L 320 65" stroke="#059669" stroke-width="2" />
+            <rect x="325" y="50" width="65" height="30" rx="6" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+            <text x="357" y="68" fill="#047857" font-size="9" font-weight="bold" text-anchor="middle">+1 Token</text>
+          </svg>
+        `;
+      }
+    }
+
+    function checkPrediction(num, choice) {
+      const feedback = document.getElementById(`pred${num}-feedback`);
+      const btnA = document.getElementById(`pred${num}-a`);
+      const btnB = document.getElementById(`pred${num}-b`);
+      const btnC = document.getElementById(`pred${num}-c`);
+
+      feedback.classList.remove('hidden');
+      if (num === 1) {
+        btnA.className = 'pred-btn text-xs text-left p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-400';
+        btnB.className = 'pred-btn text-xs text-left p-2.5 rounded-lg bg-emerald-50 border border-emerald-400 text-emerald-900 font-bold';
+        btnC.className = 'pred-btn text-xs text-left p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-400';
+
+        if (choice === 'b') {
+          feedback.className = 'mt-3 text-xs p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 leading-relaxed';
+          feedback.innerHTML = '<strong>Correct!</strong> For a single token, arithmetic calculations take less than 1% of the cycle. Over 99% of elapsed time is waiting for the memory bus to fetch the model weights and the existing KV cache from HBM into on-chip SRAM.';
+        } else {
+          feedback.className = 'mt-3 text-xs p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 leading-relaxed';
+          feedback.innerHTML = '<strong>Not quite:</strong> Choice B is correct. Computing softmax or GEMV takes negligible time compared to the physical delay of streaming gigabytes of past keys and values across the memory bus.';
+        }
+      }
+    }
+
+    function toggleFaq(id) {
+      const el = document.getElementById(id);
+      const btn = document.getElementById(`${id}-btn-text`);
+      if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        btn.innerHTML = 'Hide Reality &uarr;';
+      } else {
+        el.classList.add('hidden');
+        btn.innerHTML = 'Reveal Reality &rarr;';
+      }
+    }
+
+    function stepSimToken(amount) {
+      state.simToken += amount;
+      updateSimDisplay();
+    }
+
+    function resetSimToken() {
+      state.simToken = 1;
+      updateSimDisplay();
+    }
+
+    function updateSimDisplay() {
+      const countEl = document.getElementById('sim-token-count');
+      const shapeEl = document.getElementById('sim-tensor-shape');
+      const memEl = document.getElementById('sim-memory-val');
+      const barFill = document.getElementById('sim-memory-fill');
+      const barPct = document.getElementById('sim-bar-pct');
+
+      countEl.innerText = state.simToken.toLocaleString();
+      shapeEl.innerText = `[B=1, Heads=32, Len=${state.simToken}, Dim=128]`;
+
+      // 32 layers * 32 heads * 128 dim * 2 bytes (FP16) * 2 (K+V) = 524,288 bytes per token
+      const totalBytes = state.simToken * 524288;
+      const mb = totalBytes / (1024 * 1024);
+
+      if (mb < 1024) {
+        memEl.innerText = `${mb.toFixed(2)} MB`;
+      } else {
+        memEl.innerText = `${(mb / 1024).toFixed(2)} GB`;
+      }
+
+      // H100 80GB = 81,920 MB
+      const pct = Math.min(100, Math.max(1, (mb / 81920) * 100));
+      barFill.style.width = `${pct}%`;
+      barPct.innerText = `${pct.toFixed(2)}% of 80GB H100 VRAM`;
+    }
+
+    function showArchTab(arch) {
+      state.currentArchTab = arch;
+      const tabs = ['mha', 'mqa', 'gqa', 'mla'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const pane = document.getElementById(`arch-pane-${t}`);
+        if (t === arch) {
+          btn.className = 'arch-tab-btn px-4 py-3 border-b-2 border-brand-600 text-brand-700 bg-white whitespace-nowrap font-bold';
+          pane.classList.remove('hidden');
+        } else {
+          btn.className = 'arch-tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap';
+          pane.classList.add('hidden');
+        }
+      });
+    }
+
+    function toggleAllocationType(type) {
+      state.allocType = type;
+      const btnC = document.getElementById('btn-alloc-contig');
+      const btnP = document.getElementById('btn-alloc-paged');
+      const label = document.getElementById('alloc-type-label');
+      const wasteStat = document.getElementById('alloc-waste-stat');
+      const grid = document.getElementById('memory-block-grid');
+
+      if (type === 'contiguous') {
+        btnC.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white transition';
+        btnP.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        label.innerText = 'Pre-allocated Contiguous Slots (Max Context 16 blocks reserved per request)';
+        wasteStat.innerText = 'Memory Waste: 62.5% (Internal Fragmentation)';
+        wasteStat.className = 'font-mono font-bold text-rose-600';
+
+        // 4 requests, each pre-allocated 16 slots (total 64)
+        // Req 1 used 6, Req 2 used 12, Req 3 used 2, Req 4 used 4
+        let html = '';
+        const requests = [
+          { used: 6, total: 16 },
+          { used: 12, total: 16 },
+          { used: 2, total: 16 },
+          { used: 4, total: 16 }
+        ];
+
+        requests.forEach((r, reqIdx) => {
+          for (let i = 0; i < r.total; i++) {
+            if (i < r.used) {
+              html += `<div class="h-6 rounded bg-emerald-500 flex items-center justify-center text-[9px] font-bold text-white" title="Request ${reqIdx+1}: Active Token ${i+1}">R${reqIdx+1}</div>`;
+            } else {
+              html += `<div class="h-6 rounded bg-rose-200 border border-dashed border-rose-300 flex items-center justify-center text-[8px] text-rose-700" title="Request ${reqIdx+1}: Reserved but unused">Idle</div>`;
+            }
+          }
+        });
+        grid.innerHTML = html;
+      } else {
+        btnC.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        btnP.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white transition';
+        label.innerText = 'PagedAttention Virtual Block Allocation (Dynamic pages of 16 tokens)';
+        wasteStat.innerText = 'Memory Waste: < 4% (Only last partial page)';
+        wasteStat.className = 'font-mono font-bold text-emerald-600';
+
+        // Used blocks: 6 + 12 + 2 + 4 = 24 blocks. Rest are completely free!
+        let html = '';
+        let totalUsed = 24;
+        for (let i = 0; i < 64; i++) {
+          if (i < totalUsed) {
+            html += `<div class="h-6 rounded bg-emerald-500 flex items-center justify-center text-[9px] font-bold text-white" title="Allocated Page Block ${i+1}">P${i+1}</div>`;
+          } else {
+            html += `<div class="h-6 rounded bg-white border border-slate-300 flex items-center justify-center text-[8px] text-slate-400" title="Free physical memory page">Free</div>`;
+          }
+        }
+        grid.innerHTML = html;
+      }
+    }
+
+    function setCSA2Mode(mode) {
+      state.csaMode = mode;
+      const btnFull = document.getElementById('csa-btn-full');
+      const btnReindex = document.getElementById('csa-btn-reindex');
+      const btnReuse = document.getElementById('csa-btn-reuse');
+      const container = document.getElementById('csa2-graphic-container');
+      const title = document.getElementById('csa2-title');
+      const desc = document.getElementById('csa2-desc');
+      const mem = document.getElementById('csa2-mem');
+      const flops = document.getElementById('csa2-flops');
+
+      // Reset button styles
+      [btnFull, btnReindex, btnReuse].forEach(b => b.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition');
+
+      if (mode === 'full') {
+        btnFull.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white transition';
+        title.innerText = 'Full Mode (Anchor Layers: 0, 7, 14, 19)';
+        desc.innerText = 'Performs dense projection and establishes the global attention representations. It recalculates the 16,384 candidate index buffer used by downstream sparse layers.';
+        mem.innerText = 'Dense Latent Update (FP4)';
+        flops.innerText = '100% of Layer Standard';
+
+        container.innerHTML = `
+          <svg class="w-full h-full p-2" viewBox="0 0 380 140">
+            <rect x="20" y="20" width="70" height="30" rx="4" fill="#4f46e5" /><text x="55" y="38" fill="white" font-size="9" font-weight="bold" text-anchor="middle">Input Token</text>
+            <path d="M 95 35 L 140 35" stroke="#6366f1" stroke-width="2" />
+            <rect x="145" y="15" width="100" height="40" rx="6" fill="#e0e7ff" stroke="#6366f1" />
+            <text x="195" y="33" fill="#312e81" font-size="9" font-weight="bold" text-anchor="middle">Dense Projection</text>
+            <text x="195" y="45" fill="#4338ca" font-size="8" text-anchor="middle">Full Q, K, V & Index</text>
+            <path d="M 250 35 L 295 35" stroke="#0d9488" stroke-width="2" />
+            <rect x="300" y="15" width="65" height="40" rx="6" fill="#f0fdfa" stroke="#0d9488" />
+            <text x="332" y="33" fill="#0f766e" font-size="8" font-weight="bold" text-anchor="middle">16k Pool</text>
+            <text x="332" y="45" fill="#115e59" font-size="7" text-anchor="middle">Updated</text>
+          </svg>
+        `;
+      } else if (mode === 'reindex') {
+        btnReindex.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white transition';
+        title.innerText = 'Reindex Mode (Routing Selection Layers)';
+        desc.innerText = 'Uses lightweight low-dimensional index scoring against the candidate pool to select the active top-K positions. Does not recompute dense attention across the full context.';
+        mem.innerText = 'Reads Sparse Top-K Tokens';
+        flops.innerText = '~18% of Full Attention';
+
+        container.innerHTML = `
+          <svg class="w-full h-full p-2" viewBox="0 0 380 140">
+            <rect x="20" y="20" width="80" height="30" rx="4" fill="#0d9488" /><text x="60" y="38" fill="white" font-size="8" font-weight="bold" text-anchor="middle">Index Query (q_idx)</text>
+            <path d="M 105 35 L 145 35" stroke="#0d9488" stroke-width="2" />
+            <rect x="150" y="15" width="110" height="45" rx="6" fill="#ccfbf1" stroke="#0d9488" />
+            <text x="205" y="33" fill="#0f766e" font-size="9" font-weight="bold" text-anchor="middle">Top-K Scorer</text>
+            <text x="205" y="45" fill="#115e59" font-size="8" text-anchor="middle">Selects Top 256 of 16k</text>
+            <path d="M 265 35 L 305 35" stroke="#6366f1" stroke-width="2" />
+            <rect x="310" y="20" width="55" height="35" rx="4" fill="#eef2ff" stroke="#6366f1" />
+            <text x="337" y="36" fill="#4338ca" font-size="8" font-weight="bold" text-anchor="middle">Routing</text>
+            <text x="337" y="47" fill="#4338ca" font-size="7" text-anchor="middle">Mask Created</text>
+          </svg>
+        `;
+      } else {
+        btnReuse.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white transition';
+        title.innerText = 'Reuse Mode (Zero Query-Key Compute Layers)';
+        desc.innerText = 'Completely bypasses Query-Key score generation. It takes the index routing tensor from the preceding Reindex layer and immediately fetches only those Values. Massive FLOPs reduction.';
+        mem.innerText = 'Direct Value Gather Only';
+        flops.innerText = '~4% of Full Attention (Zero QK FLOPs!)';
+
+        container.innerHTML = `
+          <svg class="w-full h-full p-2" viewBox="0 0 380 140">
+            <rect x="20" y="20" width="100" height="35" rx="6" fill="#f8fafc" stroke="#94a3b8" />
+            <text x="70" y="38" fill="#475569" font-size="8" font-weight="bold" text-anchor="middle">Inherited Index Mask</text>
+            <path d="M 125 38 L 175 38" stroke="#059669" stroke-width="2" />
+            <rect x="180" y="20" width="120" height="40" rx="6" fill="#ecfdf5" stroke="#059669" stroke-width="1.5" />
+            <text x="240" y="38" fill="#047857" font-size="9" font-weight="bold" text-anchor="middle">Instant Value Gather</text>
+            <text x="240" y="50" fill="#065f46" font-size="8" text-anchor="middle">QK Multiplications: 0</text>
+            <path d="M 305 38 L 345 38" stroke="#059669" stroke-width="2" />
+            <circle cx="355" cy="38" r="8" fill="#059669" /><text x="355" y="41" fill="white" font-size="8" text-anchor="middle">✓</text>
+          </svg>
+        `;
+      }
+    }
+
+    function loadPreset(key) {
+      const p = PRESETS[key];
+      if (!p) return;
+      state.calc.preset = key;
+      state.calc.name = p.name;
+      state.calc.bytesPerToken = p.bytesPerToken;
+
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.className = 'preset-btn px-3 py-2 rounded-lg border border-slate-200 hover:border-brand-500 transition text-left';
+      });
+      document.getElementById(`btn-pre-${key}`).className = 'preset-btn px-3 py-2 rounded-lg border-2 border-brand-600 bg-brand-50/50 transition text-left';
+
+      runCalculator();
+    }
+
+    function runCalculator() {
+      const contextSlider = document.getElementById('slider-context');
+      const batchSlider = document.getElementById('slider-batch');
+      const contextVal = parseInt(contextSlider.value);
+      const batchVal = parseInt(batchSlider.value);
+
+      state.calc.context = contextVal;
+      state.calc.batch = batchVal;
+
+      // Update slider readout
+      document.getElementById('calc-context-display').innerText = contextVal.toLocaleString();
+      document.getElementById('calc-batch-display').innerText = batchVal.toString();
+
+      const bpt = state.calc.bytesPerToken;
+      document.getElementById('calc-out-bpt').innerText = bpt >= 1024 ? `${(bpt / 1024).toFixed(1)} KB` : `${bpt} B`;
+
+      // Total Memory = Batch * Context * BytesPerToken
+      const totalBytes = batchVal * contextVal * bpt;
+      const totalGB = totalBytes / (1024 * 1024 * 1024);
+      const totalTB = totalGB / 1024;
+
+      const vramDisplay = totalGB >= 1024 ? `${totalTB.toFixed(2)} TB` : `${totalGB.toFixed(2)} GB`;
+      document.getElementById('calc-out-total-vram').innerText = vramDisplay;
+
+      // Dedicated 80GB H100 GPUs (assuming 70GB usable for KV cache after OS/runtime)
+      const h100Count = Math.max(1, Math.ceil(totalGB / 70));
+      document.getElementById('calc-out-h100-count').innerText = `${h100Count.toLocaleString()} ${h100Count === 1 ? 'GPU' : 'GPUs'}`;
+
+      const h100Note = document.getElementById('calc-out-h100-note');
+      if (h100Count === 1) {
+        h100Note.innerText = 'Fits comfortably on 1 card';
+        h100Note.className = 'text-[11px] text-emerald-600 font-semibold';
+      } else if (h100Count <= 8) {
+        h100Note.innerText = 'Requires single 8x H100 node';
+        h100Note.className = 'text-[11px] text-amber-600 font-semibold';
+      } else {
+        h100Note.innerText = `Requires ${Math.ceil(h100Count / 8)} full 8-GPU nodes!`;
+        h100Note.className = 'text-[11px] text-rose-600 font-semibold';
+      }
+
+      // Memory Bandwidth at 30 tokens/sec
+      // Decode: Every token generation step must read the accumulated cache
+      // Bandwidth = totalBytes * 30 / 1e9 (GB/s)
+      const bwGBs = (totalBytes * 30) / (1024 * 1024 * 1024);
+      document.getElementById('calc-out-bandwidth').innerText = bwGBs >= 1000 ? `${(bwGBs / 1000).toFixed(2)} TB/s` : `${bwGBs.toFixed(1)} GB/s`;
+
+      // Relative reduction display
+      const currentPreset = PRESETS[state.calc.preset];
+      document.getElementById('calc-out-reduction').innerText = currentPreset.reductionFromMHA;
+
+      // Insight commentary
+      const insight = document.getElementById('calc-insight-box');
+      if (state.calc.preset === 'dsv4flash') {
+        insight.innerHTML = `<strong>Architectural Takeaway:</strong> With DeepSeek-V4.1-Flash at ${contextVal.toLocaleString()} context and batch size ${batchVal}, total KV cache memory is just <strong>${vramDisplay}</strong>. Compare this to standard MHA which would require <strong>${((totalBytes * 437) / 1e9).toFixed(0)} GB (${Math.ceil((totalGB * 437) / 70)} GPUs)</strong>!`;
+      } else if (state.calc.preset === 'gpt4mha') {
+        insight.innerHTML = `<strong>Warning:</strong> Classic Multi-Head Attention at scale hits an immediate memory wall. Storing full 96-head FP16 caches across ${contextVal.toLocaleString()} tokens requires an impossible <strong>${vramDisplay}</strong> just for activations.`;
+      } else {
+        insight.innerHTML = `<strong>Observation:</strong> Grouped-Query Attention cuts cache by 8× over MHA, but at ${contextVal.toLocaleString()} context length, ${batchVal} concurrent users still consume <strong>${vramDisplay}</strong>. This demonstrates why sub-kilobyte architectures like CED and MLA are required for million-token workloads.`;
+      }
+
+      // Automatically tick calculator milestone
+      if (contextVal >= 500000) {
+        document.getElementById('m5-check').checked = true;
+        updateMilestones();
+      }
+    }
+
+    function answerQuiz(qNum, choice, isCorrect) {
+      const options = document.querySelectorAll(`.q-opt-${qNum}`);
+      const explain = document.getElementById(`quiz-explain-${qNum}`);
+
+      options.forEach(opt => {
+        opt.disabled = true;
+        opt.classList.remove('hover:bg-slate-50');
+      });
+
+      explain.classList.remove('hidden');
+
+      if (isCorrect) {
+        explain.className = 'p-3 rounded-lg text-xs bg-emerald-50 border border-emerald-200 text-emerald-900';
+        explain.innerHTML = `<strong>Correct!</strong> ${getQuizExplanation(qNum)}`;
+        if (!state.answeredQuestions.has(qNum)) {
+          state.quizScore++;
+          state.answeredQuestions.add(qNum);
+        }
+      } else {
+        explain.className = 'p-3 rounded-lg text-xs bg-rose-50 border border-rose-200 text-rose-900';
+        explain.innerHTML = `<strong>Incorrect.</strong> ${getQuizExplanation(qNum)}`;
+      }
+
+      document.getElementById('quiz-final-score').innerText = state.quizScore;
+      document.getElementById('quiz-badge-score').innerText = `${state.quizScore} / 6`;
+      updateProgress();
+    }
+
+    function getQuizExplanation(qNum) {
+      switch(qNum) {
+        case 1:
+          return "Autoregressive decode computes only one token per forward pass. Because arithmetic operations per step are tiny while all model weights and KV cache tensors must be streamed across the GPU memory bus, hardware execution is entirely memory-bandwidth bound.";
+        case 2:
+          return "Formula: 2 * L * H_kv * D_h * P_bytes = 2 * 32 * 8 * 128 * 2 = 131,072 Bytes = 128 KB per token.";
+        case 3:
+          return "PagedAttention mimics OS virtual memory by partitioning continuous token sequences into non-contiguous 16-token physical blocks managed by a page table, eliminating up to 80% wasted VRAM.";
+        case 4:
+          return "RoPE rotates coordinate pairs based on absolute position. If applied before matrix compression, the query up-projection matrix cannot be absorbed into the key projection matrix, destroying the low-rank cache compression benefit.";
+        case 5:
+          return "In CSA2 Reuse Mode, layers completely skip calculating query-key inner products and simply inherit the candidate routing index mask from the preceding Reindex layer, cutting computational FLOPs.";
+        case 6:
+          return "Sliding Window Attention (SWA) Bounded Replay dynamically recomputes intermediate activation states over sliding windows when hopping across distant context, completely avoiding high-latency NVMe SSD reads.";
+      }
+    }
+
+    function updateMilestones() {
+      const checks = [
+        document.getElementById('m1-check').checked,
+        document.getElementById('m2-check').checked,
+        document.getElementById('m3-check').checked,
+        document.getElementById('m4-check').checked,
+        document.getElementById('m5-check').checked
+      ];
+      const doneCount = checks.filter(Boolean).length;
+      document.getElementById('milestone-count').innerText = `${doneCount}/5 Done`;
+      updateProgress();
+    }
+
+    function updateProgress() {
+      // Calculate progress based on scroll, quiz answers, and milestones
+      const scrollY = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPct = docHeight > 0 ? (scrollY / docHeight) * 100 : 0;
+
+      // Linear progress bar at very top
+      document.getElementById('scroll-progress').style.width = `${scrollPct}%`;
+
+      // Overall composite score
+      const quizWeight = (state.answeredQuestions.size / 6) * 40; // 40%
+      const scrollWeight = (scrollPct) * 0.6; // 60%
+      const totalProg = Math.min(100, Math.round(quizWeight + scrollWeight));
+
+      document.getElementById('progress-percent').innerText = `${totalProg}%`;
+      document.getElementById('progress-bar-fill').style.width = `${totalProg}%`;
+
+      // Update current section indicator badge
+      const sections = [
+        { id: 'level-1', name: 'Level 1: Big Picture' },
+        { id: 'level-2', name: 'Level 2: KV Anatomy' },
+        { id: 'level-3', name: 'Level 3: Evolution' },
+        { id: 'level-paged', name: 'Level 3+: PagedAttention' },
+        { id: 'level-deepseek', name: 'Level 4: DeepSeek-V4.1' },
+        { id: 'calculator', name: 'Level 5: VRAM Calculator' },
+        { id: 'comparison-matrix', name: 'Comparison Matrix' },
+        { id: 'final-quiz', name: 'Level 6: Mastery Quiz' },
+        { id: 'mental-model', name: 'The Mental Model' }
+      ];
+
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sections[i].id);
+        if (el && el.getBoundingClientRect().top <= 160) {
+          document.getElementById('current-section-badge').innerText = sections[i].name;
+
+          // Highlight sidebar link
+          document.querySelectorAll('.sidebar-link').forEach(link => {
+            if (link.getAttribute('data-sec') === sections[i].id) {
+              link.className = 'sidebar-link flex items-center justify-between px-3 py-2 rounded-lg bg-brand-50 text-brand-700 font-bold transition';
+            } else {
+              link.className = 'sidebar-link flex items-center justify-between px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition';
+            }
+          });
+          break;
+        }
+      }
+    }
+
+    window.onload = function() {
+      // Initialize sub-components
+      setPhaseMode('prefill');
+      updateSimDisplay();
+      toggleAllocationType('contiguous');
+      setCSA2Mode('full');
+      loadPreset('dsv4flash');
+
+      // Scroll listener for progress tracking
+      window.addEventListener('scroll', updateProgress);
+      updateProgress();
+    };
+  </script>
+</body>
+</html>

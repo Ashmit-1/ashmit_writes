@@ -1,0 +1,2754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Computer Networks · Interactive Revision Module</title>
+  <style>
+    /* ---------- RESET & BASE ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f9fafb;
+      --surface: #ffffff;
+      --text: #1e293b;
+      --text-secondary: #475569;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --accent-dark: #1d4ed8;
+      --green: #16a34a;
+      --green-light: #dcfce7;
+      --red: #dc2626;
+      --red-light: #fee2e2;
+      --amber: #d97706;
+      --amber-light: #fef3c7;
+      --purple: #7c3aed;
+      --purple-light: #ede9fe;
+      --radius: 10px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow: 0 4px 12px rgba(0,0,0,0.07);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* ---------- LAYOUT ---------- */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ---------- PROGRESS BAR ---------- */
+    .progress-tracker {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .progress-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .progress-stages {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .stage-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--bg);
+      color: var(--text-light);
+      border: 1px solid var(--border);
+      transition: all 0.25s;
+      cursor: default;
+      white-space: nowrap;
+    }
+
+    .stage-pill.active {
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      border-color: var(--accent);
+    }
+
+    .stage-pill.done {
+      background: var(--green-light);
+      color: var(--green);
+      border-color: var(--green);
+    }
+
+    .progress-meta {
+      display: flex;
+      gap: 14px;
+      font-size: 0.78rem;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+
+    .progress-meta strong {
+      color: var(--text);
+    }
+
+    /* ---------- TYPOGRAPHY ---------- */
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--accent-light);
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-top: 28px;
+      margin-bottom: 10px;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 20px;
+      margin-bottom: 6px;
+    }
+
+    p {
+      margin-bottom: 12px;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    a:hover {
+      color: var(--accent-dark);
+    }
+
+    /* ---------- HERO / INTRO ---------- */
+    .hero {
+      padding: 48px 0 32px;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      background: var(--accent-light);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin-bottom: 20px;
+    }
+
+    .objective-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 8px;
+    }
+
+    .objective-box h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      color: var(--accent-dark);
+    }
+
+    .objective-box ul {
+      margin-left: 20px;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .objective-box li {
+      margin-bottom: 4px;
+    }
+
+    /* ---------- CARDS ---------- */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-accent {
+      border-left: 4px solid var(--accent);
+    }
+
+    .card-green {
+      border-left: 4px solid var(--green);
+    }
+
+    .card-amber {
+      border-left: 4px solid var(--amber);
+    }
+
+    .card-red {
+      border-left: 4px solid var(--red);
+    }
+
+    .card-purple {
+      border-left: 4px solid var(--purple);
+    }
+
+    /* ---------- EXPAND/COLLAPSE ---------- */
+    .expandable {
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .expandable-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: var(--surface);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: none;
+      width: 100%;
+      text-align: left;
+      color: var(--text);
+      transition: background 0.2s;
+    }
+
+    .expandable-header:hover {
+      background: #f8fafc;
+    }
+
+    .expandable-header:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+
+    .expandable-header .chevron {
+      font-size: 0.8rem;
+      transition: transform 0.25s;
+      color: var(--text-light);
+    }
+
+    .expandable-header[aria-expanded="true"] .chevron {
+      transform: rotate(180deg);
+    }
+
+    .expandable-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+
+    .expandable-body-inner {
+      padding: 4px 18px 16px;
+      font-size: 0.93rem;
+      color: var(--text-secondary);
+    }
+
+    .expandable.open .expandable-body {
+      max-height: 2000px;
+    }
+
+    /* ---------- TABS ---------- */
+    .tabs {
+      margin-bottom: 20px;
+    }
+
+    .tab-list {
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-btn {
+      padding: 10px 16px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+    }
+
+    .tab-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .tab-btn[aria-selected="true"] {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* ---------- QUIZ ---------- */
+    .quiz-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .quiz-question {
+      font-weight: 600;
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .quiz-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      background: var(--surface);
+    }
+
+    .quiz-option:hover {
+      border-color: var(--accent);
+      background: #f8faff;
+    }
+
+    .quiz-option:focus-within {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .quiz-option input[type="radio"] {
+      margin-top: 4px;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .quiz-option.correct {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
+
+    .quiz-option.incorrect {
+      border-color: var(--red);
+      background: var(--red-light);
+    }
+
+    .quiz-option.disabled {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .quiz-feedback {
+      font-size: 0.88rem;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 8px;
+      display: none;
+      line-height: 1.6;
+    }
+
+    .quiz-feedback.show {
+      display: block;
+    }
+
+    .quiz-feedback.correct {
+      background: var(--green-light);
+      border: 1px solid var(--green);
+      color: #14532d;
+    }
+
+    .quiz-feedback.incorrect {
+      background: var(--red-light);
+      border: 1px solid var(--red);
+      color: #7f1d1d;
+    }
+
+    .quiz-btn {
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quiz-btn:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+
+    .quiz-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .quiz-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .quiz-btn-outline {
+      background: var(--surface);
+      color: var(--accent);
+    }
+
+    .quiz-btn-outline:hover {
+      background: var(--accent-light);
+    }
+
+    /* ---------- TRUE/FALSE ---------- */
+    .tf-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tf-btn {
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 8px 24px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tf-btn:hover {
+      border-color: var(--accent);
+      background: #f8faff;
+    }
+
+    .tf-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .tf-btn.correct {
+      border-color: var(--green);
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .tf-btn.incorrect {
+      border-color: var(--red);
+      background: var(--red-light);
+      color: var(--red);
+    }
+
+    /* ---------- MATCHING ---------- */
+    .match-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .match-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .match-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .match-item {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.88rem;
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      font-family: inherit;
+      color: var(--text);
+    }
+
+    .match-item:hover {
+      border-color: var(--accent);
+    }
+
+    .match-item:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .match-item.selected {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      font-weight: 600;
+    }
+
+    .match-item.matched {
+      border-color: var(--green);
+      background: var(--green-light);
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    .match-item.wrong {
+      border-color: var(--red);
+      background: var(--red-light);
+      animation: shake 0.3s;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    /* ---------- FILL IN BLANK ---------- */
+    .fib-input {
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 100%;
+      max-width: 300px;
+      transition: border-color 0.2s;
+    }
+
+    .fib-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    .fib-input.correct {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
+
+    .fib-input.incorrect {
+      border-color: var(--red);
+      background: var(--red-light);
+    }
+
+    /* ---------- VISUALIZATIONS ---------- */
+    .viz-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 18px;
+      overflow-x: auto;
+    }
+
+    .viz-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-light);
+      margin-bottom: 12px;
+    }
+
+    .osi-stack {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 2px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .osi-layer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      transition: all 0.25s;
+      cursor: pointer;
+      font-size: 0.88rem;
+    }
+
+    .osi-layer:hover {
+      border-color: var(--accent);
+      background: #f8faff;
+    }
+
+    .osi-layer:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .osi-layer .layer-num {
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: #fff;
+      background: var(--accent);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .osi-layer .layer-name {
+      font-weight: 600;
+      min-width: 110px;
+    }
+
+    .osi-layer .layer-desc {
+      color: var(--text-light);
+      font-size: 0.8rem;
+    }
+
+    .osi-layer[data-layer="7"] { background: #f0f9ff; }
+    .osi-layer[data-layer="6"] { background: #f5f3ff; }
+    .osi-layer[data-layer="5"] { background: #fdf4ff; }
+    .osi-layer[data-layer="4"] { background: #fef2f2; }
+    .osi-layer[data-layer="3"] { background: #fff7ed; }
+    .osi-layer[data-layer="2"] { background: #f0fdf4; }
+    .osi-layer[data-layer="1"] { background: #f8fafc; }
+
+    /* ---------- TCP HANDSHAKE ---------- */
+    .handshake-viz {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      position: relative;
+      padding: 20px 0;
+      min-height: 260px;
+    }
+
+    .handshake-side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .handshake-actor {
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 8px 20px;
+      border-radius: 8px;
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      border: 1px solid var(--accent);
+    }
+
+    .handshake-actor.server {
+      background: var(--green-light);
+      color: var(--green);
+      border-color: var(--green);
+    }
+
+    .handshake-msgs {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 0 12px;
+      position: relative;
+    }
+
+    .handshake-msg {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s, transform 0.4s;
+    }
+
+    .handshake-msg.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .handshake-msg .arrow {
+      font-size: 1.1rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .handshake-msg .label {
+      font-weight: 600;
+      background: var(--surface);
+      padding: 3px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .handshake-msg.reverse {
+      flex-direction: row-reverse;
+    }
+
+    .handshake-msg.reverse .arrow {
+      color: var(--green);
+    }
+
+    .handshake-progress {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .handshake-step {
+      font-size: 0.78rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: var(--bg);
+      color: var(--text-light);
+      border: 1px solid var(--border);
+      transition: all 0.3s;
+    }
+
+    .handshake-step.active {
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .handshake-step.done {
+      background: var(--green-light);
+      color: var(--green);
+      border-color: var(--green);
+    }
+
+    /* ---------- SUBNET CALCULATOR ---------- */
+    .subnet-calc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 18px;
+    }
+
+    .subnet-input-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .subnet-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .subnet-input-group label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .subnet-input-group input {
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 160px;
+    }
+
+    .subnet-input-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    .subnet-results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+
+    .subnet-result-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+
+    .subnet-result-item .label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-light);
+      margin-bottom: 2px;
+    }
+
+    .subnet-result-item .value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: 'Consolas', 'Monaco', monospace;
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    /* ---------- MISC COMPONENTS ---------- */
+    .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-right: 4px;
+      margin-bottom: 2px;
+    }
+
+    .tag-blue { background: var(--accent-light); color: var(--accent-dark); }
+    .tag-green { background: var(--green-light); color: var(--green); }
+    .tag-amber { background: var(--amber-light); color: var(--amber); }
+    .tag-red { background: var(--red-light); color: var(--red); }
+    .tag-purple { background: var(--purple-light); color: var(--purple); }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comparison-table th {
+      font-weight: 600;
+      background: var(--bg);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-secondary);
+    }
+
+    .comparison-table tr:hover td {
+      background: #f8fafc;
+    }
+
+    .tip-box {
+      background: var(--amber-light);
+      border: 1px solid #fbbf24;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+
+    .tip-box strong {
+      color: #92400e;
+    }
+
+    .prediction-box {
+      background: var(--purple-light);
+      border: 1px solid #c4b5fd;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+    }
+
+    .prediction-box p {
+      font-size: 0.92rem;
+      margin-bottom: 10px;
+    }
+
+    .prediction-box .prediction-prompt {
+      font-weight: 600;
+      color: var(--purple);
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .btn-outline {
+      background: var(--surface);
+      color: var(--accent);
+    }
+
+    .btn-outline:hover {
+      background: var(--accent-light);
+    }
+
+    .btn-sm {
+      font-size: 0.78rem;
+      padding: 6px 14px;
+    }
+
+    .btn-green {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .btn-green:hover {
+      background: #15803d;
+      border-color: #15803d;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    /* ---------- SCORE DISPLAY ---------- */
+    .score-banner {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .score-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      border: 3px solid var(--border);
+      transition: all 0.3s;
+    }
+
+    .score-circle.good {
+      border-color: var(--green);
+      color: var(--green);
+      background: var(--green-light);
+    }
+
+    .score-circle.ok {
+      border-color: var(--amber);
+      color: var(--amber);
+      background: var(--amber-light);
+    }
+
+    .score-circle.poor {
+      border-color: var(--red);
+      color: var(--red);
+      background: var(--red-light);
+    }
+
+    /* ---------- KEY TAKEAWAYS ---------- */
+    .takeaway-list {
+      list-style: none;
+      counter-reset: takeaway;
+    }
+
+    .takeaway-list li {
+      counter-increment: takeaway;
+      position: relative;
+      padding: 10px 0 10px 44px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.93rem;
+    }
+
+    .takeaway-list li::before {
+      content: counter(takeaway);
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      font-weight: 700;
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .takeaway-list li:last-child {
+      border-bottom: none;
+    }
+
+    /* ---------- GLOSSARY ---------- */
+    .glossary-item {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .glossary-item:last-child {
+      border-bottom: none;
+    }
+
+    .glossary-term {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--accent-dark);
+      margin-bottom: 2px;
+    }
+
+    .glossary-def {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+
+    /* ---------- SOURCES ---------- */
+    .source-list {
+      list-style: none;
+      font-size: 0.85rem;
+    }
+
+    .source-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .source-list li:last-child {
+      border-bottom: none;
+    }
+
+    /* ---------- MENTAL MODEL ---------- */
+    .mental-model {
+      background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+      border: 1px solid #c7d2fe;
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+    }
+
+    .mental-model h3 {
+      margin-top: 0;
+      color: var(--accent-dark);
+    }
+
+    .mental-model p {
+      font-size: 0.93rem;
+    }
+
+    .mental-model .mm-layer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 0.9rem;
+    }
+
+    .mental-model .mm-badge {
+      font-weight: 700;
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    /* ---------- FOOTER ---------- */
+    .site-footer {
+      text-align: center;
+      padding: 40px 24px;
+      font-size: 0.82rem;
+      color: var(--text-light);
+      border-top: 1px solid var(--border);
+      margin-top: 48px;
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @media (max-width: 640px) {
+      h1 { font-size: 1.5rem; }
+      h2 { font-size: 1.2rem; }
+      .container { padding: 0 16px; }
+      .hero { padding: 32px 0 20px; }
+      .card, .quiz-block, .subnet-calc { padding: 16px; }
+      .progress-stages { display: none; }
+      .handshake-viz { flex-direction: column; gap: 10px; }
+      .handshake-msgs { padding: 0; }
+      .osi-layer .layer-desc { display: none; }
+      .osi-layer .layer-name { min-width: auto; }
+    }
+
+    /* ---------- UTILITY ---------- */
+    .text-sm { font-size: 0.85rem; color: var(--text-light); }
+    .text-center { text-align: center; }
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-24 { margin-top: 24px; }
+    .mb-8 { margin-bottom: 8px; }
+    .mb-16 { margin-bottom: 16px; }
+    .hidden { display: none !important; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== PROGRESS TRACKER ==================== -->
+<div class="progress-tracker" role="navigation" aria-label="Learning progress">
+  <div class="progress-inner">
+    <div class="progress-stages">
+      <span class="stage-pill" data-stage="understand">Understanding</span>
+      <span class="stage-pill" data-stage="explore">Exploring</span>
+      <span class="stage-pill" data-stage="practice">Practicing</span>
+      <span class="stage-pill" data-stage="test">Testing</span>
+      <span class="stage-pill" data-stage="review">Review</span>
+    </div>
+    <div class="progress-meta">
+      <span>Score: <strong id="globalScore">0</strong>/<span id="globalTotal">0</span></span>
+      <span>Concepts: <strong id="conceptsDone">0</strong>/12</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+  <span class="hero-badge">Computer Networks · Interactive Revision</span>
+  <h1>Computer Networks</h1>
+  <p class="hero-sub">
+    A complete, interview-focused module covering fundamentals through advanced concepts,
+    with interactive visualizations, subnetting practice, and progressive challenges.
+  </p>
+
+  <div class="objective-box">
+    <h3>By the end, you should understand:</h3>
+    <ul>
+      <li>How data travels from one computer to another across networks</li>
+      <li>The OSI and TCP/IP models and where each protocol fits</li>
+      <li>How IP addressing, subnetting, and CIDR work — with hands-on practice</li>
+      <li>The difference between TCP and UDP, and when to use each</li>
+      <li>How the TCP 3-way handshake, connection termination, and flow control work</li>
+      <li>Key application protocols: HTTP/HTTPS, DNS, DHCP, FTP, SMTP</li>
+      <li>Network devices: hubs, switches, routers, gateways, firewalls</li>
+      <li>Network security basics: NAT, firewalls, VPNs, IDS/IPS</li>
+      <li>Common interview traps, misconceptions, and how to avoid them</li>
+    </ul>
+  </div>
+</header>
+
+<!-- ==================== SECTION 1: THE BIG PICTURE ==================== -->
+<section id="big-picture">
+  <h2>1. The Big Picture</h2>
+
+  <p>
+    Imagine two people in different cities who want to exchange letters. They need a postal system:
+    addresses, sorting centers, delivery rules, and a shared language for writing envelopes.
+    A computer network is exactly that — a system that lets devices exchange data using agreed rules
+    (called <strong>protocols</strong>) and addressing schemes.
+  </p>
+
+  <p>
+    At its core, networking answers one question: <em>how do we get data from point A to point B
+    reliably and efficiently?</em> The answer involves layers. Each layer handles one part of the problem,
+    from the physical cables that carry electrical signals up to the applications you use every day.
+  </p>
+
+  <div class="card card-accent">
+    <h3>The Central Idea</h3>
+    <p>
+      Networking is about <strong>layered abstraction</strong>. Instead of one giant system doing everything,
+      we split the job into layers. Each layer provides a service to the layer above it and relies on the
+      layer below it. This lets us change one part (e.g., swap Wi-Fi for Ethernet) without redesigning
+      the whole system.
+    </p>
+  </div>
+
+  <div class="viz-container">
+    <div class="viz-title">The Layered Model — click any layer to learn more</div>
+    <div class="osi-stack" id="osiStack">
+      <!-- Layers 7..1 -->
+      <button class="osi-layer" data-layer="7" aria-expanded="false">
+        <span class="layer-num">7</span>
+        <span class="layer-name">Application</span>
+        <span class="layer-desc">HTTP, DNS, SMTP, FTP — user-facing protocols</span>
+      </button>
+      <button class="osi-layer" data-layer="6" aria-expanded="false">
+        <span class="layer-num">6</span>
+        <span class="layer-name">Presentation</span>
+        <span class="layer-desc">Encryption, compression, data format translation</span>
+      </button>
+      <button class="osi-layer" data-layer="5" aria-expanded="false">
+        <span class="layer-num">5</span>
+        <span class="layer-name">Session</span>
+        <span class="layer-desc">Establishing and managing sessions between applications</span>
+      </button>
+      <button class="osi-layer" data-layer="4" aria-expanded="false">
+        <span class="layer-num">4</span>
+        <span class="layer-name">Transport</span>
+        <span class="layer-desc">TCP, UDP — end-to-end delivery, segmentation, flow control</span>
+      </button>
+      <button class="osi-layer" data-layer="3" aria-expanded="false">
+        <span class="layer-num">3</span>
+        <span class="layer-name">Network</span>
+        <span class="layer-desc">IP, ICMP — logical addressing and routing between networks</span>
+      </button>
+      <button class="osi-layer" data-layer="2" aria-expanded="false">
+        <span class="layer-num">2</span>
+        <span class="layer-name">Data Link</span>
+        <span class="layer-desc">Ethernet, ARP — MAC addressing, error detection on a local link</span>
+      </button>
+      <button class="osi-layer" data-layer="1" aria-expanded="false">
+        <span class="layer-num">1</span>
+        <span class="layer-name">Physical</span>
+        <span class="layer-desc">Cables, radio waves — transmitting raw bits</span>
+      </button>
+    </div>
+    <div id="osiDetail" style="margin-top:14px; font-size:0.9rem; color: var(--text-secondary); min-height: 40px;">
+      Click a layer above to see its function, protocols, and real-world analogy.
+    </div>
+  </div>
+
+  <h3>Why It Matters</h3>
+  <ul>
+    <li><strong>Every application you use</strong> — browsers, email, video calls — depends on networking.</li>
+    <li><strong>Most IT interviews</strong> test networking fundamentals as a core CS subject.</li>
+    <li><strong>Troubleshooting</strong> real-world issues (slow internet, connection failures) requires understanding layers.</li>
+    <li><strong>Security</strong> — attacks and defenses happen at different layers.</li>
+  </ul>
+</section>
+
+<!-- ==================== SECTION 2: CORE CONCEPTS ==================== -->
+<section id="core-concepts">
+  <h2>2. Core Concepts</h2>
+
+  <h3>2.1 OSI Model vs TCP/IP Model</h3>
+
+  <p>
+    The OSI (Open Systems Interconnection) model is a <strong>conceptual 7-layer framework</strong>
+    developed by ISO to describe how network communication should work. The TCP/IP model is the
+    <strong>practical 4-layer model</strong> actually used on the Internet.
+  </p>
+
+  <div class="tabs" role="tablist">
+    <div class="tab-list">
+      <button class="tab-btn" role="tab" aria-selected="true" aria-controls="tab-osi" id="tab-btn-osi">OSI Model</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-tcpip" id="tab-btn-tcpip">TCP/IP Model</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-compare" id="tab-btn-compare">Comparison</button>
+    </div>
+    <div class="tab-panel active" id="tab-osi" role="tabpanel" aria-labelledby="tab-btn-osi">
+      <p><strong>Mnemonic:</strong> <em>Please Do Not Throw Sausage Pizza Away</em></p>
+      <table class="comparison-table">
+        <thead>
+          <tr><th>#</th><th>Layer</th><th>Function</th><th>Protocols</th><th>Device</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>7</td><td>Application</td><td>User interface, network services</td><td>HTTP, DNS, SMTP, FTP</td><td>—</td></tr>
+          <tr><td>6</td><td>Presentation</td><td>Encryption, compression, format</td><td>TLS/SSL, JPEG, MPEG</td><td>—</td></tr>
+          <tr><td>5</td><td>Session</td><td>Session setup, maintenance, teardown</td><td>NetBIOS, RPC</td><td>—</td></tr>
+          <tr><td>4</td><td>Transport</td><td>End-to-end delivery, segmentation</td><td>TCP, UDP</td><td>—</td></tr>
+          <tr><td>3</td><td>Network</td><td>Logical addressing, routing</td><td>IP, ICMP, OSPF</td><td>Router</td></tr>
+          <tr><td>2</td><td>Data Link</td><td>MAC addressing, error detection</td><td>Ethernet, ARP, PPP</td><td>Switch, Bridge</td></tr>
+          <tr><td>1</td><td>Physical</td><td>Raw bit transmission</td><td>—</td><td>Hub, Repeater, Cable</td></tr>
+        </tbody>
+      </table>
+      <div class="tip-box">
+        <strong>Interview tip:</strong> The OSI model is <em>conceptual</em>. Real networks use the TCP/IP model.
+        But interviewers still ask OSI questions because it provides a common vocabulary for describing network functions.
+      </div>
+    </div>
+    <div class="tab-panel" id="tab-tcpip" role="tabpanel" aria-labelledby="tab-btn-tcpip">
+      <p>The TCP/IP model has <strong>4 layers</strong> and is what the Internet actually runs on.</p>
+      <table class="comparison-table">
+        <thead>
+          <tr><th>#</th><th>Layer</th><th>Function</th><th>Protocols</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>4</td><td>Application</td><td>User services (combines OSI 5–7)</td><td>HTTP, DNS, SMTP, FTP</td></tr>
+          <tr><td>3</td><td>Transport</td><td>End-to-end delivery</td><td>TCP, UDP</td></tr>
+          <tr><td>2</td><td>Internet</td><td>Logical addressing, routing</td><td>IP, ICMP, ARP</td></tr>
+          <tr><td>1</td><td>Link (Network Access)</td><td>Physical + Data Link (combines OSI 1–2)</td><td>Ethernet, Wi-Fi, PPP</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tab-panel" id="tab-compare" role="tabpanel" aria-labelledby="tab-btn-compare">
+      <table class="comparison-table">
+        <thead>
+          <tr><th>OSI</th><th>TCP/IP</th><th>Key Difference</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>7 layers</td><td>4 layers</td><td>TCP/IP merges OSI 5–7 into Application and OSI 1–2 into Link</td></tr>
+          <tr><td>Conceptual reference</td><td>Practical implementation</td><td>OSI is a teaching/design tool; TCP/IP is what runs the Internet</td></tr>
+          <tr><td>Protocol-independent</td><td>Protocol-specific</td><td>OSI defines services; TCP/IP is built around actual protocols</td></tr>
+        </tbody>
+      </table>
+      <div class="quiz-block" data-quiz-id="q-osi1">
+        <div class="quiz-question">Quick check: Which model is actually used on the Internet?</div>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q-osi1" value="a"> OSI Model</label>
+          <label class="quiz-option"><input type="radio" name="q-osi1" value="b"> TCP/IP Model</label>
+          <label class="quiz-option"><input type="radio" name="q-osi1" value="c"> Both equally</label>
+          <label class="quiz-option"><input type="radio" name="q-osi1" value="d"> Neither</label>
+        </div>
+        <button class="quiz-btn" data-check="q-osi1" data-correct="b" data-explanation="The TCP/IP model is the practical 4-layer model that the Internet actually runs on. OSI is a conceptual reference framework used for teaching and design.">Check</button>
+        <div class="quiz-feedback" id="fb-q-osi1"></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>2.2 Network Topologies</h3>
+
+  <p>Topology describes <em>how devices are arranged</em> and connected in a network.</p>
+
+  <div class="expandable" data-concept="topology-bus">
+    <button class="expandable-header" aria-expanded="false">
+      <span>Bus Topology</span>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="expandable-body">
+      <div class="expandable-body-inner">
+        <p><strong>How it works:</strong> All devices connect to a single central cable (the bus). Data travels along the bus in both directions and is received by all devices, but only the intended recipient processes it.</p>
+        <p><strong>Pros:</strong> Cheap, requires less cable, easy to set up for small networks.</p>
+        <p><strong>Cons:</strong> If the main cable breaks, the entire network fails. Performance degrades with many devices. Difficult to troubleshoot.</p>
+        <p><strong>Analogy:</strong> A single highway with no exits — if it's blocked, everyone is stuck.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="expandable" data-concept="topology-star">
+    <button class="expandable-header" aria-expanded="false">
+      <span>Star Topology</span>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="expandable-body">
+      <div class="expandable-body-inner">
+        <p><strong>How it works:</strong> Every device connects to a central hub or switch. All communication goes through this central device.</p>
+        <p><strong>Pros:</strong> If one cable fails, only that device is affected. Easy to add/remove devices. Centralized management.</p>
+        <p><strong>Cons:</strong> If the central hub/switch fails, the entire network goes down. Requires more cable than bus.</p>
+        <p><strong>Analogy:</strong> A classroom where every student talks only through the teacher.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="expandable" data-concept="topology-ring">
+    <button class="expandable-header" aria-expanded="false">
+      <span>Ring Topology</span>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="expandable-body">
+      <div class="expandable-body-inner">
+        <p><strong>How it works:</strong> Devices connect in a closed loop. Data travels in one direction (or both in dual-ring) around the ring, passing through each device.</p>
+        <p><strong>Pros:</strong> Predictable performance, no collisions (with token passing).</p>
+        <p><strong>Cons:</strong> A single break can bring down the whole ring (unless dual-ring). Adding/removing devices disrupts the network.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="expandable" data-concept="topology-mesh">
+    <button class="expandable-header" aria-expanded="false">
+      <span>Mesh Topology</span>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="expandable-body">
+      <div class="expandable-body-inner">
+        <p><strong>How it works:</strong> Every device connects to every other device (full mesh) or to multiple other devices (partial mesh).</p>
+        <p><strong>Pros:</strong> Extremely reliable — if one link fails, data can take another path. High fault tolerance.</p>
+        <p><strong>Cons:</strong> Very expensive and complex to wire. Number of connections grows as n(n−1)/2.</p>
+        <p><strong>Analogy:</strong> A group of friends where everyone has everyone else's phone number.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>2.3 Network Devices</h3>
+
+  <table class="comparison-table">
+    <thead>
+      <tr><th>Device</th><th>OSI Layer</th><th>Function</th><th>Key Detail</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Hub</td><td>1 (Physical)</td><td>Broadcasts data to all connected devices</td><td>No intelligence; causes collisions</td></tr>
+      <tr><td>Switch</td><td>2 (Data Link)</td><td>Forwards frames based on MAC address</td><td>Learns MAC addresses; reduces collisions</td></tr>
+      <tr><td>Router</td><td>3 (Network)</td><td>Connects different networks; forwards packets based on IP</td><td>Uses routing tables; separates broadcast domains</td></tr>
+      <tr><td>Gateway</td><td>Any</td><td>Connects networks using <em>different</em> protocols</td><td>Protocol translator</td></tr>
+      <tr><td>Firewall</td><td>3–7</td><td>Filters traffic based on security rules</td><td>Can be packet-filtering or stateful</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card card-green">
+    <h4>Interview trap: Hub vs Switch vs Router</h4>
+    <p>
+      A <strong>hub</strong> broadcasts to everyone (dumb device, Layer 1). A <strong>switch</strong>
+      sends data only to the intended device using MAC addresses (smart, Layer 2). A <strong>router</strong>
+      connects <em>different networks</em> and uses IP addresses (Layer 3). A common misconception is that
+      a switch can connect to the Internet — it cannot; you need a router for that.
+    </p>
+  </div>
+</section>
+
+<!-- ==================== SECTION 3: IP ADDRESSING & SUBNETTING ==================== -->
+<section id="ip-addressing">
+  <h2>3. IP Addressing &amp; Subnetting</h2>
+
+  <h3>3.1 IPv4 vs IPv6</h3>
+
+  <table class="comparison-table">
+    <thead>
+      <tr><th>Feature</th><th>IPv4</th><th>IPv6</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Address size</td><td>32-bit</td><td>128-bit</td></tr>
+      <tr><td>Format</td><td>Dotted decimal (192.168.1.1)</td><td>Hexadecimal (2001:DB8::1)</td></tr>
+      <tr><td>Total addresses</td><td>~4.3 billion</td><td>~3.4 × 10³⁸</td></tr>
+      <tr><td>NAT</td><td>Widely used</td><td>Not needed (enough addresses)</td></tr>
+      <tr><td>Header size</td><td>20–60 bytes (variable)</td><td>40 bytes (fixed)</td></tr>
+      <tr><td>Broadcast</td><td>Yes</td><td>No (uses multicast)</td></tr>
+      <tr><td>ARP</td><td>Yes</td><td>No — uses NDP (Neighbor Discovery Protocol)</td></tr>
+      <tr><td>Security</td><td>IPSec optional</td><td>IPSec mandatory in the spec</td></tr>
+    </tbody>
+  </table>
+
+  <div class="prediction-box">
+    <p class="prediction-prompt">Prediction: Why do you think ARP works only in IPv4?</p>
+    <p>Think about it for a moment before revealing.</p>
+    <button class="btn btn-outline btn-sm" data-reveal="pred-arp">Reveal explanation</button>
+    <div id="pred-arp" class="hidden" style="margin-top:10px; font-size:0.9rem;">
+      ARP relies on <strong>broadcast</strong> MAC frames (FF:FF:FF:FF:FF:FF) to ask "Who has this IP?"
+      IPv6 eliminated broadcast entirely — it uses <strong>multicast</strong> instead, via the Neighbor
+      Discovery Protocol (NDP). So ARP simply cannot work in IPv6 because the broadcast mechanism it
+      depends on doesn't exist there.
+    </div>
+  </div>
+
+  <h3>3.2 Subnetting — Interactive Calculator</h3>
+
+  <p>
+    Subnetting is dividing a larger network into smaller sub-networks. It improves security,
+    reduces broadcast traffic, and makes efficient use of IP addresses.
+  </p>
+
+  <div class="subnet-calc">
+    <div class="subnet-input-row">
+      <div class="subnet-input-group">
+        <label for="subnetIp">IP Address</label>
+        <input type="text" id="subnetIp" value="192.168.1.100" placeholder="e.g. 192.168.1.100" aria-label="IP address">
+      </div>
+      <div class="subnet-input-group">
+        <label for="subnetPrefix">Prefix (CIDR)</label>
+        <input type="number" id="subnetPrefix" value="24" min="1" max="32" aria-label="CIDR prefix length">
+      </div>
+      <button class="btn" id="calcSubnet">Calculate</button>
+    </div>
+    <div class="subnet-results" id="subnetResults">
+      <div class="subnet-result-item">
+        <div class="label">Subnet Mask</div>
+        <div class="value" id="resMask">255.255.255.0</div>
+      </div>
+      <div class="subnet-result-item">
+        <div class="label">Network Address</div>
+        <div class="value" id="resNetwork">192.168.1.0</div>
+      </div>
+      <div class="subnet-result-item">
+        <div class="label">Broadcast Address</div>
+        <div class="value" id="resBroadcast">192.168.1.255</div>
+      </div>
+      <div class="subnet-result-item">
+        <div class="label">First Usable Host</div>
+        <div class="value" id="resFirst">192.168.1.1</div>
+      </div>
+      <div class="subnet-result-item">
+        <div class="label">Last Usable Host</div>
+        <div class="value" id="resLast">192.168.1.254</div>
+      </div>
+      <div class="subnet-result-item">
+        <div class="label">Total Usable Hosts</div>
+        <div class="value" id="resHosts">254</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-amber">
+    <h4>How subnetting works — the key insight</h4>
+    <p>
+      An IP address has two parts: a <strong>network portion</strong> and a <strong>host portion</strong>.
+      The subnet mask (or CIDR prefix) tells you where the split happens. A /24 mask (255.255.255.0)
+      means the first 24 bits are network, the last 8 bits are host.
+    </p>
+    <p>
+      <strong>Formula:</strong> Usable hosts = 2<sup>(host bits)</sup> − 2.
+      We subtract 2 because the network address (all host bits 0) and broadcast address
+      (all host bits 1) cannot be assigned to devices.
+    </p>
+  </div>
+
+  <h3>3.3 Subnetting Practice Problems</h3>
+
+  <div class="quiz-block" data-quiz-id="sub1">
+    <div class="quiz-question">You have IP 192.168.10.5 /24. What is the subnet mask in dotted-decimal?</div>
+    <div class="quiz-options">
+      <label class="quiz-option"><input type="radio" name="sub1" value="a"> 255.255.0.0</label>
+      <label class="quiz-option"><input type="radio" name="sub1" value="b"> 255.255.255.0</label>
+      <label class="quiz-option"><input type="radio" name="sub1" value="c"> 255.255.255.255</label>
+      <label class="quiz-option"><input type="radio" name="sub1" value="d"> 255.0.0.0</label>
+    </div>
+    <button class="quiz-btn" data-check="sub1" data-correct="b" data-explanation="/24 means the first 24 bits are network bits, leaving 8 host bits. 24 network bits = 255.255.255.0 in dotted-decimal. Each '1' bit in the mask corresponds to 255 in that octet.">Check</button>
+    <div class="quiz-feedback" id="fb-sub1"></div>
+  </div>
+
+  <div class="quiz-block" data-quiz-id="sub2">
+    <div class="quiz-question">A network uses subnet mask 255.255.255.248. How many usable hosts per subnet?</div>
+    <div class="quiz-options">
+      <label class="quiz-option"><input type="radio" name="sub2" value="a"> 6</label>
+      <label class="quiz-option"><input type="radio" name="sub2" value="b"> 14</label>
+      <label class="quiz-option"><input type="radio" name="sub2" value="c"> 30</label>
+      <label class="quiz-option"><input type="radio" name="sub2" value="d"> 62</label>
+    </div>
+    <button class="quiz-btn" data-check="sub2" data-correct="a" data-explanation="255.255.255.248 = /29. Host bits = 32 − 29 = 3. Usable hosts = 2³ − 2 = 8 − 2 = 6. The two subtracted addresses are the network address and broadcast address.">Check</button>
+    <div class="quiz-feedback" id="fb-sub2"></div>
+  </div>
+
+  <div class="quiz-block" data-quiz-id="sub3">
+    <div class="quiz-question">For network 172.16.0.0 /20, what is the broadcast address of the first subnet?</div>
+    <div class="quiz-options">
+      <label class="quiz-option"><input type="radio" name="sub3" value="a"> 172.16.0.255</label>
+      <label class="quiz-option"><input type="radio" name="sub3" value="b"> 172.16.15.255</label>
+      <label class="quiz-option"><input type="radio" name="sub3" value="c"> 172.16.31.255</label>
+      <label class="quiz-option"><input type="radio" name="sub3" value="d"> 172.16.255.255</label>
+    </div>
+    <button class="quiz-btn" data-check="sub3" data-correct="b" data-explanation="/20 means 12 host bits. Block size = 2^(16−20+16)? Let's compute: third octet has 4 borrowed bits (20 = 16 + 4). Block size in third octet = 2^4 = 16. First subnet: 172.16.0.0 to 172.16.15.255. Broadcast = 172.16.15.255.">Check</button>
+    <div class="quiz-feedback" id="fb-sub3"></div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 4: TCP vs UDP ==================== -->
+<section id="tcp-udp">
+  <h2>4. TCP vs UDP — Transport Layer</h2>
+
+  <p>
+    The transport layer is responsible for <strong>end-to-end delivery</strong> between applications.
+    Two protocols dominate: TCP and UDP. They make fundamentally different trade-offs.
+  </p>
+
+  <table class="comparison-table">
+    <thead>
+      <tr><th>Feature</th><th>TCP</th><th>UDP</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Connection</td><td>Connection-oriented (handshake)</td><td>Connectionless</td></tr>
+      <tr><td>Reliability</td><td>Reliable — retransmits lost data</td><td>Unreliable — no retransmission</td></tr>
+      <tr><td>Ordering</td><td>Preserves packet order</td><td>No ordering guarantee</td></tr>
+      <tr><td>Error checking</td><td>Yes (checksum + ACKs)</td><td>Checksum only</td></tr>
+      <tr><td>Header size</td><td>20–60 bytes</td><td>8 bytes</td></tr>
+      <tr><td>Speed</td><td>Slower (overhead)</td><td>Faster (low overhead)</td></tr>
+      <tr><td>Flow control</td><td>Yes (sliding window)</td><td>No</td></tr>
+      <tr><td>Congestion control</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Use cases</td><td>HTTP, email, file transfer, SSH</td><td>DNS, video streaming, gaming, VoIP</td></tr>
+    </tbody>
+  </table>
+
+  <div class="prediction-box">
+    <p class="prediction-prompt">Prediction: You're building a live video call app. TCP or UDP? Why?</p>
+    <p>Think about what happens if a packet is lost during a live call.</p>
+    <button class="btn btn-outline btn-sm" data-reveal="pred-udp">Reveal answer</button>
+    <div id="pred-udp" class="hidden" style="margin-top:10px; font-size:0.9rem;">
+      <strong>UDP.</strong> In a live video call, retransmitting a lost packet is pointless — by the time
+      it arrives, the conversation has moved on. It's better to drop the frame and continue. TCP's
+      reliability and ordering guarantees would actually <em>hurt</em> here by adding latency.
+      This is why real-time applications prefer UDP.
+    </div>
+  </div>
+
+  <h3>4.1 TCP 3-Way Handshake — Interactive</h3>
+
+  <p>
+    Before TCP can send data, it must establish a connection. This is done through a
+    <strong>three-way handshake</strong>: SYN → SYN-ACK → ACK.
+  </p>
+
+  <div class="viz-container">
+    <div class="viz-title">TCP Three-Way Handshake</div>
+    <div class="handshake-viz">
+      <div class="handshake-side">
+        <div class="handshake-actor">Client</div>
+      </div>
+      <div class="handshake-msgs" id="handshakeMsgs">
+        <div class="handshake-msg" id="hm1">
+          <span class="arrow">→</span>
+          <span class="label">SYN (Seq = x)</span>
+          <span>Client: "Can we talk? My sequence starts at x."</span>
+        </div>
+        <div class="handshake-msg reverse" id="hm2">
+          <span class="arrow">←</span>
+          <span class="label">SYN-ACK (Seq = y, Ack = x+1)</span>
+          <span>Server: "Yes! My sequence starts at y. I got your x."</span>
+        </div>
+        <div class="handshake-msg" id="hm3">
+          <span class="arrow">→</span>
+          <span class="label">ACK (Ack = y+1)</span>
+          <span>Client: "Got it. Connection established."</span>
+        </div>
+      </div>
+      <div class="handshake-side">
+        <div class="handshake-actor server">Server</div>
+      </div>
+    </div>
+    <div class="handshake-progress" id="handshakeProgress">
+      <span class="handshake-step" data-hstep="1">Step 1: SYN</span>
+      <span class="handshake-step" data-hstep="2">Step 2: SYN-ACK</span>
+      <span class="handshake-step" data-hstep="3">Step 3: ACK</span>
+    </div>
+    <div class="btn-group" style="margin-top:14px; justify-content:center;">
+      <button class="btn btn-sm" id="playHandshake">▶ Play Handshake</button>
+      <button class="btn btn-outline btn-sm" id="resetHandshake">Reset</button>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <strong>Why three steps, not two?</strong> A two-way handshake would leave the server uncertain
+    whether the client received the server's SYN-ACK. The third ACK confirms that both sides have
+    synchronized their sequence numbers and are ready to exchange data.
+  </div>
+
+  <h3>4.2 Connection Termination (4-Way FIN)</h3>
+
+  <p>
+    TCP connections are terminated with a <strong>four-way handshake</strong> using FIN and ACK flags:
+  </p>
+
+  <ol style="margin-left:20px; margin-bottom:14px;">
+    <li><strong>Client → FIN:</strong> "I'm done sending data."</li>
+    <li><strong>Server → ACK:</strong> "OK, I heard you." (Server can still send data — half-close)</li>
+    <li><strong>Server → FIN:</strong> "I'm done too."</li>
+    <li><strong>Client → ACK:</strong> "Acknowledged." (Client waits 2×MSL before fully closing)</li>
+  </ol>
+
+  <h3>4.3 Flow Control vs Congestion Control</h3>
+
+  <table class="comparison-table">
+    <thead>
+      <tr><th></th><th>Flow Control</th><th>Congestion Control</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Purpose</td><td>Prevent sender from overwhelming receiver</td><td>Prevent sender from overwhelming the network</td></tr>
+      <tr><td>Mechanism</td><td>Sliding window (advertised window size)</td><td>AIMD, slow start, congestion window</td></tr>
+      <tr><td>Who controls it</td><td>Receiver tells sender how much it can handle</td><td>Sender infers network capacity</td></tr>
+      <tr><td>Signal</td><td>Receiver's receive window (rwnd)</td><td>Packet loss / delay</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== SECTION 5: APPLICATION PROTOCOLS ==================== -->
+<section id="protocols">
+  <h2>5. Application Protocols &amp; Ports</h2>
+
+  <p>
+    These are the protocols that directly serve users and applications. Knowing their
+    <strong>port numbers</strong> is essential for interviews.
+  </p>
+
+  <table class="comparison-table">
+    <thead>
+      <tr><th>Protocol</th><th>Port</th><th>Transport</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>HTTP</td><td>80</td><td>TCP</td><td>Web browsing (plaintext)</td></tr>
+      <tr><td>HTTPS</td><td>443</td><td>TCP</td><td>Secure web (HTTP over TLS/SSL)</td></tr>
+      <tr><td>FTP</td><td>20 (data), 21 (control)</td><td>TCP</td><td>File transfer</td></tr>
+      <tr><td>SSH</td><td>22</td><td>TCP</td><td>Secure remote login</td></tr>
+      <tr><td>Telnet</td><td>23</td><td>TCP</td><td>Remote login (unencrypted)</td></tr>
+      <tr><td>SMTP</td><td>25</td><td>TCP</td><td>Sending email</td></tr>
+      <tr><td>DNS</td><td>53</td><td>UDP (mostly), TCP</td><td>Domain name → IP resolution</td></tr>
+      <tr><td>DHCP</td><td>67 (server), 68 (client)</td><td>UDP</td><td>Automatic IP configuration</td></tr>
+      <tr><td>POP3</td><td>110</td><td>TCP</td><td>Receiving email (download)</td></tr>
+      <tr><td>IMAP</td><td>143</td><td>TCP</td><td>Receiving email (sync)</td></tr>
+      <tr><td>SNMP</td><td>161/162</td><td>UDP</td><td>Network management</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card card-purple">
+    <h4>What happens when you type a URL and press Enter?</h4>
+    <ol style="margin-left:18px; font-size:0.9rem;">
+      <li>Browser checks its <strong>cache</strong> for the IP address.</li>
+      <li><strong>DNS resolution:</strong> Browser asks DNS resolver → root → TLD → authoritative server.</li>
+      <li><strong>TCP 3-way handshake</strong> with the web server (port 80 or 443).</li>
+      <li>If HTTPS, <strong>TLS handshake</strong> for encryption.</li>
+      <li>Browser sends <strong>HTTP GET</strong> request.</li>
+      <li>Server responds with HTML, browser parses and requests CSS/JS/images.</li>
+      <li>Page renders. TCP connection may be closed or kept alive.</li>
+    </ol>
+  </div>
+
+  <h3>5.1 DNS — Domain Name System</h3>
+
+  <p>
+    DNS translates human-readable domain names (google.com) into IP addresses (142.250.190.46).
+    It's the "phonebook of the Internet."
+  </p>
+
+  <div class="expandable">
+    <button class="expandable-header" aria-expanded="false">
+      <span>Recursive vs Iterative DNS Resolution</span>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="expandable-body">
+      <div class="expandable-body-inner">
+        <p><strong>Recursive:</strong> Your device asks a recursive resolver (usually your ISP's DNS)
+        to get the final answer. The resolver does all the work and returns the IP. This is the default
+        for most users.</p>
+        <p><strong>Iterative:</strong> The resolver asks each server in turn — root server → TLD server
+        (.com) → authoritative server — and each one refers it to the next. The resolver builds the
+        answer step by step.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>5.2 DHCP — Dynamic Host Configuration Protocol</h3>
+
+  <p>DHCP automatically assigns IP addresses to devices on a network. It uses the <strong>DORA</strong> process:</p>
+  <ul style="margin-left:20px; margin-bottom:14px;">
+    <li><strong>D</strong>iscover — Client broadcasts: "Is there a DHCP server?"</li>
+    <li><strong>O</strong>ffer — Server responds: "Here's an available IP."</li>
+    <li><strong>R</strong>equest — Client: "I'll take that one."</li>
+    <li><strong>A</strong>cknowledge — Server: "Confirmed. It's yours for [lease time]."</li>
+  </ul>
+</section>
+
+<!-- ==================== SECTION 6: MAC, ARP, ETHERNET, SWITCHING ==================== -->
+<section id="mac-arp">
+  <h2>6. MAC, ARP, Ethernet &amp; Switching</h2>
+
+  <h3>6.1 MAC Address vs IP Address</h3>
+
+  <table class="comparison-table">
+    <thead>
+      <tr><th></th><th>MAC Address</th><th>IP Address</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Layer</td><td>Data Link (Layer 2)</td><td>Network (Layer 3)</td></tr>
+      <tr><td>Nature</td><td>Physical, burned into NIC</td><td>Logical, assigned by network</td></tr>
+      <tr><td>Format</td><td>48-bit hex (00:1A:2B:3C:4D:5E)</td><td>32-bit IPv4 or 128-bit IPv6</td></tr>
+      <tr><td>Scope</td><td>Local network segment only</td><td>Global (routable)</td></tr>
+      <tr><td>Changeable?</td><td>Rarely (can be spoofed)</td><td>Yes, changes with network</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 ARP — Address Resolution Protocol</h3>
+
+  <p>
+    ARP maps an IP address to a MAC address <strong>within a local network (LAN)</strong>.
+    When a device wants to send data to another device on the same LAN, it knows the destination IP
+    but needs the MAC address to build the Ethernet frame.
+  </p>
+
+  <div class="card card-accent">
+    <h4>How ARP works — step by step</h4>
+    <ol style="margin-left:18px; font-size:0.9rem;">
+      <li>Check the <strong>ARP cache</strong> for an existing IP→MAC mapping.</li>
+      <li>If not found, <strong>broadcast</strong> an ARP Request: "Who has 192.168.1.5?"</li>
+      <li>The device with that IP replies with a <strong>unicast</strong> ARP Reply: "I do. My MAC is XX:XX..."</li>
+      <li>The sender <strong>caches</strong> this mapping and sends the data.</li>
+    </ol>
+  </div>
+
+  <div class="card card-red">
+    <h4>Common ARP misconceptions (interview traps)</h4>
+    <ul style="margin-left:18px; font-size:0.9rem;">
+      <li>❌ "ARP works across the Internet." → ✅ ARP works only within a LAN. Routers do not forward ARP requests.</li>
+      <li>❌ "ARP works in IPv6." → ✅ IPv6 uses NDP (Neighbor Discovery Protocol), not ARP.</li>
+      <li>❌ "ARP Request is unicast." → ✅ ARP Request is broadcast; ARP Reply is unicast.</li>
+      <li>❌ "ARP cache is permanent." → ✅ Dynamic ARP entries expire after a timeout.</li>
+    </ul>
+  </div>
+
+  <h3>6.3 Ethernet &amp; Switching</h3>
+
+  <p>
+    Ethernet is the dominant technology for wired LANs. It operates at Layers 1 and 2.
+    A <strong>switch</strong> learns which devices are on which ports by examining the
+    <strong>source MAC address</strong> of incoming frames, building a <strong>MAC address table</strong>.
+    When a frame arrives, the switch looks up the destination MAC and forwards it only to the
+    correct port (or floods if unknown).
+  </p>
+</section>
+
+<!-- ==================== SECTION 7: NETWORK SECURITY ==================== -->
+<section id="security">
+  <h2>7. Network Security Basics</h2>
+
+  <h3>7.1 NAT — Network Address Translation</h3>
+
+  <p>
+    NAT translates private IP addresses to a public IP address (and vice versa) as packets cross
+    the boundary between a private network and the Internet. This conserves IPv4 addresses and
+    provides a basic security benefit: external hosts cannot initiate connections to internal
+    devices because there's no translation entry for unsolicited inbound traffic.
+  </p>
+
+  <div class="card card-green">
+    <h4>How NAT works</h4>
+    <ul style="margin-left:18px; font-size:0.9rem;">
+      <li>Internal device sends a packet with a private source IP (e.g., 192.168.1.10).</li>
+      <li>NAT router rewrites the source IP to its public IP and records the mapping in a translation table.</li>
+      <li>When the reply comes back, the router looks up the table and forwards it to the correct internal device.</li>
+    </ul>
+    <p style="font-size:0.85rem; margin-top:8px; color:var(--text-light);">
+      NAT operates at Layer 3 but also modifies Layer 4 headers (ports) for connection tracking.
+    </p>
+  </div>
+
+  <h3>7.2 Firewalls</h3>
+
+  <table class="comparison-table">
+    <thead>
+      <tr><th>Type</th><th>How it works</th><th>Limitation</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Packet Filtering</td><td>Examines headers (src/dst IP, port, protocol); allows or drops each packet independently</td><td>No awareness of connection state; can be fooled</td></tr>
+      <tr><td>Stateful Inspection</td><td>Tracks active connections; allows return traffic for established sessions</td><td>More resource-intensive</td></tr>
+      <tr><td>Application Layer (Proxy)</td><td>Understands specific protocols (HTTP, FTP); deep packet inspection</td><td>Slower; protocol-specific</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.3 VPN — Virtual Private Network</h3>
+
+  <p>
+    A VPN creates an encrypted tunnel between your device and a VPN server, protecting data
+    in transit from eavesdropping on local networks. It does <em>not</em> provide anonymity —
+    the VPN provider can still see your traffic, and websites can still identify you via cookies
+    and browser fingerprinting.
+  </p>
+
+  <h3>7.4 IDS vs IPS</h3>
+
+  <table class="comparison-table">
+    <thead>
+      <tr><th></th><th>IDS (Intrusion Detection System)</th><th>IPS (Intrusion Prevention System)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Action</td><td>Detects and alerts</td><td>Detects and blocks</td></tr>
+      <tr><td>Placement</td><td>Passive (out-of-band)</td><td>Inline (in the traffic path)</td></tr>
+      <tr><td>Impact</td><td>No effect on traffic</td><td>Can drop malicious packets</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== SECTION 8: DEEPER UNDERSTANDING ==================== -->
+<section id="deeper">
+  <h2>8. Deeper Understanding — Misconceptions &amp; Nuances</h2>
+
+  <div class="card card-red">
+    <h4>Misconception 1: "The OSI model is what the Internet actually uses."</h4>
+    <p>
+      <strong>Reality:</strong> The Internet uses the TCP/IP model. OSI is a conceptual framework
+      for teaching and design. Interviewers often ask about OSI to test whether you understand
+      layered networking, not because OSI is deployed.
+    </p>
+  </div>
+
+  <div class="card card-red">
+    <h4>Misconception 2: "A switch can connect to the Internet."</h4>
+    <p>
+      <strong>Reality:</strong> A switch operates at Layer 2 and connects devices within the same
+      network. To connect to the Internet (a different network), you need a <strong>router</strong>
+      (Layer 3).
+    </p>
+  </div>
+
+  <div class="card card-red">
+    <h4>Misconception 3: "TCP is always better than UDP because it's reliable."</h4>
+    <p>
+      <strong>Reality:</strong> Reliability comes at the cost of latency and overhead. For real-time
+      applications (video calls, gaming), UDP is better because retransmitting lost packets would
+      cause unacceptable delays. The right choice depends on the application's needs.
+    </p>
+  </div>
+
+  <div class="card card-red">
+    <h4>Misconception 4: "DHCP assigns permanent IP addresses."</h4>
+    <p>
+      <strong>Reality:</strong> DHCP assigns <em>leases</em> — temporary addresses that expire after
+      a configurable time. Devices can request renewals. Only manual (static) configuration is permanent.
+    </p>
+  </div>
+
+  <div class="card card-red">
+    <h4>Misconception 5: "NAT is a complete security solution."</h4>
+    <p>
+      <strong>Reality:</strong> NAT provides a useful side effect — it blocks unsolicited inbound
+      connections by default. But it is <em>not</em> a firewall. Internal hosts can still initiate
+      outbound connections that could be exploited, and NAT can be bypassed in some scenarios.
+    </p>
+  </div>
+</section>
+
+<!-- ==================== SECTION 9: FINAL QUIZ ==================== -->
+<section id="final-quiz">
+  <h2>9. Final Quiz</h2>
+
+  <div class="score-banner">
+    <div class="score-circle" id="finalScoreCircle">0%</div>
+    <div>
+      <strong id="finalScoreText">0 of 10 correct</strong>
+      <p class="text-sm" style="margin:0;">Answer all questions to see your result</p>
+    </div>
+  </div>
+
+  <div id="finalQuizContainer">
+    <!-- Questions injected by JS -->
+  </div>
+
+  <button class="btn btn-green" id="submitFinalQuiz" style="margin-top:16px;">Submit Final Quiz</button>
+  <button class="btn btn-outline" id="resetFinalQuiz" style="margin-top:16px; margin-left:8px;">Reset</button>
+  <div id="finalQuizResult" style="margin-top:16px;"></div>
+</section>
+
+<!-- ==================== SECTION 10: KEY TAKEAWAYS ==================== -->
+<section id="takeaways">
+  <h2>10. Key Takeaways</h2>
+  <ol class="takeaway-list">
+    <li>Networking is layered: each layer has a specific job and relies on the one below it.</li>
+    <li>OSI is a 7-layer conceptual model; TCP/IP is the 4-layer model the Internet actually uses.</li>
+    <li>IP addresses identify devices logically (Layer 3); MAC addresses identify them physically (Layer 2). ARP bridges the two within a LAN.</li>
+    <li>TCP is reliable, connection-oriented, and ordered. UDP is fast, connectionless, and unreliable — but lower overhead.</li>
+    <li>The TCP 3-way handshake (SYN → SYN-ACK → ACK) establishes a connection. Teardown uses FIN/ACK.</li>
+    <li>Subnetting divides networks using CIDR notation. Usable hosts = 2<sup>host bits</sup> − 2.</li>
+    <li>DNS resolves names to IPs; DHCP assigns IPs automatically; NAT conserves public IPs.</li>
+    <li>Switches forward based on MAC; routers forward based on IP. A hub broadcasts to everyone.</li>
+    <li>Firewalls filter traffic; IDS detects; IPS blocks; VPNs encrypt tunnels. NAT provides incidental inbound protection.</li>
+    <li>Always distinguish between conceptual models (OSI) and practical implementations (TCP/IP).</li>
+  </ol>
+</section>
+
+<!-- ==================== THE MENTAL MODEL ==================== -->
+<section id="mental-model-section">
+  <h2>The Mental Model</h2>
+  <div class="mental-model">
+    <p style="margin-bottom:16px;">
+      Think of networking as a <strong>postal system with layers of responsibility</strong>:
+    </p>
+    <div class="mm-layer">
+      <span class="mm-badge">Application</span>
+      <span>You write a letter (HTTP request).</span>
+    </div>
+    <div class="mm-layer">
+      <span class="mm-badge">Transport</span>
+      <span>You decide: certified mail with tracking (TCP) or regular postcard (UDP).</span>
+    </div>
+    <div class="mm-layer">
+      <span class="mm-badge">Network</span>
+      <span>You write the destination address (IP address).</span>
+    </div>
+    <div class="mm-layer">
+      <span class="mm-badge">Data Link</span>
+      <span>The local post office routes it to the correct street (MAC address via ARP).</span>
+    </div>
+    <div class="mm-layer">
+      <span class="mm-badge">Physical</span>
+      <span>The mail truck drives on the road (cables, Wi-Fi).</span>
+    </div>
+    <p style="margin-top:16px; font-size:0.9rem;">
+      Each layer only knows about its own job. The postal worker doesn't read your letter;
+      the truck driver doesn't decide which city to route to. This separation of concerns is
+      the superpower of layered networking.
+    </p>
+  </div>
+</section>
+
+<!-- ==================== GLOSSARY ==================== -->
+<section id="glossary">
+  <h2>Glossary</h2>
+  <div class="glossary-item">
+    <div class="glossary-term">Protocol</div>
+    <div class="glossary-def">An agreed set of rules for communication between devices (e.g., TCP, IP, HTTP).</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">OSI Model</div>
+    <div class="glossary-def">A 7-layer conceptual framework for understanding network communication.</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">TCP/IP Model</div>
+    <div class="glossary-def">The 4-layer practical model used by the Internet: Link, Internet, Transport, Application.</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">IP Address</div>
+    <div class="glossary-def">A logical address assigned to a device on a network. IPv4 is 32-bit; IPv6 is 128-bit.</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">MAC Address</div>
+    <div class="glossary-def">A physical hardware address burned into a network interface card (NIC).</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Subnetting</div>
+    <div class="glossary-def">Dividing a network into smaller logical sub-networks using a subnet mask or CIDR prefix.</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">CIDR</div>
+    <div class="glossary-def">Classless Inter-Domain Routing — notation like /24 that specifies the number of network bits.</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">ARP</div>
+    <div class="glossary-def">Address Resolution Protocol — maps an IP address to a MAC address within a local network.</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">NAT</div>
+    <div class="glossary-def">Network Address Translation — rewrites private IP addresses to a public IP for Internet access.</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">DNS</div>
+    <div class="glossary-def">Domain Name System — translates domain names (google.com) to IP addresses.</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">DHCP</div>
+    <div class="glossary-def">Dynamic Host Configuration Protocol — automatically assigns IP addresses using the DORA process.</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Three-Way Handshake</div>
+    <div class="glossary-def">The TCP connection establishment sequence: SYN → SYN-ACK → ACK.</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Flow Control</div>
+    <div class="glossary-def">Preventing a sender from overwhelming a receiver (sliding window in TCP).</div>
+  </div>
+  <div class="glossary-item">
+    <div class="glossary-term">Congestion Control</div>
+    <div class="glossary-def">Preventing a sender from overwhelming the network (AIMD, slow start in TCP).</div>
+  </div>
+</section>
+
+<!-- ==================== SOURCES ==================== -->
+<section id="sources">
+  <h2>Sources &amp; Further Reading</h2>
+  <ul class="source-list">
+    <li>Kurose, J. F., &amp; Ross, K. W. <em>Computer Networking: A Top-Down Approach</em>. Pearson. — Standard university textbook.</li>
+    <li>Tanenbaum, A. S., &amp; Wetherall, D. J. <em>Computer Networks</em>. Pearson. — Comprehensive reference.</li>
+    <li>RFC 791 — Internet Protocol (IPv4). IETF. https://datatracker.ietf.org/doc/html/rfc791</li>
+    <li>RFC 8200 — Internet Protocol, Version 6 (IPv6) Specification. IETF. https://datatracker.ietf.org/doc/html/rfc8200</li>
+    <li>RFC 793 — Transmission Control Protocol (TCP). IETF. https://datatracker.ietf.org/doc/html/rfc793</li>
+    <li>RFC 768 — User Datagram Protocol (UDP). IETF. https://datatracker.ietf.org/doc/html/rfc768</li>
+    <li>RFC 826 — Address Resolution Protocol (ARP). IETF. https://datatracker.ietf.org/doc/html/rfc826</li>
+    <li>RFC 2131 — Dynamic Host Configuration Protocol (DHCP). IETF. https://datatracker.ietf.org/doc/html/rfc2131</li>
+    <li>RFC 1034/1035 — Domain Names (DNS). IETF. https://datatracker.ietf.org/doc/html/rfc1034</li>
+    <li>Microsoft Learn — Port Assignments for Commonly-Used Services. https://learn.microsoft.com/</li>
+    <li>Cisco Learning Network — Subnetting Practice Questions. https://learningnetwork.cisco.com/</li>
+    <li>Carnegie Mellon University — 15-441 Computer Networking lecture notes. http://www.cs.cmu.edu/~srini/15-441/</li>
+    <li>Rutgers University — Final Exam Study Guide: NAT, Firewalls, VPNs. https://people.cs.rutgers.edu/~pxk/classes/419/</li>
+  </ul>
+</section>
+
+</div><!-- /container -->
+
+<footer class="site-footer">
+  <p>Interactive learning module · Computer Networks · Built for Technical interview preparation.</p>
+  <p style="margin-top:4px;">All interactions run locally in your browser. No data is sent anywhere.</p>
+</footer>
+
+<script>
+/* ============================================================
+   GLOBAL STATE
+   ============================================================ */
+const state = {
+  score: 0,
+  totalQuestions: 0,
+  conceptsCompleted: new Set(),
+  currentStage: 'understand',
+  handshakeStep: 0,
+  handshakePlaying: false,
+  finalQuizAnswers: {},
+  finalQuizSubmitted: false
+};
+
+/* ============================================================
+   UTILITY FUNCTIONS
+   ============================================================ */
+function updateGlobalScore() {
+  document.getElementById('globalScore').textContent = state.score;
+  document.getElementById('globalTotal').textContent = state.totalQuestions;
+  document.getElementById('conceptsDone').textContent = state.conceptsCompleted.size;
+}
+
+function markConcept(id) {
+  state.conceptsCompleted.add(id);
+  updateGlobalScore();
+}
+
+function setStage(stage) {
+  state.currentStage = stage;
+  document.querySelectorAll('.stage-pill').forEach(pill => {
+    pill.classList.remove('active');
+    if (pill.dataset.stage === stage) {
+      pill.classList.add('active');
+    }
+  });
+}
+
+/* ============================================================
+   PROGRESS TRACKER — INTERSECTION OBSERVER
+   ============================================================ */
+const sectionStageMap = {
+  'big-picture': 'understand',
+  'core-concepts': 'understand',
+  'ip-addressing': 'explore',
+  'tcp-udp': 'explore',
+  'protocols': 'explore',
+  'mac-arp': 'explore',
+  'security': 'explore',
+  'deeper': 'practice',
+  'final-quiz': 'test',
+  'takeaways': 'review',
+  'mental-model-section': 'review',
+  'glossary': 'review',
+  'sources': 'review'
+};
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      if (sectionStageMap[id]) {
+        setStage(sectionStageMap[id]);
+      }
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+document.querySelectorAll('section[id]').forEach(section => {
+  observer.observe(section);
+});
+
+/* ============================================================
+   OSI LAYER INTERACTION
+   ============================================================ */
+const osiDetails = {
+  7: {
+    title: 'Application Layer (Layer 7)',
+    text: 'Provides network services directly to user applications. This is where protocols like HTTP, DNS, SMTP, and FTP live. The application layer does not mean the application itself — it means the protocols the application uses.',
+    protocols: 'HTTP, HTTPS, DNS, SMTP, FTP, SSH, Telnet',
+    analogy: 'The language you speak when writing a letter — the content and conventions.'
+  },
+  6: {
+    title: 'Presentation Layer (Layer 6)',
+    text: 'Handles data format translation, encryption/decryption, and compression. It ensures that data sent by one system can be read by another, even if they use different internal formats.',
+    protocols: 'TLS/SSL (encryption), JPEG, MPEG, ASCII, EBCDIC',
+    analogy: 'Translating your letter into a language the recipient understands, or sealing it in an encrypted envelope.'
+  },
+  5: {
+    title: 'Session Layer (Layer 5)',
+    text: 'Establishes, manages, and terminates sessions between applications. It handles authentication, permissions, and session restoration.',
+    protocols: 'NetBIOS, RPC, PPTP',
+    analogy: 'Starting a phone call, keeping it connected, and ending it politely.'
+  },
+  4: {
+    title: 'Transport Layer (Layer 4)',
+    text: 'Provides end-to-end delivery. TCP gives reliability and ordering; UDP gives speed and low overhead. Also handles segmentation, flow control, and congestion control.',
+    protocols: 'TCP, UDP',
+    analogy: 'The postal service deciding whether to use certified mail (TCP) or regular postcards (UDP).'
+  },
+  3: {
+    title: 'Network Layer (Layer 3)',
+    text: 'Handles logical addressing and routing. IP addresses live here. Routers operate at this layer to move packets between different networks.',
+    protocols: 'IP (IPv4/IPv6), ICMP, OSPF, BGP',
+    analogy: 'Writing the destination address on an envelope and the postal system choosing the route.'
+  },
+  2: {
+    title: 'Data Link Layer (Layer 2)',
+    text: 'Handles physical addressing (MAC), error detection on a local link, and frame formatting. Switches and bridges operate here.',
+    protocols: 'Ethernet, ARP, PPP, Wi-Fi (802.11)',
+    analogy: 'The local post office sorting mail by street address.'
+  },
+  1: {
+    title: 'Physical Layer (Layer 1)',
+    text: 'Transmits raw bits over a physical medium — cables, fiber optics, radio waves. Defines voltages, pin layouts, and data rates.',
+    protocols: 'Ethernet physical variants, USB, Bluetooth radio',
+    analogy: 'The actual roads and trucks that carry the mail.'
+  }
+};
+
+document.querySelectorAll('.osi-layer').forEach(layer => {
+  layer.addEventListener('click', () => {
+    const num = parseInt(layer.dataset.layer);
+    const detail = osiDetails[num];
+    const detailEl = document.getElementById('osiDetail');
+    detailEl.innerHTML = `
+      <strong style="color:var(--accent-dark);">${detail.title}</strong><br>
+      ${detail.text}<br><br>
+      <strong>Protocols:</strong> ${detail.protocols}<br>
+      <strong>Analogy:</strong> <em>${detail.analogy}</em>
+    `;
+    markConcept('osi-layers');
+  });
+  layer.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      layer.click();
+    }
+  });
+});
+
+/* ============================================================
+   EXPANDABLE SECTIONS
+   ============================================================ */
+document.querySelectorAll('.expandable-header').forEach(header => {
+  header.addEventListener('click', () => {
+    const expandable = header.closest('.expandable');
+    const isOpen = expandable.classList.contains('open');
+    // Close others in the same group? No — allow multiple open.
+    expandable.classList.toggle('open');
+    header.setAttribute('aria-expanded', !isOpen);
+    if (!isOpen) {
+      const conceptId = expandable.dataset.concept;
+      if (conceptId) markConcept(conceptId);
+    }
+  });
+});
+
+/* ============================================================
+   TABS
+   ============================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tabList = btn.closest('.tab-list');
+    const tabs = btn.closest('.tabs');
+    // Deactivate all in this tab group
+    tabList.querySelectorAll('.tab-btn').forEach(b => b.setAttribute('aria-selected', 'false'));
+    tabs.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    // Activate clicked
+    btn.setAttribute('aria-selected', 'true');
+    const panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if (panel) panel.classList.add('active');
+  });
+  btn.addEventListener('keydown', (e) => {
+    const tabList = btn.closest('.tab-list');
+    const buttons = Array.from(tabList.querySelectorAll('.tab-btn'));
+    const idx = buttons.indexOf(btn);
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      buttons[(idx + 1) % buttons.length].focus();
+      buttons[(idx + 1) % buttons.length].click();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      buttons[(idx - 1 + buttons.length) % buttons.length].focus();
+      buttons[(idx - 1 + buttons.length) % buttons.length].click();
+    }
+  });
+});
+
+/* ============================================================
+   QUIZ ENGINE
+   ============================================================ */
+document.querySelectorAll('.quiz-btn[data-check]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const quizId = btn.dataset.check;
+    const correct = btn.dataset.correct;
+    const explanation = btn.dataset.explanation;
+    const block = btn.closest('.quiz-block');
+    const selected = block.querySelector('input[type="radio"]:checked');
+
+    if (!selected) {
+      // No answer selected
+      return;
+    }
+
+    const value = selected.value;
+    const feedback = document.getElementById('fb-' + quizId);
+    const options = block.querySelectorAll('.quiz-option');
+
+    // Disable all options
+    options.forEach(opt => {
+      opt.classList.add('disabled');
+      const input = opt.querySelector('input');
+      if (input) input.disabled = true;
+    });
+
+    // Mark correct/incorrect
+    options.forEach(opt => {
+      const input = opt.querySelector('input');
+      if (input.value === correct) {
+        opt.classList.add('correct');
+      } else if (input.value === value && value !== correct) {
+        opt.classList.add('incorrect');
+      }
+    });
+
+    // Show feedback
+    if (value === correct) {
+      feedback.className = 'quiz-feedback show correct';
+      feedback.innerHTML = '✅ <strong>Correct!</strong> ' + explanation;
+      state.score++;
+    } else {
+      feedback.className = 'quiz-feedback show incorrect';
+      feedback.innerHTML = '❌ <strong>Not quite.</strong> ' + explanation;
+    }
+
+    state.totalQuestions++;
+    updateGlobalScore();
+    markConcept('quiz-' + quizId);
+    btn.disabled = true;
+  });
+});
+
+/* ============================================================
+   PREDICTION REVEAL BUTTONS
+   ============================================================ */
+document.querySelectorAll('[data-reveal]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.reveal);
+    if (target) {
+      target.classList.toggle('hidden');
+      if (!target.classList.contains('hidden')) {
+        btn.textContent = 'Hide explanation';
+      } else {
+        btn.textContent = 'Reveal explanation';
+      }
+    }
+  });
+});
+
+/* ============================================================
+   TCP HANDSHAKE VISUALIZATION
+   ============================================================ */
+const handshakeMessages = ['hm1', 'hm2', 'hm3'];
+const handshakeSteps = document.querySelectorAll('.handshake-step');
+
+function resetHandshakeViz() {
+  state.handshakeStep = 0;
+  state.handshakePlaying = false;
+  handshakeMessages.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('show');
+  });
+  handshakeSteps.forEach(s => {
+    s.classList.remove('active', 'done');
+  });
+  const btn = document.getElementById('playHandshake');
+  if (btn) btn.textContent = '▶ Play Handshake';
+}
+
+function playHandshake() {
+  if (state.handshakePlaying) return;
+  resetHandshakeViz();
+  state.handshakePlaying = true;
+  document.getElementById('playHandshake').textContent = 'Playing…';
+
+  let step = 0;
+  function showNext() {
+    if (step >= handshakeMessages.length) {
+      state.handshakePlaying = false;
+      document.getElementById('playHandshake').textContent = '▶ Play Handshake';
+      markConcept('tcp-handshake');
+      return;
+    }
+    const msgId = handshakeMessages[step];
+    const el = document.getElementById(msgId);
+    if (el) el.classList.add('show');
+
+    handshakeSteps.forEach((s, i) => {
+      s.classList.remove('active');
+      if (i < step) s.classList.add('done');
+      if (i === step) s.classList.add('active');
+    });
+
+    step++;
+    setTimeout(showNext, 900);
+  }
+  showNext();
+}
+
+const playBtn = document.getElementById('playHandshake');
+const resetBtn = document.getElementById('resetHandshake');
+if (playBtn) playBtn.addEventListener('click', playHandshake);
+if (resetBtn) resetBtn.addEventListener('click', resetHandshakeViz);
+
+/* ============================================================
+   SUBNET CALCULATOR
+   ============================================================ */
+function ipToInt(ip) {
+  const parts = ip.split('.').map(Number);
+  return ((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+}
+
+function intToIp(int) {
+  return [
+    (int >>> 24) & 255,
+    (int >>> 16) & 255,
+    (int >>> 8) & 255,
+    int & 255
+  ].join('.');
+}
+
+function prefixToMask(prefix) {
+  return (0xFFFFFFFF << (32 - prefix)) >>> 0;
+}
+
+function calcSubnet() {
+  const ipInput = document.getElementById('subnetIp').value.trim();
+  const prefixInput = parseInt(document.getElementById('subnetPrefix').value);
+
+  // Validate
+  const ipParts = ipInput.split('.');
+  if (ipParts.length !== 4 || ipParts.some(p => isNaN(Number(p)) || Number(p) < 0 || Number(p) > 255)) {
+    alert('Please enter a valid IPv4 address (e.g., 192.168.1.100)');
+    return;
+  }
+  if (isNaN(prefixInput) || prefixInput < 1 || prefixInput > 32) {
+    alert('Please enter a valid prefix length (1–32)');
+    return;
+  }
+
+  const ipInt = ipToInt(ipInput);
+  const maskInt = prefixToMask(prefixInput);
+  const networkInt = (ipInt & maskInt) >>> 0;
+  const broadcastInt = (networkInt | (~maskInt >>> 0)) >>> 0;
+  const hostBits = 32 - prefixInput;
+  const totalHosts = Math.pow(2, hostBits);
+  const usableHosts = totalHosts > 2 ? totalHosts - 2 : 0;
+
+  document.getElementById('resMask').textContent = intToIp(maskInt);
+  document.getElementById('resNetwork').textContent = intToIp(networkInt);
+  document.getElementById('resBroadcast').textContent = intToIp(broadcastInt);
+  document.getElementById('resFirst').textContent = usableHosts > 0 ? intToIp(networkInt + 1) : 'N/A';
+  document.getElementById('resLast').textContent = usableHosts > 0 ? intToIp(broadcastInt - 1) : 'N/A';
+  document.getElementById('resHosts').textContent = usableHosts;
+
+  markConcept('subnet-calc');
+}
+
+const calcBtn = document.getElementById('calcSubnet');
+if (calcBtn) calcBtn.addEventListener('click', calcSubnet);
+
+// Allow Enter key
+document.getElementById('subnetIp')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') calcSubnet();
+});
+document.getElementById('subnetPrefix')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') calcSubnet();
+});
+
+/* ============================================================
+   FINAL QUIZ
+   ============================================================ */
+const finalQuizQuestions = [
+  {
+    id: 'fq1',
+    q: 'Which layer of the OSI model is responsible for logical addressing and routing?',
+    options: ['Transport', 'Network', 'Data Link', 'Session'],
+    correct: 1,
+    explanation: 'The Network layer (Layer 3) handles logical addressing (IP addresses) and routing between different networks.'
+  },
+  {
+    id: 'fq2',
+    q: 'What is the correct order of the TCP three-way handshake?',
+    options: ['SYN → ACK → SYN-ACK', 'ACK → SYN → SYN-ACK', 'SYN → SYN-ACK → ACK', 'SYN-ACK → SYN → ACK'],
+    correct: 2,
+    explanation: 'The client sends SYN, the server responds with SYN-ACK, and the client sends ACK. This establishes the connection.'
+  },
+  {
+    id: 'fq3',
+    q: 'How many usable hosts are available on a /28 subnet?',
+    options: ['16', '14', '30', '12'],
+    correct: 1,
+    explanation: '/28 = 4 host bits. 2⁴ − 2 = 14 usable hosts. The two subtracted addresses are network and broadcast.'
+  },
+  {
+    id: 'fq4',
+    q: 'Which protocol is used to map an IP address to a MAC address within a LAN?',
+    options: ['DNS', 'DHCP', 'ARP', 'RARP'],
+    correct: 2,
+    explanation: 'ARP (Address Resolution Protocol) broadcasts a request asking "Who has this IP?" and receives a unicast reply with the MAC address.'
+  },
+  {
+    id: 'fq5',
+    q: 'Which of these uses UDP as its primary transport protocol?',
+    options: ['HTTP', 'FTP', 'DNS', 'SMTP'],
+    correct: 2,
+    explanation: 'DNS primarily uses UDP (port 53) for fast, connectionless queries. HTTP, FTP, and SMTP all use TCP.'
+  },
+  {
+    id: 'fq6',
+    q: 'What does NAT provide as a security benefit?',
+    options: ['Encrypts all traffic', 'Blocks unsolicited inbound connections by default', 'Filters malicious payloads', 'Authenticates users'],
+    correct: 1,
+    explanation: 'NAT only creates translation entries when internal hosts initiate connections, so external hosts cannot initiate unsolicited inbound connections.'
+  },
+  {
+    id: 'fq7',
+    q: 'What is the key difference between a switch and a router?',
+    options: ['A switch is faster', 'A switch uses MAC addresses; a router uses IP addresses', 'A router only works with IPv6', 'A switch connects to the Internet; a router does not'],
+    correct: 1,
+    explanation: 'Switches operate at Layer 2 and forward based on MAC addresses within a network. Routers operate at Layer 3 and forward based on IP addresses between networks.'
+  },
+  {
+    id: 'fq8',
+    q: 'What is the purpose of the DHCP DORA process?',
+    options: ['To encrypt data', 'To automatically assign IP addresses', 'To resolve domain names', 'To route packets'],
+    correct: 1,
+    explanation: 'DHCP uses Discover, Offer, Request, Acknowledge (DORA) to automatically assign IP addresses and network configuration to devices.'
+  },
+  {
+    id: 'fq9',
+    q: 'Which statement about TCP flow control is correct?',
+    options: ['It prevents the sender from overwhelming the network', 'It prevents the sender from overwhelming the receiver', 'It ensures packets arrive in order', 'It encrypts data'],
+    correct: 1,
+    explanation: 'Flow control uses a sliding window (advertised window) to prevent the sender from overwhelming the receiver. Congestion control prevents overwhelming the network.'
+  },
+  {
+    id: 'fq10',
+    q: 'What does the OSI model represent?',
+    options: ['The actual implementation of the Internet', 'A conceptual framework for network communication', 'A security protocol', 'A routing algorithm'],
+    correct: 1,
+    explanation: 'The OSI model is a conceptual 7-layer framework for understanding network communication. The Internet actually uses the TCP/IP model.'
+  }
+];
+
+function renderFinalQuiz() {
+  const container = document.getElementById('finalQuizContainer');
+  if (!container) return;
+  container.innerHTML = finalQuizQuestions.map((q, idx) => `
+    <div class="quiz-block" data-fq="${q.id}">
+      <div class="quiz-question">${idx + 1}. ${q.q}</div>
+      <div class="quiz-options">
+        ${q.options.map((opt, oi) => `
+          <label class="quiz-option">
+            <input type="radio" name="${q.id}" value="${oi}">
+            <span>${opt}</span>
+          </label>
+        `).join('')}
+      </div>
+      <div class="quiz-feedback" id="fb-${q.id}"></div>
+    </div>
+  `).join('');
+}
+
+function submitFinalQuiz() {
+  if (state.finalQuizSubmitted) return;
+  let correctCount = 0;
+
+  finalQuizQuestions.forEach(q => {
+    const selected = document.querySelector(`input[name="${q.id}"]:checked`);
+    const block = document.querySelector(`.quiz-block[data-fq="${q.id}"]`);
+    const feedback = document.getElementById('fb-' + q.id);
+    const options = block.querySelectorAll('.quiz-option');
+
+    options.forEach(opt => {
+      opt.classList.add('disabled');
+      const input = opt.querySelector('input');
+      if (input) input.disabled = true;
+    });
+
+    if (!selected) {
+      // Unanswered
+      options.forEach(opt => {
+        const input = opt.querySelector('input');
+        if (input.value == q.correct) opt.classList.add('correct');
+      });
+      feedback.className = 'quiz-feedback show incorrect';
+      feedback.innerHTML = '⚠️ <strong>Not answered.</strong> ' + q.explanation;
+      return;
+    }
+
+    const value = parseInt(selected.value);
+    options.forEach(opt => {
+      const input = opt.querySelector('input');
+      if (parseInt(input.value) === q.correct) {
+        opt.classList.add('correct');
+      } else if (parseInt(input.value) === value && value !== q.correct) {
+        opt.classList.add('incorrect');
+      }
+    });
+
+    if (value === q.correct) {
+      correctCount++;
+      feedback.className = 'quiz-feedback show correct';
+      feedback.innerHTML = '✅ <strong>Correct!</strong> ' + q.explanation;
+    } else {
+      feedback.className = 'quiz-feedback show incorrect';
+      feedback.innerHTML = '❌ <strong>Not quite.</strong> ' + q.explanation;
+    }
+  });
+
+  state.finalQuizSubmitted = true;
+  const pct = Math.round((correctCount / finalQuizQuestions.length) * 100);
+  document.getElementById('finalScoreCircle').textContent = pct + '%';
+  document.getElementById('finalScoreCircle').className = 'score-circle ' +
+    (pct >= 80 ? 'good' : pct >= 50 ? 'ok' : 'poor');
+  document.getElementById('finalScoreText').textContent =
+    correctCount + ' of ' + finalQuizQuestions.length + ' correct';
+
+  document.getElementById('finalQuizResult').innerHTML = `
+    <div class="card ${pct >= 80 ? 'card-green' : pct >= 50 ? 'card-amber' : 'card-red'}">
+      <h4>${pct >= 80 ? '🎉 Excellent!' : pct >= 50 ? '📖 Good effort — review the misses.' : '📚 Keep studying — you\'ll get there.'}</h4>
+      <p>You scored <strong>${correctCount}/${finalQuizQuestions.length}</strong> (${pct}%).
+      ${pct >= 80 ? 'You have a strong grasp of networking fundamentals.' : pct >= 50 ? 'Review the explanations above and try again.' : 'Go back through the earlier sections and revisit the core concepts.'}</p>
+    </div>
+  `;
+
+  state.score += correctCount;
+  state.totalQuestions += finalQuizQuestions.length;
+  updateGlobalScore();
+  markConcept('final-quiz');
+  document.getElementById('submitFinalQuiz').disabled = true;
+  setStage('review');
+}
+
+function resetFinalQuiz() {
+  state.finalQuizSubmitted = false;
+  state.finalQuizAnswers = {};
+  document.getElementById('finalScoreCircle').textContent = '0%';
+  document.getElementById('finalScoreCircle').className = 'score-circle';
+  document.getElementById('finalScoreText').textContent = '0 of 10 correct';
+  document.getElementById('finalQuizResult').innerHTML = '';
+  document.getElementById('submitFinalQuiz').disabled = false;
+  renderFinalQuiz();
+}
+
+// Initialize final quiz
+renderFinalQuiz();
+
+document.getElementById('submitFinalQuiz')?.addEventListener('click', submitFinalQuiz);
+document.getElementById('resetFinalQuiz')?.addEventListener('click', resetFinalQuiz);
+
+/* ============================================================
+   INIT
+   ============================================================ */
+updateGlobalScore();
+setStage('understand');
+</script>
+
+</body>
+</html>

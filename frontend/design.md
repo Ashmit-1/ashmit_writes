@@ -182,9 +182,15 @@ The exact visual treatment should be:
 
 The difference should feel editorial rather than promotional. `AI` is the only part of the wordmark that intentionally breaks the typography system.
 
-Do not add an icon or logo mark unless a later product need requires one.
+The logo mark (`frontend/public/logo.svg`) appears beside the wordmark in the **top bar only**:
 
-**Favicon exception.** A favicon is served from `frontend/public/logo.svg` and linked in `index.html`. It is browser-chrome only: it must not be reused as an inline nav logo or beside the wordmark. The mark is a small node graph with the accent sparkle, echoing the hero constellation.
+* rendered at ~28px, vertically aligned with the compact wordmark's cap height;
+* small and quiet — it supports the wordmark rather than competing with it;
+* it is the same asset as the favicon, so there is one mark to maintain;
+* it is not repeated beside the hero heading, which stays purely typographic;
+* it is marked decorative (`alt=""`) because the adjacent wordmark already names the brand.
+
+Beyond this, do not add further icon or logo marks unless a later product need requires one.
 
 ## Tagline
 

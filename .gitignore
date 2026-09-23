@@ -1,0 +1,16 @@
+# Build output (collected from frontend/dist by scripts/collect-dist.mjs)
+dist
+
+# Dependencies
+node_modules
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.local

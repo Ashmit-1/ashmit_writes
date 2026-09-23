@@ -1,0 +1,14 @@
+{
+  "name": "ashmit-and-ai-writes",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Static gateway for interactive HTML learning articles.",
+  "scripts": {
+    "postinstall": "npm --prefix frontend install",
+    "manifest": "npm --prefix frontend run manifest",
+    "build": "npm --prefix frontend run build && node scripts/collect-dist.mjs",
+    "dev": "npm --prefix frontend run dev",
+    "preview": "npm --prefix frontend run preview",
+    "install:frontend": "npm --prefix frontend install"
+  }
+}

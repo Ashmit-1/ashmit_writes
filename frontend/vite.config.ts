@@ -30,6 +30,8 @@ function copyBlogsPlugin(): Plugin {
       // served verbatim from the site root, matching the manifest URLs.
       cpSync(BLOGS_DIR, path.resolve(FRONTEND_DIR, 'dist/blogs'), {
         recursive: true,
+        // Dotfiles such as blogs/.gitignore are repo plumbing, not content.
+        filter: (source) => !path.basename(source).startsWith('.'),
       })
     },
   }

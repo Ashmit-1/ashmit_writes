@@ -184,6 +184,8 @@ The difference should feel editorial rather than promotional. `AI` is the only p
 
 Do not add an icon or logo mark unless a later product need requires one.
 
+**Favicon exception.** A favicon is served from `frontend/public/logo.svg` and linked in `index.html`. It is browser-chrome only: it must not be reused as an inline nav logo or beside the wordmark. The mark is a small node graph with the accent sparkle, echoing the hero constellation.
+
 ## Tagline
 
 The phrase **"Ashmit and AI Writes"** functions as the primary identity and hero heading, not a tiny navbar logo.

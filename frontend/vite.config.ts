@@ -28,8 +28,13 @@ function copyBlogsPlugin(): Plugin {
       }
       // `blogs/` (including the generated index.json and every lesson) is
       // served verbatim from the site root, matching the manifest URLs.
+      // `force: true` overwrites anything already present so repeat builds on
+      // a dirty dist/ succeed. `preserveTimestamps` is left off because some
+      // filesystems (e.g. FUSE/NTFS mounts) cannot apply chmod, which would
+      // otherwise make cpSync throw.
       cpSync(BLOGS_DIR, path.resolve(FRONTEND_DIR, 'dist/blogs'), {
         recursive: true,
+        force: true,
         // Dotfiles such as blogs/.gitignore are repo plumbing, not content.
         filter: (source) => !path.basename(source).startsWith('.'),
       })

@@ -41,6 +41,17 @@ Metadata validation is defensive. An entry is skipped with a build-time warning 
 
 The gateway must therefore remain a static site. Adding or removing a lesson requires no frontend code change — only the content folder.
 
+### Build and deployment
+
+The deployable artifact is a plain static directory:
+
+* `npm run build` at the repository root builds the frontend and collects the result into a root-level `dist/`.
+* `dist/` contains `index.html`, hashed assets, and a verbatim copy of `blogs/` (manifest plus every lesson).
+* Asset and manifest URLs are root-absolute (`/assets/...`, `/blogs/index.json`), so the site must be hosted at a **domain root**, not a subpath. Deploying under a path prefix would require changing `base` in `vite.config.ts` and the public blog base in the build script.
+* No server-side rendering, routing, or API is required. The site is a single page plus static lesson files.
+
+Hosting (Cloudflare Pages) uses: build command `npm run build`, output directory `dist`, root directory `/`.
+
 ---
 
 # Philosophy

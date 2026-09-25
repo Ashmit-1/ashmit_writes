@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Fundamentals Crash Course — HTML, CSS &amp; JS </title>
+<style>
+/* ============ RESET & BASE ============ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #f8f9fb;
+  color: #1e293b;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; }
+button { font-family: inherit; cursor: pointer; }
+code, pre { font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", Consolas, monospace; }
+
+/* ============ LAYOUT ============ */
+.page-wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+
+/* ============ PROGRESS BAR ============ */
+.progress-sticky {
+  position: sticky; top: 0; z-index: 100;
+  background: #fff; border-bottom: 1px solid #e2e8f0;
+  padding: .5rem 1rem; display: flex; align-items: center; gap: .75rem;
+  font-size: .8rem; color: #64748b;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.progress-track {
+  flex: 1; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; width: 0%; background: #2563eb; border-radius: 3px;
+  transition: width .4s ease;
+}
+.progress-label { white-space: nowrap; font-weight: 600; color: #2563eb; }
+
+/* ============ TYPOGRAPHY ============ */
+h1 { font-size: 1.9rem; font-weight: 700; line-height: 1.25; color: #0f172a; margin-bottom: .5rem; }
+h2 { font-size: 1.45rem; font-weight: 700; color: #0f172a; margin: 2.5rem 0 1rem; padding-bottom: .5rem; border-bottom: 2px solid #e2e8f0; }
+h3 { font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 1.5rem 0 .5rem; }
+h4 { font-size: 1rem; font-weight: 700; color: #334155; margin: 1.25rem 0 .35rem; }
+p { margin-bottom: .85rem; }
+ul, ol { margin: .5rem 0 1rem 1.25rem; }
+li { margin-bottom: .3rem; }
+strong { font-weight: 700; }
+sub { font-size: .8em; }
+.lead { font-size: 1.05rem; color: #475569; }
+
+/* ============ CARDS & SECTIONS ============ */
+.card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 1.25rem 1.5rem; margin: 1rem 0;
+}
+.card-accent { border-left: 4px solid #2563eb; }
+.card-warn { border-left: 4px solid #f59e0b; background: #fffbeb; }
+.card-tip { border-left: 4px solid #10b981; background: #f0fdf4; }
+
+.callout {
+  padding: .9rem 1.1rem; border-radius: 8px; margin: 1rem 0; font-size: .92rem;
+}
+.callout-blue { background: #eff6ff; border: 1px solid #bfdbfe; }
+.callout-amber { background: #fffbeb; border: 1px solid #fde68a; }
+.callout-green { background: #f0fdf4; border: 1px solid #bbf7d0; }
+
+/* ============ CODE BLOCKS ============ */
+pre {
+  background: #1e293b; color: #e2e8f0; border-radius: 8px;
+  padding: 1rem 1.25rem; overflow-x: auto; font-size: .82rem;
+  line-height: 1.6; margin: .75rem 0;
+}
+code { font-size: .85em; }
+p code, li code {
+  background: #e2e8f0; color: #1e293b; padding: .15em .4em;
+  border-radius: 4px; font-size: .82em;
+}
+.output-box {
+  background: #f1f5f9; color: #1e293b; border: 1px solid #e2e8f0;
+  border-radius: 6px; padding: .75rem 1rem; font-size: .85rem;
+  font-family: "SF Mono", "Fira Code", monospace; margin: .5rem 0;
+}
+.output-box::before {
+  content: "▶ Output"; display: block; font-size: .7rem;
+  font-weight: 700; color: #64748b; margin-bottom: .25rem;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+
+/* ============ TABS ============ */
+.tabs { margin: 1rem 0; }
+.tab-btns { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; flex-wrap: wrap; }
+.tab-btn {
+  padding: .55rem 1.1rem; border: none; background: transparent;
+  font-size: .85rem; font-weight: 600; color: #64748b;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: all .15s;
+}
+.tab-btn:hover { color: #2563eb; }
+.tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+.tab-panel { display: none; padding: 1rem 0; }
+.tab-panel.active { display: block; }
+
+/* ============ QUIZ / INTERACTIVE ============ */
+.quiz-q { margin: 1.25rem 0; }
+.quiz-q .q-text { font-weight: 600; margin-bottom: .6rem; }
+.quiz-options label {
+  display: block; padding: .5rem .75rem; margin: .3rem 0;
+  border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer;
+  font-size: .9rem; transition: all .15s; background: #fff;
+}
+.quiz-options label:hover { border-color: #93c5fd; background: #f0f7ff; }
+.quiz-options input[type="radio"] { margin-right: .5rem; }
+.quiz-options input[type="radio"]:checked + span { font-weight: 600; }
+.quiz-options label.correct { border-color: #10b981; background: #f0fdf4; }
+.quiz-options label.wrong { border-color: #ef4444; background: #fef2f2; }
+.quiz-feedback {
+  margin-top: .6rem; padding: .75rem 1rem; border-radius: 6px;
+  font-size: .88rem; display: none;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #065f46; }
+.quiz-feedback.no { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.quiz-actions { margin-top: .5rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+
+/* ============ BUTTONS ============ */
+.btn {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .5rem 1.1rem; border-radius: 6px; font-size: .85rem;
+  font-weight: 600; border: 1px solid transparent; transition: all .15s;
+}
+.btn-primary { background: #2563eb; color: #fff; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-outline { background: #fff; color: #2563eb; border-color: #93c5fd; }
+.btn-outline:hover { background: #eff6ff; }
+.btn-ghost { background: transparent; color: #64748b; border-color: #e2e8f0; }
+.btn-ghost:hover { background: #f1f5f9; }
+.btn-sm { padding: .35rem .8rem; font-size: .8rem; }
+.btn:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+
+/* ============ INTERACTIVE DEMO ============ */
+.demo-area {
+  border: 1px dashed #cbd5e1; border-radius: 8px; padding: 1rem;
+  background: #fafbfc; margin: .75rem 0; min-height: 60px;
+}
+.demo-controls { display: flex; gap: .5rem; flex-wrap: wrap; margin: .5rem 0; }
+.demo-controls input, .demo-controls select {
+  padding: .4rem .6rem; border: 1px solid #cbd5e1; border-radius: 5px;
+  font-size: .85rem; font-family: inherit;
+}
+.demo-controls input:focus { outline: 2px solid #93c5fd; }
+
+/* ============ SPECIFICITY CALCULATOR ============ */
+.spec-result { font-family: monospace; font-size: 1.1rem; font-weight: 700; color: #2563eb; }
+
+/* ============ TABLE ============ */
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .88rem; }
+th, td { padding: .6rem .8rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+th { background: #f8fafc; font-weight: 700; color: #334155; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+tr:hover td { background: #f8fafc; }
+
+/* ============ FLASHCARD ============ */
+.flashcard {
+  perspective: 800px; margin: .75rem 0; cursor: pointer;
+}
+.flashcard-inner {
+  position: relative; width: 100%; min-height: 80px;
+  transition: transform .5s; transform-style: preserve-3d;
+}
+.flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+.flashcard-front, .flashcard-back {
+  position: absolute; inset: 0; backface-visibility: hidden;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem; border-radius: 8px; font-size: .9rem; text-align: center;
+}
+.flashcard-front { background: #eff6ff; border: 1px solid #bfdbfe; font-weight: 600; }
+.flashcard-back { background: #f0fdf4; border: 1px solid #bbf7d0; transform: rotateY(180deg); font-size: .85rem; }
+.flashcard-hint { font-size: .75rem; color: #94a3b8; margin-top: .25rem; }
+
+/* ============ BADGE ============ */
+.badge {
+  display: inline-block; padding: .2em .6em; border-radius: 4px;
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .04em; vertical-align: middle;
+}
+.badge-blue { background: #dbeafe; color: #1e40af; }
+.badge-green { background: #dcfce7; color: #166534; }
+.badge-amber { background: #fef3c7; color: #92400e; }
+.badge-red { background: #fee2e2; color: #991b1b; }
+
+/* ============ FINAL SCORE ============ */
+.score-display {
+  text-align: center; padding: 1.5rem; background: #fff;
+  border: 2px solid #e2e8f0; border-radius: 12px; margin: 1rem 0;
+}
+.score-display .score-num { font-size: 2.5rem; font-weight: 800; color: #2563eb; }
+.score-display .score-label { font-size: .9rem; color: #64748b; }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 600px) {
+  .page-wrap { padding: 1rem .75rem 3rem; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.2rem; }
+  pre { font-size: .75rem; padding: .75rem; }
+  .tab-btn { padding: .45rem .7rem; font-size: .78rem; }
+}
+
+/* ============ REDUCED MOTION ============ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  html { scroll-behavior: auto; }
+}
+
+/* ============ FOCUS ============ */
+:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ===== PROGRESS BAR ===== -->
+<div class="progress-sticky" role="progressbar" aria-label="Course progress" aria-valuemin="0" aria-valuemax="100" id="progressBar">
+  <span class="progress-label" id="progressLabel">0%</span>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <span id="progressSection">Start</span>
+</div>
+
+<div class="page-wrap">
+
+<!-- ============================================================ -->
+<!-- 1. HEADER / LEARNING OBJECTIVE -->
+<!-- ============================================================ -->
+<header>
+  <p class="badge badge-blue" style="margin-bottom:.75rem;">Interview Crash Course</p>
+  <h1>HTML, CSS &amp; JavaScript </h1>
+  <p class="lead">A focused, interactive crash course for B.Tech CSE students. Built around the questions that actually get asked.</p>
+
+  <div class="card card-accent" style="margin-top:1.25rem;">
+    <h3 style="margin-top:0;">By the end, you should understand:</h3>
+    <ul>
+      <li><strong>HTML</strong> — document structure, semantic elements, forms, inputs, attributes, HTML5 features</li>
+      <li><strong>CSS</strong> — selectors, specificity, box model, display, position, units, flexbox, grid, responsive design</li>
+      <li><strong>JavaScript</strong> — variables, data types, operators, conditionals, loops, functions, arrays, objects, strings, scope, ES6</li>
+      <li><strong>DOM &amp; Events</strong> — selecting elements, modifying content/styles, creating/removing elements, event handling, propagation, validation</li>
+      <li>How to <strong>predict code output</strong> and answer <strong>MCQs</strong> confidently under time pressure</li>
+    </ul>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<!-- 2. THE BIG PICTURE -->
+<!-- ============================================================ -->
+<h2 id="big-picture">The Big Picture</h2>
+
+<p>Every webpage you've ever visited is built from three cooperating languages. Think of a webpage like a human body:</p>
+
+<div class="card">
+  <table>
+    <thead><tr><th>Language</th><th>Role</th><th>Analogy</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><strong>HTML</strong></td><td>Structure &amp; content</td><td>Skeleton / bones</td><td><code>&lt;h1&gt;Hello&lt;/h1&gt;</code></td></tr>
+      <tr><td><strong>CSS</strong></td><td>Presentation &amp; layout</td><td>Skin, clothing, posture</td><td><code>h1 { color: blue; }</code></td></tr>
+      <tr><td><strong>JavaScript</strong></td><td>Behavior &amp; interactivity</td><td>Muscles &amp; nervous system</td><td><code>document.querySelector('h1').textContent = 'Hi';</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout callout-blue">
+  <strong>Interview tip:</strong> Interviewers often start with <em>"Can you explain how HTML, CSS, and JavaScript work together?"</em> — This table is your answer. Mention separation of concerns: structure, presentation, and behavior.
+</div>
+
+<h3>Why this matters for your interview</h3>
+<ul>
+  <li>Online tests include <strong>output-prediction questions</strong>, <strong>MCQs on syntax</strong>, and <strong>code-based problems</strong> on these three languages.</li>
+  <li>Technical interviews frequently ask about <strong>semantic HTML</strong>, <strong>flexbox vs. grid</strong>, <strong><code>let</code> vs <code>var</code></strong>, <strong>event propagation</strong>, and <strong>DOM manipulation</strong>.</li>
+  <li>Freshers are expected to write clean, semantic, accessible code — not just code that works.</li>
+</ul>
+
+<!-- ============================================================ -->
+<!-- 3. HTML FUNDAMENTALS -->
+<!-- ============================================================ -->
+<h2 id="html">HTML Fundamentals</h2>
+
+<h3>What is HTML?</h3>
+<p><strong>HTML (HyperText Markup Language)</strong> is the standard markup language for creating web pages. It describes the <em>structure</em> of a document using a system of <strong>elements</strong> — each element is defined by a <strong>tag</strong>, and elements can have <strong>attributes</strong> that provide additional information.</p>
+
+<div class="card">
+  <h4>Anatomy of an HTML element</h4>
+  <pre>&lt;<span style="color:#7dd3fc">a</span> <span style="color:#fbbf24">href</span>=<span style="color:#86efac">"https://example.com"</span>&gt;Visit Example&lt;/<span style="color:#7dd3fc">a</span>&gt;
+ │   │                      │                        │
+ │   │                      │                        └─ Content
+ │   │                      └─ Attribute value
+ │   └─ Attribute name
+ └─ Tag name (opening tag)            Closing tag</pre>
+</div>
+
+<h3>Document structure</h3>
+<p>Every HTML5 document follows the same skeleton. This is one of the most predictable interview questions.</p>
+
+<div class="tabs" id="html-structure-tabs">
+  <div class="tab-btns" role="tablist">
+    <button class="tab-btn active" role="tab" aria-selected="true" data-tab="html-structure-tabs-0">The skeleton</button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="html-structure-tabs-1">Semantic elements</button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="html-structure-tabs-2">Common tags</button>
+  </div>
+
+  <div class="tab-panel active" role="tabpanel" id="html-structure-tabs-0">
+    <pre>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+  &lt;title&gt;Page Title&lt;/title&gt;
+  &lt;link rel="stylesheet" href="style.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;!-- Visible content goes here --&gt;
+  &lt;script src="app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+    <p><strong>Key parts:</strong></p>
+    <ul>
+      <li><code>&lt;!DOCTYPE html&gt;</code> — tells the browser this is HTML5</li>
+      <li><code>&lt;html lang="en"&gt;</code> — root element; <code>lang</code> helps screen readers and search engines</li>
+      <li><code>&lt;head&gt;</code> — metadata (not visible on the page)</li>
+      <li><code>&lt;body&gt;</code> — everything visible</li>
+      <li><code>&lt;meta name="viewport"&gt;</code> — critical for responsive design on mobile</li>
+    </ul>
+  </div>
+
+  <div class="tab-panel" role="tabpanel" id="html-structure-tabs-1">
+    <p>Semantic elements <em>describe their meaning</em> to the browser and developers, unlike <code>&lt;div&gt;</code> and <code>&lt;span&gt;</code> which carry no meaning.</p>
+    <table>
+      <thead><tr><th>Element</th><th>Meaning</th><th>When to use</th></tr></thead>
+      <tbody>
+        <tr><td><code>&lt;header&gt;</code></td><td>Introductory content</td><td>Page top, article header</td></tr>
+        <tr><td><code>&lt;nav&gt;</code></td><td>Navigation links</td><td>Main menu, breadcrumbs</td></tr>
+        <tr><td><code>&lt;main&gt;</code></td><td>Primary content</td><td>Once per page — the core content</td></tr>
+        <tr><td><code>&lt;article&gt;</code></td><td>Self-contained content</td><td>Blog post, news story, forum post</td></tr>
+        <tr><td><code>&lt;section&gt;</code></td><td>Thematic grouping</td><td>Chapters, tabbed content</td></tr>
+        <tr><td><code>&lt;aside&gt;</code></td><td>Side content</td><td>Sidebar, pull quotes, ads</td></tr>
+        <tr><td><code>&lt;footer&gt;</code></td><td>Footer content</td><td>Copyright, contact info</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-amber">
+      <strong>Why semantic HTML matters:</strong> Accessibility (screen readers announce landmarks), SEO (search engines understand structure), and maintainability (other developers read your code faster). Interviewers specifically ask: <em>"What are semantic elements and how do they help in SEO?"</em>
+    </div>
+  </div>
+
+  <div class="tab-panel" role="tabpanel" id="html-structure-tabs-2">
+    <table>
+      <thead><tr><th>Category</th><th>Tags</th></tr></thead>
+      <tbody>
+        <tr><td>Headings</td><td><code>&lt;h1&gt;</code> to <code>&lt;h6&gt;</code></td></tr>
+        <tr><td>Text</td><td><code>&lt;p&gt;</code>, <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;br&gt;</code>, <code>&lt;hr&gt;</code>, <code>&lt;blockquote&gt;</code></td></tr>
+        <tr><td>Links</td><td><code>&lt;a href="..."&gt;</code></td></tr>
+        <tr><td>Images</td><td><code>&lt;img src="..." alt="..."&gt;</code></td></tr>
+        <tr><td>Lists</td><td><code>&lt;ul&gt;</code>, <code>&lt;ol&gt;</code>, <code>&lt;li&gt;</code>, <code>&lt;dl&gt;</code>, <code>&lt;dt&gt;</code>, <code>&lt;dd&gt;</code></td></tr>
+        <tr><td>Tables</td><td><code>&lt;table&gt;</code>, <code>&lt;thead&gt;</code>, <code>&lt;tbody&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;th&gt;</code>, <code>&lt;td&gt;</code></td></tr>
+        <tr><td>Forms</td><td><code>&lt;form&gt;</code>, <code>&lt;input&gt;</code>, <code>&lt;label&gt;</code>, <code>&lt;select&gt;</code>, <code>&lt;textarea&gt;</code>, <code>&lt;button&gt;</code></td></tr>
+        <tr><td>Containers</td><td><code>&lt;div&gt;</code> (block), <code>&lt;span&gt;</code> (inline)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<h3>Forms and inputs</h3>
+<p>Forms are heavily tested because they combine HTML, accessibility, and validation. Tests often include questions about <code>input</code> types, attributes, and client-side validation.</p>
+
+<div class="card">
+  <pre>&lt;form action="/submit" method="POST"&gt;
+  &lt;label for="email"&gt;Email:&lt;/label&gt;
+  &lt;input type="email" id="email" name="email"
+         required placeholder="you@example.com"&gt;
+
+  &lt;label for="pwd"&gt;Password:&lt;/label&gt;
+  &lt;input type="password" id="pwd" name="pwd"
+         minlength="8" required&gt;
+
+  &lt;button type="submit"&gt;Sign Up&lt;/button&gt;
+&lt;/form&gt;</pre>
+</div>
+
+<h4>Common <code>input</code> types</h4>
+<table>
+  <thead><tr><th>Type</th><th>Purpose</th><th>Built-in validation</th></tr></thead>
+  <tbody>
+    <tr><td><code>text</code></td><td>Single-line text</td><td>None (use <code>pattern</code>)</td></tr>
+    <tr><td><code>email</code></td><td>Email address</td><td>Requires <code>@</code> and domain</td></tr>
+    <tr><td><code>password</code></td><td>Masked input</td><td>None (use <code>minlength</code>)</td></tr>
+    <tr><td><code>number</code></td><td>Numeric input</td><td>Accepts only numbers</td></tr>
+    <tr><td><code>checkbox</code></td><td>Multiple selections</td><td>None</td></tr>
+    <tr><td><code>radio</code></td><td>Single selection from group</td><td>None</td></tr>
+    <tr><td><code>file</code></td><td>File upload</td><td>None</td></tr>
+    <tr><td><code>date</code></td><td>Date picker</td><td>Date format</td></tr>
+    <tr><td><code>range</code></td><td>Slider</td><td>Min/max bounds</td></tr>
+    <tr><td><code>submit</code></td><td>Submit button</td><td>Triggers form validation</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-green">
+  <strong>Key form attributes to remember:</strong>
+  <ul style="margin-bottom:0;">
+    <li><code>required</code> — field must be filled</li>
+    <li><code>placeholder</code> — hint text shown when empty</li>
+    <li><code>minlength</code> / <code>maxlength</code> — character limits</li>
+    <li><code>min</code> / <code>max</code> — numeric bounds</li>
+    <li><code>pattern</code> — regex validation (e.g. <code>pattern="[0-9]{6}"</code> for a 6-digit PIN)</li>
+    <li><code>autocomplete</code> — browser autofill hints</li>
+  </ul>
+</div>
+
+<!-- ===== KNOWLEDGE CHECK: HTML ===== -->
+<div class="quiz-q" id="q-html-1">
+  <p class="q-text">Quick check: Which element should contain the primary content of a page exactly once?</p>
+  <div class="quiz-options">
+    <label><input type="radio" name="q-html-1" value="a"><span><code>&lt;section&gt;</code></span></label>
+    <label><input type="radio" name="q-html-1" value="b"><span><code>&lt;main&gt;</code></span></label>
+    <label><input type="radio" name="q-html-1" value="c"><span><code>&lt;article&gt;</code></span></label>
+    <label><input type="radio" name="q-html-1" value="d"><span><code>&lt;div&gt;</code></span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('q-html-1','b','The <code>&lt;main&gt;</code> element represents the dominant content of the document. It should appear only once per page and must not be nested inside <code>&lt;article&gt;</code>, <code>&lt;aside&gt;</code>, <code>&lt;header&gt;</code>, or <code>&lt;footer&gt;</code>.')">Check Answer</button>
+  <div class="quiz-feedback" id="q-html-1-fb"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4. CSS FUNDAMENTALS -->
+<!-- ============================================================ -->
+<h2 id="css">CSS Fundamentals</h2>
+
+<h3>What is CSS?</h3>
+<p><strong>CSS (Cascading Style Sheets)</strong> describes how HTML elements should be displayed. It separates <em>presentation</em> from <em>structure</em>, allowing the same HTML to be styled differently for different contexts (screen, print, mobile, dark mode).</p>
+
+<h3>Three ways to add CSS</h3>
+<div class="tabs" id="css-add-tabs">
+  <div class="tab-btns" role="tablist">
+    <button class="tab-btn active" role="tab" data-tab="css-add-tabs-0">Inline</button>
+    <button class="tab-btn" role="tab" data-tab="css-add-tabs-1">Internal</button>
+    <button class="tab-btn" role="tab" data-tab="css-add-tabs-2">External</button>
+  </div>
+  <div class="tab-panel active" id="css-add-tabs-0">
+    <pre>&lt;p style="color: red; font-size: 16px;"&gt;Hello&lt;/p&gt;</pre>
+    <p><strong>Pros:</strong> Quick, specific to one element. <strong>Cons:</strong> Hard to maintain, no reuse, highest specificity (except <code>!important</code>).</p>
+  </div>
+  <div class="tab-panel" id="css-add-tabs-1">
+    <pre>&lt;head&gt;
+  &lt;style&gt;
+    p { color: red; font-size: 16px; }
+  &lt;/style&gt;
+&lt;/head&gt;</pre>
+    <p><strong>Pros:</strong> Affects one page, no extra file. <strong>Cons:</strong> Not shared across pages, mixes content and presentation.</p>
+  </div>
+  <div class="tab-panel" id="css-add-tabs-2">
+    <pre>&lt;link rel="stylesheet" href="styles.css"&gt;</pre>
+    <p><strong>Pros:</strong> Reusable across pages, cached by browser, clean separation. <strong>Cons:</strong> Extra HTTP request (mitigated by HTTP/2). <strong>This is the preferred method.</strong></p>
+  </div>
+</div>
+
+<h3>Selectors and specificity</h3>
+<p>CSS selectors target elements. When multiple rules apply to the same element, <strong>specificity</strong> decides which one wins.</p>
+
+<div class="card">
+  <h4>Specificity calculation — the three-column system</h4>
+  <p>Specificity is calculated as a tuple <code>(A, B, C)</code>:</p>
+  <ul>
+    <li><strong>A</strong> = number of ID selectors (<code>#header</code>)</li>
+    <li><strong>B</strong> = number of class selectors, attribute selectors, and pseudo-classes (<code>.btn</code>, <code>[type="text"]</code>, <code>:hover</code>)</li>
+    <li><strong>C</strong> = number of type selectors and pseudo-elements (<code>div</code>, <code>::before</code>)</li>
+  </ul>
+  <p>Inline styles have specificity <code>(1,0,0,0)</code> — a fourth column that beats all selector-based specificity. <code>!important</code> overrides everything except another <code>!important</code>.</p>
+</div>
+
+<h4>Interactive specificity calculator</h4>
+<div class="demo-area">
+  <div class="demo-controls">
+    <input type="text" id="specInput" value="nav ul li a:hover" placeholder="Enter a selector, e.g. #nav .item" style="flex:1;min-width:200px;">
+    <button class="btn btn-primary btn-sm" onclick="calcSpecificity()">Calculate</button>
+  </div>
+  <p>Specificity: <span class="spec-result" id="specOutput">(0, 0, 0)</span></p>
+  <p style="font-size:.8rem;color:#64748b;margin-bottom:0;">Counts ID selectors, then class/attribute/pseudo-class selectors, then type/pseudo-element selectors.</p>
+</div>
+
+<h3>The CSS Box Model</h3>
+<p>Every element in CSS is a rectangular box made of four layers. This is one of the most frequently tested CSS concepts in interviews.</p>
+
+<div class="card">
+  <div style="display:flex;justify-content:center;margin:1rem 0;">
+    <div style="width:280px;background:#fef3c7;border:2px solid #f59e0b;border-radius:6px;padding:18px;text-align:center;font-size:.82rem;">
+      <strong>Margin</strong> (space outside the border)
+      <div style="background:#dbeafe;border:2px solid #3b82f6;border-radius:4px;padding:16px;margin-top:8px;">
+        <strong>Border</strong>
+        <div style="background:#dcfce7;border:2px solid #22c55e;border-radius:4px;padding:16px;margin-top:8px;">
+          <strong>Padding</strong>
+          <div style="background:#fff;border:1px dashed #94a3b8;border-radius:4px;padding:12px;margin-top:8px;">
+            <strong>Content</strong><br>
+            <span style="font-size:.75rem;color:#64748b;">width &amp; height apply here</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:.82rem;color:#64748b;">From outside in: Margin → Border → Padding → Content</p>
+</div>
+
+<div class="callout callout-amber">
+  <strong>Critical distinction — <code>box-sizing</code>:</strong>
+  <ul style="margin-bottom:0;">
+    <li><code>box-sizing: content-box</code> (default) — <code>width</code> only includes content. Total width = width + padding + border.</li>
+    <li><code>box-sizing: border-box</code> — <code>width</code> includes content + padding + border. This is what most developers set globally: <code>*, *::before, *::after { box-sizing: border-box; }</code></li>
+  </ul>
+  <p style="margin-top:.5rem;margin-bottom:0;"><strong>Interview trap:</strong> "An element has <code>width: 200px; padding: 20px; border: 5px solid black;</code>. What is its total rendered width?" With <code>content-box</code>: 200 + 40 + 10 = <strong>250px</strong>. With <code>border-box</code>: <strong>200px</strong>.</p>
+</div>
+
+<h3>Display, position, and units</h3>
+
+<div class="tabs" id="css-layout-tabs">
+  <div class="tab-btns" role="tablist">
+    <button class="tab-btn active" role="tab" data-tab="css-layout-tabs-0">Display</button>
+    <button class="tab-btn" role="tab" data-tab="css-layout-tabs-1">Position</button>
+    <button class="tab-btn" role="tab" data-tab="css-layout-tabs-2">Units</button>
+  </div>
+  <div class="tab-panel active" id="css-layout-tabs-0">
+    <table>
+      <thead><tr><th>Value</th><th>Behavior</th><th>Width/height?</th><th>New line?</th></tr></thead>
+      <tbody>
+        <tr><td><code>block</code></td><td>Takes full width, stacks vertically</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td><code>inline</code></td><td>Flows with text</td><td>No (ignores width/height)</td><td>No</td></tr>
+        <tr><td><code>inline-block</code></td><td>Flows with text but accepts width/height</td><td>Yes</td><td>No</td></tr>
+        <tr><td><code>none</code></td><td>Removed from layout entirely</td><td>—</td><td>—</td></tr>
+        <tr><td><code>flex</code></td><td>Enables flexbox on children</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td><code>grid</code></td><td>Enables grid on children</td><td>Yes</td><td>Yes</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Common trap:</strong> <code>display: none</code> removes the element from the document flow (no space). <code>visibility: hidden</code> hides it but <em>keeps its space</em>.</p>
+  </div>
+  <div class="tab-panel" id="css-layout-tabs-1">
+    <table>
+      <thead><tr><th>Value</th><th>Positioned relative to</th><th>Removed from flow?</th></tr></thead>
+      <tbody>
+        <tr><td><code>static</code></td><td>Normal document flow (default)</td><td>No</td></tr>
+        <tr><td><code>relative</code></td><td>Its own normal position</td><td>No (offset visually)</td></tr>
+        <tr><td><code>absolute</code></td><td>Nearest positioned ancestor</td><td>Yes</td></tr>
+        <tr><td><code>fixed</code></td><td>Viewport (browser window)</td><td>Yes</td></tr>
+        <tr><td><code>sticky</code></td><td>Normal flow until scroll threshold, then viewport</td><td>No (until stuck)</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-blue">
+      <strong>Key rule for <code>absolute</code>:</strong> It positions relative to the nearest ancestor with <code>position: relative | absolute | fixed | sticky</code>. If no positioned ancestor exists, it positions relative to the initial containing block (the viewport).
+    </div>
+  </div>
+  <div class="tab-panel" id="css-layout-tabs-2">
+    <table>
+      <thead><tr><th>Unit</th><th>Type</th><th>Relative to</th></tr></thead>
+      <tbody>
+        <tr><td><code>px</code></td><td>Absolute</td><td>CSS pixels (device-independent)</td></tr>
+        <tr><td><code>rem</code></td><td>Relative</td><td>Root element's font-size (usually 16px)</td></tr>
+        <tr><td><code>em</code></td><td>Relative</td><td>Parent element's font-size</td></tr>
+        <tr><td><code>%</code></td><td>Relative</td><td>Parent element's corresponding property</td></tr>
+        <tr><td><code>vw</code></td><td>Relative</td><td>1% of viewport width</td></tr>
+        <tr><td><code>vh</code></td><td>Relative</td><td>1% of viewport height</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Interview tip:</strong> <code>rem</code> is generally preferred over <code>em</code> for font sizes because <code>em</code> compounds with nesting, making calculations harder.</p>
+  </div>
+</div>
+
+<h3>Flexbox vs. Grid — the most asked CSS layout question</h3>
+<div class="card">
+  <table>
+    <thead><tr><th>Aspect</th><th>Flexbox</th><th>CSS Grid</th></tr></thead>
+    <tbody>
+      <tr><td>Dimensions</td><td><strong>1D</strong> — row <em>or</em> column</td><td><strong>2D</strong> — rows <em>and</em> columns</td></tr>
+      <tr><td>Best for</td><td>Navigation bars, toolbars, card rows, centering</td><td>Page layouts, dashboards, galleries</td></tr>
+      <tr><td>Alignment</td><td><code>justify-content</code> (main axis), <code>align-items</code> (cross axis)</td><td><code>justify-items</code>, <code>align-items</code>, <code>place-items</code></td></tr>
+      <tr><td>Gap support</td><td><code>gap</code> (modern browsers)</td><td><code>gap</code>, <code>row-gap</code>, <code>column-gap</code></td></tr>
+      <tr><td>Content-driven</td><td>Yes — items size based on content</td><td>Can be either content-driven or layout-driven</td></tr>
+    </tbody>
+  </table>
+  <div class="callout callout-green" style="margin-bottom:0;">
+    <strong>Memory hook:</strong> Flexbox = <em>content decides size</em>. Grid = <em>layout decides size</em>. Use Flexbox when your content size is unknown; use Grid when you want precise control over both axes.
+  </div>
+</div>
+
+<!-- ===== PREDICTION: CSS ===== -->
+<div class="quiz-q" id="q-css-1">
+  <p class="q-text">Predict the output: An element has <code>width: 300px; padding: 20px; border: 10px solid black;</code> and <code>box-sizing: border-box;</code>. What is the rendered content width?</p>
+  <div class="quiz-options">
+    <label><input type="radio" name="q-css-1" value="a"><span>340px</span></label>
+    <label><input type="radio" name="q-css-1" value="b"><span>300px</span></label>
+    <label><input type="radio" name="q-css-1" value="c"><span>240px</span></label>
+    <label><input type="radio" name="q-css-1" value="d"><span>260px</span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('q-css-1','c','With <code>box-sizing: border-box</code>, the declared <code>width</code> includes content, padding, and border. So content width = 300 − 20 (padding) − 10 (border) = <strong>240px</strong>. With <code>content-box</code> (default), the content width would be 300px and total rendered width would be 340px.')">Check Answer</button>
+  <div class="quiz-feedback" id="q-css-1-fb"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5. JAVASCRIPT FUNDAMENTALS -->
+<!-- ============================================================ -->
+<h2 id="javascript">JavaScript Fundamentals</h2>
+
+<h3>Variables: var, let, and const</h3>
+<p>This is almost guaranteed to appear in an interview. Know the differences cold.</p>
+
+<table>
+  <thead><tr><th>Keyword</th><th>Scope</th><th>Hoisted?</th><th>Reassignable?</th><th>Redeclarable?</th></tr></thead>
+  <tbody>
+    <tr><td><code>var</code></td><td>Function-scoped</td><td>Yes (initialized as <code>undefined</code>)</td><td>Yes</td><td>Yes</td></tr>
+    <tr><td><code>let</code></td><td>Block-scoped</td><td>Yes (but in Temporal Dead Zone)</td><td>Yes</td><td>No</td></tr>
+    <tr><td><code>const</code></td><td>Block-scoped</td><td>Yes (but in TDZ)</td><td>No</td><td>No</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-amber">
+  <strong>Temporal Dead Zone (TDZ):</strong> <code>let</code> and <code>const</code> declarations are hoisted but <em>not initialized</em>. Accessing them before the declaration line throws a <code>ReferenceError</code>. This is the TDZ.
+  <pre style="margin-top:.5rem;margin-bottom:0;">console.log(a); // undefined (var is hoisted + initialized)
+var a = 5;
+
+console.log(b); // ReferenceError: Cannot access 'b' before initialization
+let b = 5;</pre>
+</div>
+
+<div class="callout callout-blue">
+  <strong><code>const</code> is not about immutability of value — it's about immutability of binding.</strong> You cannot reassign a <code>const</code> variable, but you <em>can</em> mutate the contents of an object or array it holds:
+  <pre style="margin-top:.5rem;margin-bottom:0;">const arr = [1, 2, 3];
+arr.push(4);       // OK — mutating contents
+// arr = [5, 6];   // TypeError — reassigning binding</pre>
+</div>
+
+<h3>Data types</h3>
+<p>JavaScript has <strong>7 primitive types</strong> plus <strong>object</strong> (which includes arrays, functions, and dates).</p>
+
+<div class="card">
+  <table>
+    <thead><tr><th>Type</th><th>Example</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>number</code></td><td><code>42</code>, <code>3.14</code></td><td>Integer and floating-point; <code>NaN</code> is a number type</td></tr>
+      <tr><td><code>bigint</code></td><td><code>9007199254740991n</code></td><td>Arbitrarily large integers (ES2020)</td></tr>
+      <tr><td><code>string</code></td><td><code>"hello"</code>, <code>'hi'</code>, <code>`template`</code></td><td>Immutable — methods return new strings</td></tr>
+      <tr><td><code>boolean</code></td><td><code>true</code>, <code>false</code></td><td>Used in conditions</td></tr>
+      <tr><td><code>undefined</code></td><td><code>undefined</code></td><td>Variable declared but not assigned</td></tr>
+      <tr><td><code>null</code></td><td><code>null</code></td><td>Intentional absence of value</td></tr>
+      <tr><td><code>symbol</code></td><td><code>Symbol('id')</code></td><td>Unique, immutable identifier (ES6)</td></tr>
+      <tr><td><code>object</code></td><td><code>{}</code>, <code>[]</code>, <code>function(){}</code></td><td>Reference type — stored by reference</td></tr>
+    </tbody>
+  </table>
+  <p><code>typeof null</code> returns <code>"object"</code> — a historical bug in JavaScript that persists for backward compatibility.</p>
+</div>
+
+<h3>Operators: == vs ===</h3>
+<p>The <strong>abstract equality</strong> operator (<code>==</code>) performs type coercion before comparison. The <strong>strict equality</strong> operator (<code>===</code>) compares both value and type without coercion.</p>
+
+<pre>1 == "1"      // true  — string coerced to number
+1 === "1"     // false — different types
+null == undefined  // true  — special case
+null === undefined // false
+0 == false    // true  — boolean coerced to number
+0 === false   // false
+NaN == NaN    // false — NaN is not equal to anything
+[] == false   // true  — [] → "" → 0 → false</pre>
+
+<div class="callout callout-amber">
+  <strong>Best practice:</strong> Always use <code>===</code> and <code>!==</code> unless you have a specific reason to allow type coercion. Interviewers often ask <em>"What's the difference between == and ===?"</em> — your answer should mention type coercion and give an example.
+</div>
+
+<h3>Functions and scope</h3>
+<div class="tabs" id="js-fn-tabs">
+  <div class="tab-btns" role="tablist">
+    <button class="tab-btn active" role="tab" data-tab="js-fn-tabs-0">Function declarations</button>
+    <button class="tab-btn" role="tab" data-tab="js-fn-tabs-1">Function expressions</button>
+    <button class="tab-btn" role="tab" data-tab="js-fn-tabs-2">Arrow functions</button>
+  </div>
+  <div class="tab-panel active" id="js-fn-tabs-0">
+    <pre>function greet(name) {
+  return "Hello, " + name + "!";
+}
+console.log(greet("Asha")); // Hello, Asha!</pre>
+    <p>Hoisted completely — can be called before the declaration line.</p>
+  </div>
+  <div class="tab-panel" id="js-fn-tabs-1">
+    <pre>const greet = function(name) {
+  return "Hello, " + name + "!";
+};
+// greet("Asha") works after this line
+// greet("Ravi") before this line throws TypeError</pre>
+    <p>Not hoisted — behaves like a variable assignment.</p>
+  </div>
+  <div class="tab-panel" id="js-fn-tabs-2">
+    <pre>const greet = (name) => "Hello, " + name + "!";
+const add = (a, b) => a + b;
+const square = x => x * x;    // parentheses optional for single param
+const getObj = () => ({ value: 1 }); // wrap object in ()</pre>
+    <p>Arrow functions do <strong>not</strong> have their own <code>this</code> — they inherit it from the surrounding scope. They also cannot be used as constructors.</p>
+  </div>
+</div>
+
+<h3>Arrays and common methods</h3>
+<table>
+  <thead><tr><th>Method</th><th>What it does</th><th>Returns</th><th>Mutates original?</th></tr></thead>
+  <tbody>
+    <tr><td><code>map()</code></td><td>Transforms each element</td><td>New array (same length)</td><td>No</td></tr>
+    <tr><td><code>filter()</code></td><td>Keeps elements that pass a test</td><td>New array (shorter or equal)</td><td>No</td></tr>
+    <tr><td><code>reduce()</code></td><td>Reduces to a single value</td><td>Any type</td><td>No</td></tr>
+    <tr><td><code>forEach()</code></td><td>Runs a function on each element</td><td><code>undefined</code></td><td>No</td></tr>
+    <tr><td><code>find()</code></td><td>First element that passes a test</td><td>Element or <code>undefined</code></td><td>No</td></tr>
+    <tr><td><code>push()</code> / <code>pop()</code></td><td>Add/remove at end</td><td>New length / removed element</td><td>Yes</td></tr>
+    <tr><td><code>shift()</code> / <code>unshift()</code></td><td>Remove/add at start</td><td>Removed element / new length</td><td>Yes</td></tr>
+    <tr><td><code>slice()</code></td><td>Extract a portion</td><td>New array</td><td>No</td></tr>
+    <tr><td><code>splice()</code></td><td>Add/remove at any position</td><td>Array of removed elements</td><td>Yes</td></tr>
+  </tbody>
+</table>
+
+<div class="card">
+  <h4>map, filter, reduce — the interview trio</h4>
+  <pre>const nums = [1, 2, 3, 4, 5];
+
+// map: transform
+const doubled = nums.map(n => n * 2);       // [2, 4, 6, 8, 10]
+
+// filter: select
+const evens = nums.filter(n => n % 2 === 0); // [2, 4]
+
+// reduce: aggregate
+const sum = nums.reduce((acc, n) => acc + n, 0); // 15
+
+// chaining: evens doubled and summed
+const result = nums
+  .filter(n => n % 2 === 0)  // [2, 4]
+  .map(n => n * 2)           // [4, 8]
+  .reduce((a, b) => a + b, 0); // 12</pre>
+  <div class="callout callout-green" style="margin-bottom:0;">
+    <strong>Interview pattern:</strong> Interviewer often asks: <em>"Write a function that takes an array of numbers and returns the sum of squares of all even numbers."</em> The answer is the chain above: filter → map → reduce.
+  </div>
+</div>
+
+<h3>Strings — common methods</h3>
+<table>
+  <thead><tr><th>Method</th><th>Example</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td><code>length</code></td><td><code>"hello".length</code></td><td><code>5</code></td></tr>
+    <tr><td><code>toUpperCase()</code></td><td><code>"hi".toUpperCase()</code></td><td><code>"HI"</code></td></tr>
+    <tr><td><code>toLowerCase()</code></td><td><code>"HI".toLowerCase()</code></td><td><code>"hi"</code></td></tr>
+    <tr><td><code>trim()</code></td><td><code>"  hi  ".trim()</code></td><td><code>"hi"</code></td></tr>
+    <tr><td><code>includes()</code></td><td><code>"hello".includes("ell")</code></td><td><code>true</code></td></tr>
+    <tr><td><code>indexOf()</code></td><td><code>"hello".indexOf("l")</code></td><td><code>2</code></td></tr>
+    <tr><td><code>slice(start, end)</code></td><td><code>"hello".slice(1, 3)</code></td><td><code>"el"</code></td></tr>
+    <tr><td><code>split(sep)</code></td><td><code>"a,b,c".split(",")</code></td><td><code>["a","b","c"]</code></td></tr>
+    <tr><td><code>replace(a, b)</code></td><td><code>"hello".replace("l", "L")</code></td><td><code>"heLlo"</code> (first only)</td></tr>
+    <tr><td><code>replaceAll(a, b)</code></td><td><code>"hello".replaceAll("l", "L")</code></td><td><code>"heLLo"</code></td></tr>
+    <tr><td><code>charAt(i)</code></td><td><code>"hello".charAt(1)</code></td><td><code>"e"</code></td></tr>
+    <tr><td><code>padStart(n, ch)</code></td><td><code>"5".padStart(3, "0")</code></td><td><code>"005"</code></td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-amber">
+  <strong>Strings are immutable.</strong> Every string method returns a <em>new</em> string. The original never changes:
+  <pre style="margin-top:.5rem;margin-bottom:0;">let s = "hello";
+s.toUpperCase();
+console.log(s); // still "hello"</pre>
+</div>
+
+<!-- ===== OUTPUT PREDICTION: JS ===== -->
+<div class="quiz-q" id="q-js-1">
+  <p class="q-text">What does this code output?</p>
+  <pre>for (var i = 0; i &lt; 3; i++) {
+  setTimeout(() =&gt; console.log(i), 0);
+}</pre>
+  <div class="quiz-options">
+    <label><input type="radio" name="q-js-1" value="a"><span>0, 1, 2</span></label>
+    <label><input type="radio" name="q-js-1" value="b"><span>3, 3, 3</span></label>
+    <label><input type="radio" name="q-js-1" value="c"><span>0, 0, 0</span></label>
+    <label><input type="radio" name="q-js-1" value="d"><span>Error</span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('q-js-1','b','<code>var</code> is function-scoped, so there is only <em>one</em> <code>i</code> variable shared across all iterations. By the time the <code>setTimeout</code> callbacks run (after the loop finishes), <code>i</code> has already been incremented to 3. Changing <code>var</code> to <code>let</code> creates a new block-scoped binding for each iteration, producing <code>0, 1, 2</code>. This is a classic interview question.')">Check Answer</button>
+  <div class="quiz-feedback" id="q-js-1-fb"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6. DOM & EVENTS -->
+<!-- ============================================================ -->
+<h2 id="dom">DOM Manipulation &amp; Events</h2>
+
+<h3>What is the DOM?</h3>
+<p>The <strong>Document Object Model (DOM)</strong> is a programming interface that represents an HTML document as a tree of objects. JavaScript can read and modify this tree to change what the user sees — without reloading the page.</p>
+
+<div class="card">
+  <pre>document
+└── html
+    ├── head
+    │   ├── meta
+    │   └── title
+    └── body
+        ├── header
+        │   └── h1
+        └── main
+            ├── p
+            └── ul
+                ├── li
+                └── li</pre>
+  <p style="margin-bottom:0;font-size:.85rem;color:#64748b;">The DOM mirrors your HTML structure but is a live, mutable object model.</p>
+</div>
+
+<h3>Selecting elements</h3>
+<table>
+  <thead><tr><th>Method</th><th>Returns</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td><code>getElementById(id)</code></td><td>Single element or <code>null</code></td><td><code>document.getElementById("app")</code></td></tr>
+    <tr><td><code>getElementsByClassName(cls)</code></td><td>Live HTMLCollection</td><td><code>document.getElementsByClassName("btn")</code></td></tr>
+    <tr><td><code>getElementsByTagName(tag)</code></td><td>Live HTMLCollection</td><td><code>document.getElementsByTagName("li")</code></td></tr>
+    <tr><td><code>querySelector(sel)</code></td><td>First match or <code>null</code></td><td><code>document.querySelector(".card &gt; p")</code></td></tr>
+    <tr><td><code>querySelectorAll(sel)</code></td><td>Static NodeList</td><td><code>document.querySelectorAll("input[type=text]")</code></td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-blue">
+  <strong>Performance note:</strong> <code>getElementById</code> is fastest because IDs are unique. <code>querySelectorAll</code> is the most flexible because it accepts any CSS selector. Prefer <code>querySelector</code>/<code>querySelectorAll</code> for complex selectors.
+</div>
+
+<h3>Modifying content, styles, and attributes</h3>
+<pre>const el = document.querySelector("#title");
+
+// Text content (safe — no HTML parsing)
+el.textContent = "New Title";
+
+// HTML content (careful — XSS risk if user input)
+el.innerHTML = "&lt;em&gt;New&lt;/em&gt; Title";
+
+// Styles (camelCase property names)
+el.style.color = "#2563eb";
+el.style.fontSize = "24px";
+
+// Classes
+el.classList.add("highlight");
+el.classList.remove("hidden");
+el.classList.toggle("active");
+el.classList.contains("active"); // true/false
+
+// Attributes
+el.setAttribute("data-id", "42");
+el.getAttribute("data-id");
+el.removeAttribute("data-id");</pre>
+
+<h3>Creating and removing elements</h3>
+<pre>// Create
+const newLi = document.createElement("li");
+newLi.textContent = "New item";
+
+// Add to DOM
+const ul = document.querySelector("ul");
+ul.appendChild(newLi);            // add at end
+ul.insertBefore(newLi, ul.firstChild); // add at start
+
+// Remove
+newLi.remove();                   // modern way
+// ul.removeChild(newLi);         // older way
+
+// Create multiple at once (performance)
+const fragment = document.createDocumentFragment();
+for (let i = 0; i &lt; 100; i++) {
+  const li = document.createElement("li");
+  li.textContent = `Item ${i}`;
+  fragment.appendChild(li);
+}
+ul.appendChild(fragment); // single reflow</pre>
+
+<h3>Event handling</h3>
+<div class="tabs" id="js-events-tabs">
+  <div class="tab-btns" role="tablist">
+    <button class="tab-btn active" role="tab" data-tab="js-events-tabs-0">addEventListener</button>
+    <button class="tab-btn" role="tab" data-tab="js-events-tabs-1">Event object</button>
+    <button class="tab-btn" role="tab" data-tab="js-events-tabs-2">Propagation</button>
+  </div>
+  <div class="tab-panel active" id="js-events-tabs-0">
+    <pre>const btn = document.querySelector("#myBtn");
+
+btn.addEventListener("click", function(event) {
+  console.log("Clicked!", event.target);
+});
+
+// Named function (can be removed later)
+function handleClick(e) { /* ... */ }
+btn.addEventListener("click", handleClick);
+btn.removeEventListener("click", handleClick);
+
+// Multiple listeners for same event
+btn.addEventListener("click", () =&gt; console.log("Listener 1"));
+btn.addEventListener("click", () =&gt; console.log("Listener 2"));
+// Both fire, in registration order</pre>
+  </div>
+  <div class="tab-panel" id="js-events-tabs-1">
+    <pre>document.querySelector("a").addEventListener("click", (e) =&gt; {
+  e.preventDefault();   // stop default navigation
+  console.log(e.target);      // element that triggered the event
+  console.log(e.currentTarget); // element the listener is attached to
+  console.log(e.type);        // "click"
+  console.log(e.key);         // for keyboard events
+});</pre>
+    <ul>
+      <li><code>e.target</code> — the element that <em>actually</em> triggered the event (could be a child)</li>
+      <li><code>e.currentTarget</code> — the element the listener is attached to</li>
+      <li><code>e.preventDefault()</code> — stops the default browser behavior (link navigation, form submission)</li>
+      <li><code>e.stopPropagation()</code> — stops the event from bubbling to ancestors</li>
+    </ul>
+  </div>
+  <div class="tab-panel" id="js-events-tabs-2">
+    <p>Events travel through three phases:</p>
+    <ol>
+      <li><strong>Capturing</strong> — from <code>window</code> down to the target</li>
+      <li><strong>Target</strong> — the target element itself</li>
+      <li><strong>Bubbling</strong> — from the target back up to <code>window</code></li>
+    </ol>
+    <p>By default, listeners fire during the <strong>bubbling</strong> phase. Pass <code>true</code> as the third argument to <code>addEventListener</code> to listen during capturing.</p>
+    <pre>// Capturing listener
+el.addEventListener("click", handler, true);
+
+// Bubbling listener (default)
+el.addEventListener("click", handler);</pre>
+    <div class="callout callout-amber" style="margin-bottom:0;">
+      <strong>Interview favourite:</strong> Given nested elements with click listeners, which fires first? During bubbling: innermost → outermost. During capturing: outermost → innermost.
+    </div>
+  </div>
+</div>
+
+<!-- ===== PREDICTION: Event bubbling ===== -->
+<div class="quiz-q" id="q-dom-1">
+  <p class="q-text">Given this HTML, what is logged when the button is clicked?</p>
+  <pre>&lt;div onclick="console.log('div')"&gt;
+  &lt;p onclick="console.log('p')"&gt;
+    &lt;button onclick="console.log('button')"&gt;Click&lt;/button&gt;
+  &lt;/p&gt;
+&lt;/div&gt;</pre>
+  <div class="quiz-options">
+    <label><input type="radio" name="q-dom-1" value="a"><span><code>div</code> then <code>p</code> then <code>button</code></span></label>
+    <label><input type="radio" name="q-dom-1" value="b"><span><code>button</code> then <code>p</code> then <code>div</code></span></label>
+    <label><input type="radio" name="q-dom-1" value="c"><span><code>button</code> only</span></label>
+    <label><input type="radio" name="q-dom-1" value="d"><span><code>p</code> then <code>button</code></span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('q-dom-1','b','Events bubble <strong>outward</strong> from the target. The button is the deepest nested element, so <code>button</code> fires first, then the event bubbles up to <code>p</code>, then to <code>div</code>. This is the default bubbling behavior. If you wanted capturing order, you would need to pass <code>true</code> as the third argument to <code>addEventListener</code>.')">Check Answer</button>
+  <div class="quiz-feedback" id="q-dom-1-fb"></div>
+</div>
+
+<h3>Interactive demo — DOM manipulation</h3>
+<p>Try it yourself. Edit the text, change the color, and watch the DOM update in real time.</p>
+<div class="demo-area" id="domDemo">
+  <div class="demo-controls">
+    <input type="text" id="domText" value="Hello, DOM!" placeholder="Type something" aria-label="Text to display">
+    <input type="color" id="domColor" value="#2563eb" aria-label="Text color">
+    <button class="btn btn-outline btn-sm" onclick="addDomItem()">Add list item</button>
+    <button class="btn btn-ghost btn-sm" onclick="resetDomDemo()">Reset</button>
+  </div>
+  <h4 id="domTarget" style="margin:.5rem 0;">Hello, DOM!</h4>
+  <ul id="domList">
+    <li>Item 1</li>
+    <li>Item 2</li>
+  </ul>
+</div>
+
+<script>
+let domItemCount = 2;
+function addDomItem() {
+  domItemCount++;
+  const li = document.createElement("li");
+  li.textContent = "Item " + domItemCount;
+  document.getElementById("domList").appendChild(li);
+}
+function resetDomDemo() {
+  domItemCount = 2;
+  document.getElementById("domList").innerHTML = "<li>Item 1</li><li>Item 2</li>";
+  document.getElementById("domText").value = "Hello, DOM!";
+  document.getElementById("domTarget").textContent = "Hello, DOM!";
+  document.getElementById("domTarget").style.color = "#2563eb";
+}
+document.getElementById("domText").addEventListener("input", function() {
+  document.getElementById("domTarget").textContent = this.value || "(empty)";
+});
+document.getElementById("domColor").addEventListener("input", function() {
+  document.getElementById("domTarget").style.color = this.value;
+});
+</script>
+
+<!-- ============================================================ -->
+<!-- 7. COMMON MISTAKES & TRAPS -->
+<!-- ============================================================ -->
+<h2 id="mistakes">Common Mistakes &amp; Interview Traps</h2>
+
+<div class="card card-warn">
+  <h4>HTML traps</h4>
+  <ul>
+    <li><strong>Missing <code>alt</code> on images</strong> — not just for SEO; screen readers announce it. An empty <code>alt=""</code> is acceptable for decorative images.</li>
+    <li><strong>Using <code>&lt;div&gt;</code> for everything</strong> — use semantic elements. Interviewers notice.</li>
+    <li><strong>Nested forms</strong> — not allowed in HTML. A form cannot contain another form.</li>
+    <li><strong>Label not associated with input</strong> — always use <code>for</code> matching the input's <code>id</code>.</li>
+    <li><strong>Block element inside inline element</strong> — e.g. <code>&lt;div&gt;</code> inside <code>&lt;span&gt;</code> is invalid.</li>
+  </ul>
+</div>
+
+<div class="card card-warn">
+  <h4>CSS traps</h4>
+  <ul>
+    <li><strong>Margin collapsing</strong> — vertical margins of adjacent block elements collapse into the larger one, not the sum.</li>
+    <li><strong><code>z-index</code> doesn't work on <code>position: static</code></strong> — it only applies to positioned elements (or flex/grid items).</li>
+    <li><strong><code>em</code> compounds</strong> — nested elements with <code>em</code> font sizes multiply. Use <code>rem</code> to avoid this.</li>
+    <li><strong>Inline elements ignore <code>width</code> and <code>height</code></strong> — set <code>display: inline-block</code> or <code>block</code> if you need dimensions.</li>
+    <li><strong><code>!important</code> is a code smell</strong> — it breaks the cascade and makes debugging harder. Use it only as a last resort.</li>
+  </ul>
+</div>
+
+<div class="card card-warn">
+  <h4>JavaScript traps</h4>
+  <ul>
+    <li><strong><code>typeof null === "object"</code></strong> — historical bug. Use <code>value === null</code> to check for null.</li>
+    <li><strong><code>NaN !== NaN</code></strong> — use <code>Number.isNaN(value)</code> to test for NaN.</li>
+    <li><strong>Floating point precision</strong> — <code>0.1 + 0.2 !== 0.3</code> (it's <code>0.30000000000000004</code>).</li>
+    <li><strong>Array sort is lexicographic by default</strong> — <code>[10, 9, 1].sort()</code> gives <code>[1, 10, 9]</code>. Use <code>.sort((a, b) => a - b)</code> for numeric sort.</li>
+    <li><strong>Truthy/falsy surprises</strong> — <code>[]</code> and <code>{}</code> are truthy; <code>""</code>, <code>0</code>, <code>null</code>, <code>undefined</code>, <code>NaN</code>, and <code>false</code> are falsy.</li>
+    <li><strong>Global scope pollution</strong> — assigning to an undeclared variable creates a global. Always use <code>let</code>/<code>const</code>.</li>
+  </ul>
+</div>
+
+<h3>Misconception check</h3>
+<div class="quiz-q" id="q-misc-1">
+  <p class="q-text">True or false: <em>"<code>const</code> makes an object immutable — you cannot change its properties."</em></p>
+  <div class="quiz-options">
+    <label><input type="radio" name="q-misc-1" value="a"><span>True</span></label>
+    <label><input type="radio" name="q-misc-1" value="b"><span>False</span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('q-misc-1','b','<strong>False.</strong> <code>const</code> prevents <em>reassignment of the binding</em>, not mutation of the value. You can absolutely modify properties of a <code>const</code> object: <code>const obj = {a: 1}; obj.a = 2; // works</code>. What you <em>cannot</em> do is <code>obj = {b: 3}; // TypeError</code>. To make an object truly immutable, use <code>Object.freeze()</code>.')">Check Answer</button>
+  <div class="quiz-feedback" id="q-misc-1-fb"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8. HTML vs CSS vs JS COMPARISON -->
+<!-- ============================================================ -->
+<h2 id="comparison">HTML vs CSS vs JavaScript — Quick Comparison</h2>
+
+<table>
+  <thead><tr><th>Aspect</th><th>HTML</th><th>CSS</th><th>JavaScript</th></tr></thead>
+  <tbody>
+    <tr><td>Purpose</td><td>Structure &amp; content</td><td>Presentation &amp; layout</td><td>Behavior &amp; interactivity</td></tr>
+    <tr><td>Type</td><td>Markup language</td><td>Style sheet language</td><td>Programming language</td></tr>
+    <tr><td>Syntax</td><td>Tags &amp; attributes</td><td>Selectors &amp; declarations</td><td>Statements &amp; expressions</td></tr>
+    <tr><td>Can it compute?</td><td>No</td><td>No (except <code>calc()</code>)</td><td>Yes — full computation</td></tr>
+    <tr><td>Can it react to user?</td><td>Limited (forms, links)</td><td>Pseudo-classes (<code>:hover</code>)</td><td>Fully — event listeners</td></tr>
+    <tr><td>File extension</td><td><code>.html</code></td><td><code>.css</code></td><td><code>.js</code></td></tr>
+    <tr><td>Where it runs</td><td>Browser parses it</td><td>Browser renders it</td><td>Browser's JS engine</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<!-- 9. PRACTICE QUESTIONS -->
+<!-- ============================================================ -->
+<h2 id="practice">Progressive Practice Questions</h2>
+
+<h3>Level 1 — Warm-up (MCQs)</h3>
+
+<div class="quiz-q" id="p1">
+  <p class="q-text">1. Which HTML element defines a hyperlink?</p>
+  <div class="quiz-options">
+    <label><input type="radio" name="p1" value="a"><span><code>&lt;link&gt;</code></span></label>
+    <label><input type="radio" name="p1" value="b"><span><code>&lt;a&gt;</code></span></label>
+    <label><input type="radio" name="p1" value="c"><span><code>&lt;href&gt;</code></span></label>
+    <label><input type="radio" name="p1" value="d"><span><code>&lt;url&gt;</code></span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('p1','b','The <code>&lt;a&gt;</code> (anchor) element creates hyperlinks. The <code>&lt;link&gt;</code> element is used in <code>&lt;head&gt;</code> to link external resources like CSS files — it is <em>not</em> for clickable links.')">Check</button>
+  <div class="quiz-feedback" id="p1-fb"></div>
+</div>
+
+<div class="quiz-q" id="p2">
+  <p class="q-text">2. What is the default <code>position</code> value in CSS?</p>
+  <div class="quiz-options">
+    <label><input type="radio" name="p2" value="a"><span><code>relative</code></span></label>
+    <label><input type="radio" name="p2" value="b"><span><code>absolute</code></span></label>
+    <label><input type="radio" name="p2" value="c"><span><code>static</code></span></label>
+    <label><input type="radio" name="p2" value="d"><span><code>fixed</code></span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('p2','c','<code>static</code> is the default. Elements with <code>position: static</code> follow the normal document flow and ignore <code>top</code>, <code>right</code>, <code>bottom</code>, <code>left</code>, and <code>z-index</code>.')">Check</button>
+  <div class="quiz-feedback" id="p2-fb"></div>
+</div>
+
+<div class="quiz-q" id="p3">
+  <p class="q-text">3. Which method adds one or more elements to the <em>end</em> of an array?</p>
+  <div class="quiz-options">
+    <label><input type="radio" name="p3" value="a"><span><code>push()</code></span></label>
+    <label><input type="radio" name="p3" value="b"><span><code>pop()</code></span></label>
+    <label><input type="radio" name="p3" value="c"><span><code>shift()</code></span></label>
+    <label><input type="radio" name="p3" value="d"><span><code>unshift()</code></span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('p3','a','<code>push()</code> adds to the end and returns the new length. <code>pop()</code> removes from the end. <code>shift()</code> removes from the start. <code>unshift()</code> adds to the start.')">Check</button>
+  <div class="quiz-feedback" id="p3-fb"></div>
+</div>
+
+<h3>Level 2 — Intermediate (output prediction)</h3>
+
+<div class="quiz-q" id="p4">
+  <p class="q-text">4. What does this code log?</p>
+  <pre>console.log(typeof null);
+console.log(typeof undefined);
+console.log(typeof NaN);</pre>
+  <div class="quiz-options">
+    <label><input type="radio" name="p4" value="a"><span><code>"null"</code>, <code>"undefined"</code>, <code>"number"</code></span></label>
+    <label><input type="radio" name="p4" value="b"><span><code>"object"</code>, <code>"undefined"</code>, <code>"number"</code></span></label>
+    <label><input type="radio" name="p4" value="c"><span><code>"object"</code>, <code>"undefined"</code>, <code>"NaN"</code></span></label>
+    <label><input type="radio" name="p4" value="d"><span><code>"null"</code>, <code>"null"</code>, <code>"number"</code></span></label>
+  </div>
+  <button class="btn btn-primary btn-sm"
+  onclick="checkQuiz('p4', 'b', '<code>typeof null</code> is <code>&quot;object&quot;</code> — a historical bug. <code>typeof undefined</code> is <code>&quot;undefined&quot;</code>. <code>typeof NaN</code> is <code>&quot;number&quot;</code> — NaN is a numeric value representing an invalid number. To check for NaN reliably, use <code>Number.isNaN(value)</code>.')">
+  Check
+</button>
+  <div class="quiz-feedback" id="p4-fb"></div>
+</div>
+
+<div class="quiz-q" id="p5">
+  <p class="q-text">5. What is the value of <code>result</code>?</p>
+  <pre>const arr = [1, 2, 3, 4];
+const result = arr.filter(n =&gt; n % 2 === 0).map(n =&gt; n * 10);
+console.log(result);</pre>
+  <div class="quiz-options">
+    <label><input type="radio" name="p5" value="a"><span><code>[2, 4]</code></span></label>
+    <label><input type="radio" name="p5" value="b"><span><code>[20, 40]</code></span></label>
+    <label><input type="radio" name="p5" value="c"><span><code>[10, 30]</code></span></label>
+    <label><input type="radio" name="p5" value="d"><span><code>[1, 3]</code></span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('p5','b','<code>filter(n =&gt; n % 2 === 0)</code> keeps even numbers: <code>[2, 4]</code>. Then <code>map(n =&gt; n * 10)</code> multiplies each by 10: <code>[20, 40]</code>. The original array is never mutated — both methods return new arrays.')">Check</button>
+  <div class="quiz-feedback" id="p5-fb"></div>
+</div>
+
+<h3>Level 3 — Advanced (code-based interview questions)</h3>
+
+<div class="quiz-q" id="p6">
+  <p class="q-text">6. What does this code output, and why?</p>
+  <pre>const obj = {
+  name: "Company Name",
+  greet: function() {
+    return `Hello, ${this.name}`;
+  }
+};
+const fn = obj.greet;
+console.log(fn());</pre>
+  <div class="quiz-options">
+    <label><input type="radio" name="p6" value="a"><span><code>"Hello, Company Name"</code></span></label>
+    <label><input type="radio" name="p6" value="b"><span><code>"Hello, undefined"</code></span></label>
+    <label><input type="radio" name="p6" value="c"><span>Error</span></label>
+    <label><input type="radio" name="p6" value="d"><span><code>"Hello, "</code></span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('p6','b','When you assign <code>obj.greet</code> to a variable and call it without an object context, <code>this</code> is no longer the <code>obj</code> — it becomes <code>undefined</code> (in strict mode) or the global object (in non-strict mode). Since the code uses template literals (which imply strict mode in modules, but in a script it depends on context), <code>this.name</code> is <code>undefined</code>. To fix it, use <code>obj.greet()</code> or bind it: <code>const fn = obj.greet.bind(obj);</code>.')">Check</button>
+  <div class="quiz-feedback" id="p6-fb"></div>
+</div>
+
+<div class="quiz-q" id="p7">
+  <p class="q-text">7. Write a one-liner that returns the sum of squares of all odd numbers in an array <code>nums</code>.</p>
+  <pre>// nums = [1, 2, 3, 4, 5]  →  1² + 3² + 5² = 35</pre>
+  <div class="quiz-options">
+    <label><input type="radio" name="p7" value="a"><span><code>nums.filter(n =&gt; n % 2).map(n =&gt; n * n).reduce((a, b) =&gt; a + b, 0)</code></span></label>
+    <label><input type="radio" name="p7" value="b"><span><code>nums.map(n =&gt; n * n).filter(n =&gt; n % 2).reduce((a, b) =&gt; a + b, 0)</code></span></label>
+    <label><input type="radio" name="p7" value="c"><span><code>nums.reduce((a, b) =&gt; a + b, 0).filter(n =&gt; n % 2)</code></span></label>
+    <label><input type="radio" name="p7" value="d"><span><code>nums.forEach(n =&gt; n * n).filter(n =&gt; n % 2)</code></span></label>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="checkQuiz('p7','a','Option A is correct: filter odd numbers first (<code>[1, 3, 5]</code>), square them (<code>[1, 9, 25]</code>), then sum (<code>35</code>). Option B filters <em>after</em> squaring — squares of odd numbers are always odd, so it accidentally works for this input, but the logic is confusing and breaks the intent. Option C calls <code>reduce</code> on the array (producing a number), then tries <code>filter</code> on a number — that throws an error. Option D uses <code>forEach</code> which returns <code>undefined</code>, then calls <code>filter</code> on <code>undefined</code>.')">Check</button>
+  <div class="quiz-feedback" id="p7-fb"></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10. FINAL QUIZ -->
+<!-- ============================================================ -->
+<h2 id="final-quiz">Final Quiz</h2>
+<p>Answer all 8 questions. Your score will be calculated at the end.</p>
+
+<div id="finalQuizContainer">
+  <!-- Questions injected by JS -->
+</div>
+
+<div class="score-display" id="finalScoreDisplay" style="display:none;">
+  <div class="score-num" id="finalScoreNum">0/8</div>
+  <div class="score-label" id="finalScoreLabel">Keep practising!</div>
+</div>
+
+<button class="btn btn-primary" onclick="submitFinalQuiz()" id="finalSubmitBtn">Submit Final Quiz</button>
+<button class="btn btn-ghost" onclick="resetFinalQuiz()" id="finalResetBtn" style="display:none;">Retry</button>
+
+<!-- ============================================================ -->
+<!-- 11. THE MENTAL MODEL -->
+<!-- ============================================================ -->
+<h2 id="mental-model">The Mental Model</h2>
+
+<div class="card card-accent">
+  <p><strong>Everything on the web is three layers working together:</strong></p>
+  <ol>
+    <li><strong>HTML</strong> defines <em>what</em> is on the page — the structure and meaning.</li>
+    <li><strong>CSS</strong> defines <em>how</em> it looks — layout, color, typography, responsiveness.</li>
+    <li><strong>JavaScript</strong> defines <em>what happens</em> — interactivity, DOM manipulation, events.</li>
+  </ol>
+  <p style="margin-bottom:0;">When a user loads a page: the browser parses HTML into the DOM tree → applies CSS rules based on specificity and the cascade → JavaScript can then read and modify that DOM, listen for events, and update the UI without a page reload.</p>
+</div>
+
+<h3>5–10 Things to Remember</h3>
+<ol>
+  <li><strong>Semantic HTML is not optional</strong> — it improves accessibility, SEO, and maintainability. Use <code>&lt;main&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;article&gt;</code>, <code>&lt;section&gt;</code> instead of <code>&lt;div&gt;</code> wherever the meaning is clear.</li>
+  <li><strong>Specificity is (A, B, C)</strong> — IDs beat classes, classes beat types. Inline styles beat them all. <code>!important</code> is a last resort.</li>
+  <li><strong>The box model has four layers</strong> — margin, border, padding, content. <code>box-sizing: border-box</code> makes <code>width</code> include padding and border.</li>
+  <li><strong>Flexbox is 1D, Grid is 2D.</strong> Use Flexbox for rows or columns; use Grid when you need both.</li>
+  <li><strong><code>let</code> and <code>const</code> are block-scoped; <code>var</code> is function-scoped.</strong> Use <code>const</code> by default, <code>let</code> when reassignment is needed, and avoid <code>var</code> in modern code.</li>
+  <li><strong>Use <code>===</code> not <code>==</code></strong> — strict equality avoids type-coercion surprises like <code>"" == false</code> being true.</li>
+  <li><strong>map → filter → reduce</strong> is the interview pattern for array transformations. None of them mutate the original array.</li>
+  <li><strong>Events bubble outward by default.</strong> Use <code>e.stopPropagation()</code> to stop bubbling and <code>e.preventDefault()</code> to stop default browser behavior.</li>
+  <li><strong>querySelector / querySelectorAll</strong> are the most flexible DOM selection methods because they accept any CSS selector.</li>
+  <li><strong>Strings are immutable; arrays and objects are reference types.</strong> Understanding this explains many unexpected behaviors.</li>
+</ol>
+
+<!-- ============================================================ -->
+<!-- 12. GLOSSARY -->
+<!-- ============================================================ -->
+<h2 id="glossary">Glossary</h2>
+
+<table>
+  <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><strong>DOM</strong></td><td>Document Object Model — a tree representation of an HTML document that JavaScript can manipulate.</td></tr>
+    <tr><td><strong>Specificity</strong></td><td>A weight system that determines which CSS rule wins when multiple rules target the same element.</td></tr>
+    <tr><td><strong>Box model</strong></td><td>The four-layer structure of every CSS element: margin, border, padding, content.</td></tr>
+    <tr><td><strong>Hoisting</strong></td><td>JavaScript's behavior of moving declarations to the top of their scope before execution.</td></tr>
+    <tr><td><strong>TDZ (Temporal Dead Zone)</strong></td><td>The period between entering a scope and the declaration line where <code>let</code>/<code>const</code> variables cannot be accessed.</td></tr>
+    <tr><td><strong>Type coercion</strong></td><td>Automatic conversion of one data type to another (e.g., <code>"5" * 2</code> → <code>10</code>).</td></tr>
+    <tr><td><strong>Event bubbling</strong></td><td>The default phase where events propagate from the target element outward to its ancestors.</td></tr>
+    <tr><td><strong>Event capturing</strong></td><td>The opposite of bubbling — events propagate from ancestors down to the target when <code>useCapture</code> is <code>true</code>.</td></tr>
+    <tr><td><strong>Semantic HTML</strong></td><td>Using HTML elements that describe their meaning (<code>&lt;article&gt;</code>, <code>&lt;nav&gt;</code>) rather than generic containers (<code>&lt;div&gt;</code>).</td></tr>
+    <tr><td><strong>Flexbox</strong></td><td>A one-dimensional CSS layout model for arranging items in rows or columns.</td></tr>
+    <tr><td><strong>CSS Grid</strong></td><td>A two-dimensional CSS layout model for arranging items in rows <em>and</em> columns.</td></tr>
+    <tr><td><strong>TDZ</strong></td><td>Temporal Dead Zone — the period where <code>let</code>/<code>const</code> variables are hoisted but not initialized.</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<!-- 13. SOURCES -->
+<!-- ============================================================ -->
+<h2 id="sources">Sources &amp; Further Reading</h2>
+<ul>
+  <li>MDN Web Docs — <a href="https://developer.mozilla.org/en-US/docs/Web/HTML" target="_blank" rel="noopener">HTML reference</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/CSS" target="_blank" rel="noopener">CSS reference</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank" rel="noopener">JavaScript reference</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model" target="_blank" rel="noopener">DOM</a>, and <a href="https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Building_blocks/Events" target="_blank" rel="noopener">Events</a>.</li>
+  <li>WHATWG HTML Living Standard — <a href="https://html.spec.whatwg.org/" target="_blank" rel="noopener">html.spec.whatwg.org</a></li>
+  <li>W3C CSS Specifications — <a href="https://www.w3.org/Style/CSS/" target="_blank" rel="noopener">w3.org/Style/CSS</a></li>
+  <li>W3C Selectors Level 4 — <a href="https://www.w3.org/TR/selectors-4/" target="_blank" rel="noopener">Specificity calculation</a></li>
+  <li>ECMAScript Language Specification — <a href="https://tc39.es/ecma262/" target="_blank" rel="noopener">tc39.es/ecma262</a></li>
+  <li>Accenture Front-end Developer Interview Questions — <a href="https://www.ambitionbox.com/interviews/accenture-interview-questions/fresher-candidates?designation=front-end-developer" target="_blank" rel="noopener">AmbitionBox</a></li>
+  <li>Educative — <a href="https://www.educative.io/blog/css-interview-questions-cheat-sheet" target="_blank" rel="noopener">CSS Interview Questions Cheat Sheet</a></li>
+  <li>Lydia Hallie — <a href="https://github.com/lydiahallie/javascript-questions" target="_blank" rel="noopener">JavaScript Questions</a> (GitHub)</li>
+</ul>
+
+</div><!-- end page-wrap -->
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT -->
+<!-- ============================================================ -->
+<script>
+/* ============ QUIZ SYSTEM ============ */
+function checkQuiz(id, correctValue, explanation) {
+  const container = document.getElementById(id);
+  const selected = container.querySelector('input[type="radio"]:checked');
+  const fb = document.getElementById(id + '-fb');
+  const labels = container.querySelectorAll('.quiz-options label');
+
+  if (!selected) {
+    fb.className = 'quiz-feedback show no';
+    fb.innerHTML = 'Please select an answer first.';
+    return;
+  }
+
+  labels.forEach(label => {
+    label.classList.remove('correct', 'wrong');
+    const input = label.querySelector('input');
+    if (input.value === correctValue) label.classList.add('correct');
+    if (input.checked && input.value !== correctValue) label.classList.add('wrong');
+  });
+
+  const isCorrect = selected.value === correctValue;
+  fb.className = 'quiz-feedback show ' + (isCorrect ? 'ok' : 'no');
+  fb.innerHTML = (isCorrect ? '<strong>Correct!</strong> ' : '<strong>Not quite.</strong> ') + explanation;
+
+  // Update progress
+  updateProgress();
+}
+
+/* ============ SPECIFICITY CALCULATOR ============ */
+function calcSpecificity() {
+  const input = document.getElementById('specInput').value.trim();
+  const output = document.getElementById('specOutput');
+  if (!input) { output.textContent = '(0, 0, 0)'; return; }
+
+  // Split by commas and use the highest specificity
+  const selectors = input.split(',').map(s => s.trim()).filter(Boolean);
+  let best = [0, 0, 0];
+
+  selectors.forEach(sel => {
+    let a = 0, b = 0, c = 0;
+    // Remove strings
+    sel = sel.replace(/"[^"]*"/g, '""').replace(/'[^']*'/g, "''");
+
+    // Count IDs
+    a += (sel.match(/#[\w-]+/g) || []).length;
+    // Count classes, attributes, pseudo-classes
+    b += (sel.match(/\.[\w-]+/g) || []).length;
+    b += (sel.match(/\[[^\]]+\]/g) || []).length;
+    b += (sel.match(/:(?!:)[\w-]+/g) || []).length;
+    // Count types and pseudo-elements
+    c += (sel.match(/::[\w-]+/g) || []).length;
+    // Remove already-counted parts for type counting
+    let temp = sel.replace(/#[\w-]+/g, '').replace(/\.[\w-]+/g, '')
+                   .replace(/\[[^\]]+\]/g, '').replace(/::[\w-]+/g, '')
+                   .replace(/:(?!:)[\w-]+/g, '').replace(/[>+~*]/g, '');
+    c += (temp.match(/\b[a-zA-Z][\w-]*\b/g) || []).filter(t => !['and','or','not','is','where','has'].includes(t)).length;
+
+    if (a > best[0] || (a === best[0] && b > best[1]) || (a === best[0] && b === best[1] && c > best[2])) {
+      best = [a, b, c];
+    }
+  });
+
+  output.textContent = `(${best[0]}, ${best[1]}, ${best[2]})`;
+}
+
+/* ============ TABS ============ */
+document.querySelectorAll('.tab-btns').forEach(btnGroup => {
+  btnGroup.addEventListener('click', e => {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    const container = btn.closest('.tabs');
+    const targetId = btn.dataset.tab;
+
+    container.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+
+    container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById(targetId);
+    if (panel) panel.classList.add('active');
+  });
+});
+
+/* ============ FINAL QUIZ ============ */
+const finalQuestions = [
+  {
+    q: 'What does <code>box-sizing: border-box</code> do?',
+    opts: ['Content width = declared width', 'Declared width includes padding and border', 'Removes the border from the box model', 'Sets the border to zero'],
+    correct: 1,
+    explain: 'With <code>border-box</code>, the declared <code>width</code> and <code>height</code> include padding and border. The content area shrinks to compensate. This makes layout calculations predictable.'
+  },
+  {
+    q: 'Which of these is NOT a primitive type in JavaScript?',
+    opts: ['string', 'number', 'object', 'symbol'],
+    correct: 2,
+    explain: '<code>object</code> is a reference type, not a primitive. The 7 primitives are: string, number, bigint, boolean, undefined, null, and symbol.'
+  },
+  {
+    q: 'What is the specificity of <code>#nav .item</code>?',
+    opts: ['(0, 2, 0)', '(1, 1, 0)', '(1, 0, 1)', '(0, 1, 1)'],
+    correct: 1,
+    explain: 'One ID (<code>#nav</code>) = A=1. One class (<code>.item</code>) = B=1. No type selectors = C=0. Result: (1, 1, 0).'
+  },
+  {
+    q: 'What does <code>[1, 2, 3].map(n =&gt; n * 2)</code> return?',
+    opts: ['[1, 2, 3]', '[2, 4, 6]', '6', 'undefined'],
+    correct: 1,
+    explain: '<code>map</code> transforms each element and returns a new array of the same length. The original array is not mutated.'
+  },
+  {
+    q: 'During which phase do event handlers fire by default?',
+    opts: ['Capturing', 'Target', 'Bubbling', 'None — they don\'t fire'],
+    correct: 2,
+    explain: 'By default, <code>addEventListener</code> listeners fire during the bubbling phase — from the target element outward to its ancestors. Pass <code>true</code> as the third argument to use capturing instead.'
+  },
+  {
+    q: 'What is the output of <code>console.log(typeof null)</code>?',
+    opts: ['"null"', '"undefined"', '"object"', '"number"'],
+    correct: 2,
+    explain: '<code>typeof null</code> returns <code>"object"</code> — a historical bug in JavaScript that was never fixed for backward compatibility. Use <code>value === null</code> to check for null.'
+  },
+  {
+    q: 'Which method creates a new array containing only elements that pass a test?',
+    opts: ['map()', 'filter()', 'reduce()', 'forEach()'],
+    correct: 1,
+    explain: '<code>filter()</code> returns a new array with all elements for which the callback returns <code>true</code>. <code>map()</code> transforms every element; <code>reduce()</code> reduces to a single value; <code>forEach()</code> returns <code>undefined</code>.'
+  },
+  {
+    q: 'What is the correct way to add a click listener to a button with id "btn"?',
+    opts: [
+      'document.querySelector("#btn").addEventListener("click", handler)',
+      'document.getElementById("btn").on("click", handler)',
+      'document.querySelector("#btn").onclick = handler()',
+      'Both A and C are correct'
+    ],
+    correct: 0,
+    explain: 'Option A uses the modern <code>addEventListener</code> API. Option B uses a non-existent <code>on()</code> method. Option C calls <code>handler</code> immediately (note the parentheses) instead of passing a reference. Always use <code>addEventListener</code> for flexibility.'
+  }
+];
+
+function renderFinalQuiz() {
+  const container = document.getElementById('finalQuizContainer');
+  container.innerHTML = '';
+  finalQuestions.forEach((q, i) => {
+    const div = document.createElement('div');
+    div.className = 'quiz-q';
+    div.id = 'final-q-' + i;
+    let optsHtml = '';
+    q.opts.forEach((opt, j) => {
+      optsHtml += `<label><input type="radio" name="final-${i}" value="${j}"><span>${opt}</span></label>`;
+    });
+    div.innerHTML = `
+      <p class="q-text">${i + 1}. ${q.q}</p>
+      <div class="quiz-options">${optsHtml}</div>
+      <div class="quiz-feedback" id="final-fb-${i}"></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function submitFinalQuiz() {
+  let correct = 0;
+  finalQuestions.forEach((q, i) => {
+    const container = document.getElementById('final-q-' + i);
+    const selected = container.querySelector('input[type="radio"]:checked');
+    const fb = document.getElementById('final-fb-' + i);
+    const labels = container.querySelectorAll('.quiz-options label');
+
+    labels.forEach(label => label.classList.remove('correct', 'wrong'));
+
+    if (selected && parseInt(selected.value) === q.correct) {
+      correct++;
+      labels.forEach(label => {
+        if (parseInt(label.querySelector('input').value) === q.correct) label.classList.add('correct');
+      });
+      fb.className = 'quiz-feedback show ok';
+      fb.innerHTML = '<strong>Correct.</strong> ' + q.explain;
+    } else {
+      labels.forEach(label => {
+        const val = parseInt(label.querySelector('input').value);
+        if (val === q.correct) label.classList.add('correct');
+        if (selected && val === parseInt(selected.value) && val !== q.correct) label.classList.add('wrong');
+      });
+      fb.className = 'quiz-feedback show no';
+      fb.innerHTML = '<strong>Incorrect.</strong> ' + q.explain;
+    }
+  });
+
+  const display = document.getElementById('finalScoreDisplay');
+  const num = document.getElementById('finalScoreNum');
+  const label = document.getElementById('finalScoreLabel');
+  display.style.display = 'block';
+  num.textContent = correct + '/' + finalQuestions.length;
+
+  const pct = Math.round((correct / finalQuestions.length) * 100);
+  if (pct >= 87) label.textContent = 'Excellent — you are interview-ready on these topics.';
+  else if (pct >= 62) label.textContent = 'Good — review the explanations for the ones you missed.';
+  else label.textContent = 'Keep practising — go back through the sections above and retry.';
+
+  document.getElementById('finalSubmitBtn').style.display = 'none';
+  document.getElementById('finalResetBtn').style.display = 'inline-flex';
+
+  updateProgress();
+}
+
+function resetFinalQuiz() {
+  renderFinalQuiz();
+  document.getElementById('finalScoreDisplay').style.display = 'none';
+  document.getElementById('finalSubmitBtn').style.display = 'inline-flex';
+  document.getElementById('finalResetBtn').style.display = 'none';
+}
+
+renderFinalQuiz();
+
+/* ============ PROGRESS ============ */
+function updateProgress() {
+  const sections = ['big-picture', 'html', 'css', 'javascript', 'dom', 'mistakes', 'comparison', 'practice', 'final-quiz', 'mental-model', 'glossary', 'sources'];
+  const scrollY = window.scrollY;
+  let currentIdx = 0;
+
+  sections.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top < window.innerHeight * 0.4) {
+      currentIdx = i;
+    }
+  });
+
+  const pct = Math.round(((currentIdx + 1) / sections.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = pct + '%';
+
+  const names = ['Big Picture', 'HTML', 'CSS', 'JavaScript', 'DOM & Events', 'Traps', 'Comparison', 'Practice', 'Final Quiz', 'Mental Model', 'Glossary', 'Sources'];
+  document.getElementById('progressSection').textContent = names[currentIdx] || 'Start';
+  document.getElementById('progressBar').setAttribute('aria-valuenow', pct);
+}
+
+window.addEventListener('scroll', updateProgress, { passive: true });
+updateProgress();
+
+/* ============ KEYBOARD NAV FOR TABS ============ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const btns = Array.from(btn.parentElement.querySelectorAll('.tab-btn'));
+      const idx = btns.indexOf(btn);
+      const next = e.key === 'ArrowRight' ? (idx + 1) % btns.length : (idx - 1 + btns.length) % btns.length;
+      btns[next].focus();
+      btns[next].click();
+    }
+  });
+});
+</script>
+
+</body>
+</html>

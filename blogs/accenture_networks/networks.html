@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Computer Networks — Accenture Interview Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f8f6; --surface:#ffffff; --ink:#161b19; --muted:#5b655f;
+  --line:#e1e6e1; --accent:#0f6b5c; --accent-ink:#ffffff; --navy:#1b4965;
+  --must:#a8341c; --should:#a3711b; --good:#2c6e49; --low:#5b655f;
+  --mustbg:#fbeae6; --shouldbg:#fbf1e2; --goodbg:#e8f3ec; --lowbg:#eef0ee;
+  --radius:10px;
+  font-size:16px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ } }
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth; scroll-padding-top:70px;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:Inter, -apple-system, Segoe UI, sans-serif; line-height:1.6;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+h1,h2,h3,h4{font-family:"Source Serif 4", Georgia, serif; font-weight:700; color:var(--ink); line-height:1.25;}
+p{max-width:70ch;}
+a{color:var(--accent);}
+.wrap{max-width:920px; margin:0 auto; padding:0 20px;}
+
+/* header / nav */
+header.top{
+  position:sticky; top:0; z-index:20; background:rgba(247,248,246,.96); backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line); padding-top:env(safe-area-inset-top,0px);
+}
+.topbar{display:flex; align-items:center; justify-content:space-between; padding:12px 20px; max-width:920px; margin:0 auto; gap:12px;}
+.brand{font-family:"Source Serif 4",serif; font-weight:700; font-size:1.05rem;}
+.brand span{color:var(--accent);}
+nav.tabs{display:flex; gap:4px; overflow-x:auto; padding:0 20px 10px; max-width:920px; margin:0 auto; -ms-overflow-style:none; scrollbar-width:none;}
+nav.tabs::-webkit-scrollbar{display:none;}
+nav.tabs button{
+  flex:none; background:none; border:1px solid transparent; color:var(--muted); font:inherit;
+  font-size:.85rem; font-weight:600; padding:7px 12px; border-radius:20px; cursor:pointer; white-space:nowrap;
+}
+nav.tabs button:hover{background:var(--surface);}
+nav.tabs button.active{background:var(--accent); color:var(--accent-ink);}
+nav.tabs button:focus-visible, button:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--navy); outline-offset:2px;}
+.progressbar{height:4px; background:var(--line); border-radius:3px; overflow:hidden; margin:0 20px 10px; max-width:920px; margin-left:auto; margin-right:auto;}
+.progressbar i{display:block; height:100%; background:var(--accent); width:0%; transition:width .4s ease;}
+
+section.view{display:none; padding:32px 0 60px;}
+section.view.active{display:block;}
+
+.badge{display:inline-block; font-size:.7rem; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.02em;}
+.b-must{background:var(--mustbg); color:var(--must);}
+.b-should{background:var(--shouldbg); color:var(--should);}
+.b-good{background:var(--goodbg); color:var(--good);}
+.b-low{background:var(--lowbg); color:var(--low);}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; margin:16px 0;}
+.callout{border-left:3px solid var(--accent); background:#eef5f2; padding:12px 16px; border-radius:0 8px 8px 0; margin:14px 0; font-size:.95rem;}
+.callout.warn{border-color:var(--must); background:var(--mustbg);}
+.callout.tip{border-color:var(--navy); background:#eaf1f5;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+@media(max-width:640px){.grid2{grid-template-columns:1fr;}}
+
+/* accordion */
+.acc-item{border:1px solid var(--line); border-radius:var(--radius); margin:10px 0; background:var(--surface); overflow:hidden;}
+.acc-head{width:100%; text-align:left; background:none; border:0; padding:14px 18px; font:inherit; font-weight:600; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--ink);}
+.acc-head .tags{display:flex; gap:6px; align-items:center; flex:none;}
+.acc-head .chev{transition:transform .2s ease; flex:none; color:var(--muted);}
+.acc-item.open .chev{transform:rotate(90deg);}
+.acc-body{max-height:0; overflow:hidden; transition:max-height .25s ease;}
+.acc-body-inner{padding:0 18px 18px;}
+@media (prefers-reduced-motion:reduce){ .acc-body{transition:none;} html{scroll-behavior:auto;} }
+
+table{width:100%; border-collapse:collapse; font-size:.92rem; margin:12px 0;}
+th,td{border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top;}
+th{background:#eef1ee;}
+
+/* buttons */
+.btn{background:var(--accent); color:#fff; border:0; border-radius:8px; padding:9px 16px; font:inherit; font-weight:600; font-size:.9rem; cursor:pointer;}
+.btn.secondary{background:none; border:1px solid var(--line); color:var(--ink);}
+.btn:hover{opacity:.9;}
+
+/* quiz */
+.q{margin:18px 0; padding:16px 18px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface);}
+.opt{display:block; width:100%; text-align:left; background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin:6px 0; cursor:pointer; font:inherit; font-size:.92rem;}
+.opt:hover{border-color:var(--accent);}
+.opt.correct{border-color:var(--good); background:var(--goodbg);}
+.opt.wrong{border-color:var(--must); background:var(--mustbg);}
+.explain{margin-top:10px; font-size:.9rem; padding:10px 12px; background:#f1f3f0; border-radius:8px; display:none;}
+.explain.show{display:block;}
+#quizScore{font-weight:700;}
+
+/* predict */
+.predict{border:1px dashed var(--navy); border-radius:10px; padding:14px 16px; margin:16px 0; background:#f4f8fa;}
+
+/* diagram/handshake */
+.stepper{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:16px 0;}
+.stepbox{border:1px solid var(--line); border-radius:8px; padding:10px 14px; font-size:.85rem; background:#fff; min-width:90px; text-align:center;}
+.stepbox.active{border-color:var(--accent); background:var(--goodbg); font-weight:700;}
+.arrow{color:var(--muted);}
+
+.osi-layer{display:flex; justify-content:space-between; align-items:center; border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin:4px 0; background:#fff; cursor:pointer;}
+.osi-layer:hover{border-color:var(--accent);}
+.osi-layer .num{color:var(--muted); font-size:.8rem; width:26px;}
+.osi-detail{font-size:.88rem; padding:10px 14px; background:#f1f3f0; border-radius:0 0 8px 8px; margin-top:-8px; display:none;}
+.osi-detail.show{display:block;}
+
+footer{padding:30px 0 60px; border-top:1px solid var(--line); color:var(--muted); font-size:.85rem;}
+.glossary dt{font-weight:700; margin-top:10px;}
+.glossary dd{margin:2px 0 0; color:var(--muted);}
+code{background:#eef1ee; padding:1px 5px; border-radius:4px; font-size:.88em;}
+input[type=text],input[type=number]{font:inherit; padding:7px 9px; border:1px solid var(--line); border-radius:6px; width:100%;}
+label{font-size:.85rem; font-weight:600; color:var(--muted);}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="topbar">
+    <div class="brand">Networks <span>→</span> Accenture Interview Prep</div>
+    <div style="font-size:.8rem;color:var(--muted)" id="sectionLabel">Understanding</div>
+  </div>
+  <div class="progressbar"><i id="progFill"></i></div>
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <button data-v="big">Big Picture</button>
+    <button data-v="core">Core Concepts</button>
+    <button data-v="how">How It Works</button>
+    <button data-v="mis">Misconceptions</button>
+    <button data-v="zone">Accenture Zone</button>
+    <button data-v="model">Mental Model</button>
+    <button data-v="gloss">Glossary</button>
+    <button data-v="src">Sources</button>
+  </nav>
+</header>
+
+<main class="wrap">
+
+<!-- BIG PICTURE -->
+<section class="view" id="big">
+  <h1>Why Accenture asks you this</h1>
+  <p>Networking questions test whether you understand <strong>how data actually moves between two machines</strong> — because that same mental model underlies APIs, cloud services, Docker networking, Kubernetes services, VPNs and security, all of which are also in your assessment syllabus. Interviewers rarely want a textbook definition; they want to see you reason about a request end‑to‑end.</p>
+  <div class="callout tip"><strong>Learning objective:</strong> by the end you should be able to trace what happens when you type a URL and hit Enter, explain TCP vs UDP with a real trade‑off, subnet an IP address on paper, and defend your answers through 2–5 follow‑up questions.</div>
+
+  <h2>The one picture to hold in your head</h2>
+  <div class="card">
+    <p>Every network conversation is layers wrapping data, like envelopes inside envelopes. Your browser writes a letter (HTTP request). It's put in an envelope addressed by port number (TCP/UDP). That envelope goes inside another addressed by IP address (routing between networks). That goes inside one last envelope addressed by MAC address (delivery on the local wire). Each layer only reads its own envelope and hands the rest inward.</p>
+    <p style="font-size:.85rem;color:var(--muted)"><em>Analogy, not literal mechanism:</em> real headers are added as fixed-format binary fields (encapsulation), not paper envelopes — but the "each layer only needs its own address" idea is accurate.</p>
+  </div>
+
+  <div class="predict">
+    <strong>Predict before you scroll:</strong> if two layers do addressing (IP and MAC), why do we need both instead of just one global address per device?
+    <details><summary style="cursor:pointer;color:var(--accent);font-weight:600;margin-top:8px;">Reveal</summary>
+    <p style="margin-top:8px">IP addresses are <em>logical</em> and hierarchical — they can change (DHCP, moving networks) and are used for routing across networks. MAC addresses are <em>physical</em>, burned into the NIC, and used only for delivery on one local segment. Routers rewrite the MAC address hop-by-hop but keep the same destination IP address until the packet arrives.</p></details>
+  </div>
+
+  <h2>Where this shows up in your resume/projects</h2>
+  <p>If your project used a REST API, hosted something on cloud, ran containers, or used SSH/HTTPS — you already used sockets, TCP, DNS, and TLS. Be ready to say so explicitly; Accenture interviewers like candidates who connect theory to what they actually built.</p>
+</section>
+
+<!-- CORE CONCEPTS -->
+<section class="view" id="core">
+  <h1>Core Concepts</h1>
+  <p style="color:var(--muted)">Tap a topic to expand. Badges show interview priority for an Accenture fresher round.</p>
+  <div id="accordion"></div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="view" id="how">
+  <h1>How It Works — Interactive</h1>
+
+  <h2>1. OSI model, layer by layer</h2>
+  <p>Click each layer to see what it does and its Accenture-relevant protocol examples.</p>
+  <div id="osi"></div>
+
+  <h2>2. The TCP three-way handshake</h2>
+  <p>Step through it. This is one of the most commonly asked "explain this" questions.</p>
+  <div class="stepper" id="handshake"></div>
+  <div class="card" id="handshakeText"></div>
+  <div style="display:flex;gap:8px;"><button class="btn secondary" id="hsPrev">Back</button><button class="btn" id="hsNext">Next step</button><button class="btn secondary" id="hsReset">Reset</button></div>
+
+  <h2>3. Subnetting calculator</h2>
+  <p>Try it yourself — this is a very common "solve on paper" round-1 question.</p>
+  <div class="card">
+    <div class="grid2">
+      <div><label for="ipIn">IP address</label><input type="text" id="ipIn" value="192.168.10.130"></div>
+      <div><label for="cidrIn">CIDR prefix (/n)</label><input type="number" id="cidrIn" value="26" min="1" max="30"></div>
+    </div>
+    <div style="margin-top:12px;"><button class="btn" id="calcBtn">Calculate</button></div>
+    <div id="subnetOut" style="margin-top:14px; font-size:.92rem;"></div>
+  </div>
+  <div class="callout"><strong>How to answer in interview:</strong> narrate the logic out loud — "the CIDR tells me the subnet mask, I find the block size from the host bits, then I find which block this IP falls into." Interviewers grade the reasoning, not just the final number.</div>
+</section>
+
+<!-- MISCONCEPTIONS -->
+<section class="view" id="mis">
+  <h1>Common Misconceptions &amp; Interviewer Traps</h1>
+  <div id="misList"></div>
+</section>
+
+<!-- ACCENTURE ZONE -->
+<section class="view" id="zone">
+  <h1>Accenture Interview Zone</h1>
+
+  <h2>1. Must-know questions</h2>
+  <div id="mustQ"></div>
+
+  <h2>2. Likely follow-up chains</h2>
+  <div id="followQ"></div>
+
+  <h2>3. Scenario / troubleshooting questions</h2>
+  <div id="scenQ"></div>
+
+  <h2>4. Rapid-fire</h2>
+  <div class="card" id="rapid"></div>
+
+  <h2>5. Interview simulation quiz</h2>
+  <div id="quiz"></div>
+  <div class="card" style="text-align:center;">
+    <button class="btn" id="quizFinish">See my score</button>
+    <p id="quizScore" style="margin-top:10px;"></p>
+  </div>
+
+  <h2>6. Final revision checklist</h2>
+  <div class="card" id="checklist"></div>
+</section>
+
+<!-- MENTAL MODEL -->
+<section class="view" id="model">
+  <h1>The Mental Model</h1>
+  <div class="card">
+    <p><strong>Every network exchange = addressing + reliability + translation, stacked in layers.</strong></p>
+    <ul>
+      <li><strong>Addressing</strong> happens at three levels: MAC (local, physical), IP (global, logical), Port (which app/process on that host).</li>
+      <li><strong>Reliability</strong> is a choice, not a given: TCP trades speed for guaranteed, ordered, congestion-aware delivery via handshake + ACKs + windows; UDP skips all of that for speed.</li>
+      <li><strong>Translation services</strong> sit around the core path so humans and machines can both work: DNS (name→IP), DHCP (auto-assign IP), ARP (IP→MAC), NAT (private→public IP).</li>
+      <li><strong>Delivery</strong> is two different jobs: switching moves frames inside one network using MAC tables; routing moves packets between networks using routing tables and IP.</li>
+      <li><strong>Security/identity</strong> wraps this stack: HTTPS = HTTP + TLS for encryption/authentication; VPN/IPsec extends a private network's trust across the public internet.</li>
+    </ul>
+  </div>
+  <h2>5–10 things to remember</h2>
+  <ol id="takeaways"></ol>
+</section>
+
+<!-- GLOSSARY -->
+<section class="view" id="gloss">
+  <h1>Glossary</h1>
+  <dl class="glossary" id="glossList"></dl>
+</section>
+
+<!-- SOURCES -->
+<section class="view" id="src">
+  <h1>Sources &amp; Further Reading</h1>
+  <ul>
+    <li>RFC 793 / RFC 9293 — Transmission Control Protocol (IETF)</li>
+    <li>RFC 768 — User Datagram Protocol (IETF)</li>
+    <li>RFC 1034/1035 — Domain Names (DNS), IETF</li>
+    <li>RFC 2131 — Dynamic Host Configuration Protocol (DHCP), IETF</li>
+    <li>RFC 826 — Address Resolution Protocol (ARP), IETF</li>
+    <li>RFC 1918 — Address Allocation for Private Internets (NAT context), IETF</li>
+    <li>RFC 9110 — HTTP Semantics; RFC 8446 — TLS 1.3, IETF</li>
+    <li>Cisco Networking Academy — OSI &amp; TCP/IP model documentation</li>
+    <li>Kurose &amp; Ross, <em>Computer Networking: A Top-Down Approach</em> — standard university textbook reference for congestion control and sockets</li>
+  </ul>
+  <p style="color:var(--muted);font-size:.85rem;">This page condenses well-established, standardized networking behavior. Where implementations vary (e.g., exact congestion-control algorithm used, or vendor-specific CLI), that variability is noted rather than presented as one fixed fact.</p>
+</section>
+
+</main>
+
+<footer><div class="wrap">Built for interview revision. Not affiliated with Accenture. Data stays in your browser only.</div></footer>
+
+<script>
+(function(){
+"use strict";
+const $=(s,c)=>(c||document).querySelector(s), $$=(s,c)=>Array.from((c||document).querySelectorAll(s));
+const views=["big","core","how","mis","zone","model","gloss","src"];
+const labels={big:"Understanding",core:"Understanding",how:"Exploring",mis:"Exploring",zone:"Testing",model:"Review",gloss:"Review",src:"Review"};
+let visited=new Set();
+try{ visited=new Set(JSON.parse(localStorage.getItem('nap_visited')||'[]')); }catch(e){}
+
+function showView(id){
+  views.forEach(v=>{ $('#'+v).classList.toggle('active', v===id); });
+  $$('#tabs button').forEach(b=>b.classList.toggle('active', b.dataset.v===id));
+  $('#sectionLabel').textContent=labels[id]||"";
+  visited.add(id);
+  try{localStorage.setItem('nap_visited', JSON.stringify(Array.from(visited)));}catch(e){}
+  updateProgress();
+  window.scrollTo({top:0,behavior:'auto'});
+}
+function updateProgress(){
+  $('#progFill').style.width = Math.round(100*visited.size/views.length)+'%';
+}
+$$('#tabs button').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.v)));
+
+/* ---------- CORE CONCEPTS DATA ---------- */
+const concepts=[
+{t:"OSI vs TCP/IP model",tag:"must",
+ body:`<p><strong>What:</strong> OSI is a 7-layer <em>conceptual</em> model (Physical, Data Link, Network, Transport, Session, Presentation, Application). TCP/IP is the 4-layer model actually implemented on the internet (Link, Internet, Transport, Application).</p>
+ <p><strong>Why it matters:</strong> Accenture interviewers use "which layer does X live at" as a quick check that you understand where each protocol/device fits.</p>
+ <table><tr><th>Device/Protocol</th><th>OSI Layer</th></tr>
+ <tr><td>Hub, cable</td><td>Physical (1)</td></tr>
+ <tr><td>Switch, MAC address, ARP</td><td>Data Link (2)</td></tr>
+ <tr><td>Router, IP, ICMP</td><td>Network (3)</td></tr>
+ <tr><td>TCP, UDP, ports</td><td>Transport (4)</td></tr>
+ <tr><td>HTTP, DNS, FTP, SSH</td><td>Application (7, or "Application" in TCP/IP)</td></tr></table>
+ <div class="callout tip"><strong>How to answer:</strong> "OSI is a teaching/reference model with 7 layers; TCP/IP is what's actually deployed, with 4 layers that map onto OSI — Application in TCP/IP covers OSI's Session+Presentation+Application." That single sentence usually satisfies the follow-up "why two models?".</div>
+ <div class="callout warn"><strong>Trap:</strong> Don't just recite the 7 names — be ready to place a random protocol (e.g., "where does DHCP sit?" → Application layer, since it runs over UDP) into a layer on the spot.</div>`},
+
+{t:"TCP vs UDP",tag:"must",
+ body:`<p><strong>What:</strong> Both are Transport-layer protocols that add port numbers on top of IP. TCP is connection-oriented and reliable (handshake, ACKs, retransmission, ordering, flow/congestion control). UDP is connectionless and best-effort — no guarantee of delivery or order, minimal overhead.</p>
+ <p><strong>Real-world analogy:</strong> TCP is a phone call — you confirm the other person can hear you before talking and can ask them to repeat. UDP is dropping postcards in a mailbox — fast and simple, no confirmation they arrive.</p>
+ <table><tr><th></th><th>TCP</th><th>UDP</th></tr>
+ <tr><td>Connection</td><td>3-way handshake</td><td>None</td></tr>
+ <tr><td>Reliability</td><td>Guaranteed, ordered</td><td>Best-effort</td></tr>
+ <tr><td>Speed/overhead</td><td>Slower, more header</td><td>Faster, lightweight (8-byte header)</td></tr>
+ <tr><td>Use cases</td><td>HTTP/HTTPS, email, file transfer, SSH</td><td>DNS queries, video/voice calls, DHCP, gaming</td></tr></table>
+ <div class="callout tip"><strong>How to answer application-style:</strong> "I'd use UDP for a live video call because a late packet is worse than a lost one — TCP would stall to retransmit and re-order, causing lag; a dropped video frame is barely noticeable."</div>
+ <div class="callout warn"><strong>Trap:</strong> "UDP is unreliable" doesn't mean broken — it means <em>no built-in guarantee</em>; the application (e.g., a video codec) may add its own light-weight recovery.</div>`},
+
+{t:"Ports &amp; Sockets",tag:"must",
+ body:`<p><strong>What:</strong> A port (0–65535) identifies <em>which application/process</em> on a host a connection belongs to. A socket is the combination <code>(protocol, source IP, source port, destination IP, destination port)</code> — the actual endpoint of a connection.</p>
+ <p><strong>Common ports to know:</strong> HTTP 80, HTTPS 443, DNS 53, SSH 22, FTP 20/21, SMTP 25, DHCP 67/68.</p>
+ <div class="callout"><strong>Why it matters for your resume:</strong> if you've deployed anything (Docker <code>-p 8080:80</code>, Kubernetes Service, a cloud VM security group), you've directly configured ports/sockets — say so explicitly.</div>
+ <div class="callout warn"><strong>Trap:</strong> Confusing "port" (a number identifying a service) with "socket" (a live, bound connection endpoint). A server listens on one port but can have many simultaneous sockets (one per client connection) because each client has a different source IP/port.</div>`},
+
+{t:"TCP three-way handshake",tag:"must",
+ body:`<p><strong>What:</strong> How two hosts establish a reliable TCP connection before sending data: <strong>SYN → SYN-ACK → ACK</strong>. Each side proves it can send and receive, and both agree on initial sequence numbers.</p>
+ <p>See the interactive stepper in "How It Works" for the walkthrough.</p>
+ <div class="callout tip"><strong>Follow-up they love:</strong> "What about closing a connection?" — Answer: a 4-step process (FIN, ACK, FIN, ACK) called the four-way termination/teardown, since each side closes independently (half-close).</div>`},
+
+{t:"Flow control vs Congestion control",tag:"should",
+ body:`<p><strong>Flow control:</strong> protects the <em>receiver</em> from being overwhelmed — the receiver advertises a "window size" telling the sender how much it can accept right now.</p>
+ <p><strong>Congestion control:</strong> protects the <em>network</em> from being overwhelmed — the sender grows its sending rate gradually (slow start) and backs off sharply when it detects packet loss (a sign of congestion).</p>
+ <div class="callout tip"><strong>How to answer:</strong> "Flow control is receiver-driven; congestion control is network-driven. Both throttle the sender, but for different reasons — one is about the other computer's buffer, the other is about the shared network path in between."</div>
+ <div class="badge b-low">Depth: know the distinction, not algorithm internals (e.g., exact slow-start math) unless asked to go deeper.</div>`},
+
+{t:"IP addressing &amp; Subnetting",tag:"must",
+ body:`<p><strong>What:</strong> An IPv4 address is 32 bits, written as 4 octets (e.g., 192.168.1.10). A subnet mask/CIDR (<code>/24</code>) splits it into a network portion and a host portion.</p>
+ <p><strong>Classes (legacy but still asked):</strong> A (1–126, default /8), B (128–191, /16), C (192–223, /24). Private ranges: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 (RFC 1918).</p>
+ <p><strong>Subnetting logic:</strong> host bits = 32 − CIDR. Number of usable hosts = 2^(host bits) − 2 (subtracting network &amp; broadcast address). Block size = 256 − (last octet's mask value).</p>
+ <p>Try the calculator in "How It Works" — practice this until it's automatic; it's a very common written/verbal test.</p>
+ <div class="callout warn"><strong>Trap:</strong> Forgetting to subtract 2 for network/broadcast address, or forgetting IPv4 exhaustion is exactly why NAT and IPv6 exist — a natural bridge to those topics.</div>`},
+
+{t:"DNS",tag:"must",
+ body:`<p><strong>What:</strong> Translates human-readable domain names into IP addresses, via a hierarchical, distributed, cached lookup: browser cache → OS cache → resolver (ISP/recursive) → root servers → TLD servers → authoritative server.</p>
+ <p><strong>Record types to know:</strong> A (IPv4), AAAA (IPv6), CNAME (alias), MX (mail), NS (nameserver), TXT.</p>
+ <div class="callout tip"><strong>How to answer "explain DNS":</strong> walk it as a story — "it's like asking a librarian who directs you to a more specific librarian each time, until someone hands you the exact address, and everyone remembers the answer for a while (TTL/caching) so they don't have to ask again."</div>
+ <div class="callout warn"><strong>Trap:</strong> DNS mostly uses UDP port 53 for quick lookups, but falls back to TCP port 53 for large responses (e.g., zone transfers) — a good "I know the exception" answer.</div>`},
+
+{t:"DHCP",tag:"should",
+ body:`<p><strong>What:</strong> Automatically assigns IP configuration (IP address, subnet mask, default gateway, DNS server) to a device joining a network, avoiding manual configuration.</p>
+ <p><strong>Process — DORA:</strong> Discover (client broadcasts) → Offer (server proposes an IP) → Request (client asks for that IP) → Acknowledge (server confirms/leases it).</p>
+ <div class="callout"><strong>Connection to your assessment:</strong> this is exactly how a laptop gets an IP on office Wi-Fi, and conceptually similar to how Docker/Kubernetes auto-assigns container IPs on a virtual network.</div>`},
+
+{t:"ARP",tag:"should",
+ body:`<p><strong>What:</strong> Address Resolution Protocol maps a known IP address to the unknown MAC address needed for local delivery. The sender broadcasts "who has this IP?" and the owner replies with its MAC; the mapping is cached in an ARP table.</p>
+ <div class="callout tip"><strong>How to answer:</strong> "ARP bridges Layer 3 (IP) and Layer 2 (MAC) — a router already knows the destination IP from routing, but still needs ARP to find out which physical device to hand the frame to on the final local network."</div>`},
+
+{t:"NAT",tag:"must",
+ body:`<p><strong>What:</strong> Network Address Translation lets many devices on a private network share one public IP address, by rewriting source IP/port as traffic leaves the router and reversing it on the way back.</p>
+ <p><strong>Why it matters:</strong> solves IPv4 address exhaustion and adds a layer of obscurity (not real security) since internal IPs aren't directly reachable from outside.</p>
+ <div class="callout warn"><strong>Trap:</strong> "NAT is a firewall" — false. NAT hides internal addressing as a side effect, but it isn't designed as a security control; a dedicated firewall/ACL still does that job. This distinction is a favorite trap.</div>
+ <div class="callout tip"><strong>Connects to:</strong> VPN — a site-to-site VPN often needs NAT traversal handled explicitly, and this is a good bridge if they pivot into VPN/IPsec questions.</div>`},
+
+{t:"Routing vs Switching",tag:"must",
+ body:`<p><strong>Switching</strong> forwards frames <em>within</em> one local network using the destination MAC address, learned by inspecting source MACs of incoming frames (builds a MAC address table).</p>
+ <p><strong>Routing</strong> forwards packets <em>between</em> different networks using the destination IP address and a routing table (which may be built manually — static routing — or dynamically via protocols like OSPF/BGP).</p>
+ <div class="callout tip"><strong>How to answer:</strong> "A switch operates inside one broadcast domain at Layer 2; a router connects separate networks at Layer 3 and is the boundary of a broadcast domain."</div>
+ <div class="badge b-low">Dynamic routing protocol internals (OSPF/BGP specifics) are Low priority for a fresher role — know they exist and roughly why (scale, automatic path selection).</div>`},
+
+{t:"HTTP vs HTTPS",tag:"must",
+ body:`<p><strong>What:</strong> HTTP is the application-layer protocol for exchanging web content (methods GET/POST/PUT/DELETE, status codes 200/301/404/500). HTTPS is HTTP running inside a TLS-encrypted, authenticated channel (port 443 vs 80).</p>
+ <p><strong>TLS handshake, briefly:</strong> client and server agree on a cipher, the server proves its identity with a certificate (chain of trust to a CA), and they derive a shared symmetric key used to encrypt the actual data (asymmetric crypto is only used to set that up — it's too slow for bulk data).</p>
+ <div class="callout tip"><strong>How to answer:</strong> "HTTPS adds confidentiality (encryption), integrity, and authentication of the server on top of plain HTTP, using TLS." This is your direct bridge into the cybersecurity portion of your assessment.</div>
+ <div class="callout warn"><strong>Trap:</strong> HTTPS protects data <em>in transit</em>; it says nothing about what the server does with your data afterward, and doesn't make an application logically secure (e.g., SQL injection is unaffected by HTTPS).</div>`},
+
+{t:"VPN &amp; IPsec (bridge topic)",tag:"should",
+ body:`<p><strong>What:</strong> A VPN creates an encrypted "tunnel" across an untrusted network (the internet) so traffic behaves as if it were on a private network. IPsec is a common protocol suite used to build that tunnel, working at the Network layer, providing encryption (ESP) and/or authentication (AH) of IP packets.</p>
+ <div class="callout"><strong>Connects directly to your assessment:</strong> this is the natural pivot point between Networking and the VPN/IPsec + cybersecurity portion of your Accenture syllabus — be ready to explain a VPN in one line and then let them redirect you into security if they want depth there.</div>`}
+];
+const tagLabel={must:"MUST KNOW",should:"SHOULD KNOW",good:"GOOD TO KNOW",low:"LOW PRIORITY"};
+const accHtml=concepts.map((c,i)=>`
+<div class="acc-item" id="acc${i}">
+  <button class="acc-head" aria-expanded="false" aria-controls="accbody${i}">
+    <span>${c.t}</span>
+    <span class="tags"><span class="badge b-${c.tag}">${tagLabel[c.tag]}</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+  </button>
+  <div class="acc-body" id="accbody${i}"><div class="acc-body-inner">${c.body}</div></div>
+</div>`).join('');
+$('#accordion').innerHTML=accHtml;
+$$('.acc-head').forEach(h=>h.addEventListener('click',()=>{
+  const item=h.closest('.acc-item'); const body=item.querySelector('.acc-body');
+  const open=item.classList.toggle('open');
+  h.setAttribute('aria-expanded', open?'true':'false');
+  body.style.maxHeight= open? body.scrollHeight+'px' : null;
+}));
+
+/* ---------- OSI interactive ---------- */
+const osi=[
+ {n:7,name:"Application",ex:"HTTP, HTTPS, DNS, FTP, SSH — what the user's app actually speaks."},
+ {n:6,name:"Presentation",ex:"Data format/encoding/encryption (e.g., TLS is often discussed here or at session)."},
+ {n:5,name:"Session",ex:"Establishes/manages a session between two apps (e.g., login session handling)."},
+ {n:4,name:"Transport",ex:"TCP/UDP — port numbers, reliability, segmentation."},
+ {n:3,name:"Network",ex:"IP, ICMP, routers — logical addressing and path selection."},
+ {n:2,name:"Data Link",ex:"MAC addresses, switches, ARP, Ethernet framing."},
+ {n:1,name:"Physical",ex:"Cables, radio signals, hubs — raw bits on the wire."}
+];
+$('#osi').innerHTML=osi.map((l,i)=>`
+<div class="osi-layer" data-i="${i}" tabindex="0" role="button" aria-expanded="false">
+  <span><span class="num">${l.n}</span> ${l.name}</span><span class="arrow">▾</span>
+</div><div class="osi-detail" id="osid${i}">${l.ex}</div>`).join('');
+function toggleOsi(el){
+  const i=el.dataset.i; const d=$('#osid'+i); const open=d.classList.toggle('show');
+  el.setAttribute('aria-expanded', open?'true':'false');
+}
+$$('.osi-layer').forEach(el=>{
+  el.addEventListener('click',()=>toggleOsi(el));
+  el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); toggleOsi(el);} });
+});
+
+/* ---------- Handshake stepper ---------- */
+const hsSteps=[
+ {label:"Idle", text:"Client and server both idle. No connection yet."},
+ {label:"SYN →", text:"<strong>Step 1 — SYN:</strong> Client sends a segment with the SYN flag set and an initial sequence number, saying 'I want to connect, here's where my sequence numbers start.'"},
+ {label:"← SYN-ACK", text:"<strong>Step 2 — SYN-ACK:</strong> Server replies with SYN+ACK: it acknowledges the client's sequence number <em>and</em> sends its own SYN with its own starting sequence number."},
+ {label:"ACK →", text:"<strong>Step 3 — ACK:</strong> Client acknowledges the server's sequence number. Connection is now ESTABLISHED on both sides — data can flow."},
+ {label:"Data ⇄", text:"<strong>Connection established.</strong> Both sides now exchange data, each segment tracked with sequence/ACK numbers for reliability."}
+];
+let hsIdx=0;
+function renderHs(){
+  $('#handshake').innerHTML = hsSteps.map((s,i)=>`<span class="stepbox ${i===hsIdx?'active':''}">${s.label}</span>${i<hsSteps.length-1?'<span class="arrow">→</span>':''}`).join('');
+  $('#handshakeText').innerHTML = hsSteps[hsIdx].text;
+}
+$('#hsNext').addEventListener('click',()=>{ hsIdx=Math.min(hsIdx+1, hsSteps.length-1); renderHs(); });
+$('#hsPrev').addEventListener('click',()=>{ hsIdx=Math.max(hsIdx-1,0); renderHs(); });
+$('#hsReset').addEventListener('click',()=>{ hsIdx=0; renderHs(); });
+renderHs();
+
+/* ---------- Subnet calculator ---------- */
+$('#calcBtn').addEventListener('click',()=>{
+  const ipStr=$('#ipIn').value.trim(); const cidr=parseInt($('#cidrIn').value,10);
+  const out=$('#subnetOut');
+  const parts=ipStr.split('.').map(Number);
+  if(parts.length!==4 || parts.some(p=>isNaN(p)||p<0||p>255) || isNaN(cidr) || cidr<1 || cidr>30){
+    out.innerHTML='<span style="color:var(--must)">Enter a valid IPv4 address and a CIDR between 1 and 30.</span>'; return;
+  }
+  const ipInt = ((parts[0]<<24)>>>0) + (parts[1]<<16) + (parts[2]<<8) + parts[3];
+  const maskInt = cidr===0?0: (0xFFFFFFFF << (32-cidr))>>>0;
+  const network = (ipInt & maskInt)>>>0;
+  const broadcast = (network | (~maskInt>>>0))>>>0;
+  const hostBits = 32-cidr;
+  const usable = hostBits<=1 ? 0 : Math.pow(2,hostBits)-2;
+  const toIp = n => [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].join('.');
+  const maskIp = toIp(maskInt);
+  out.innerHTML = `<table>
+   <tr><th>Network address</th><td>${toIp(network)}</td></tr>
+   <tr><th>Subnet mask</th><td>${maskIp}</td></tr>
+   <tr><th>Broadcast address</th><td>${toIp(broadcast)}</td></tr>
+   <tr><th>First usable host</th><td>${usable>0?toIp(network+1):'—'}</td></tr>
+   <tr><th>Last usable host</th><td>${usable>0?toIp(broadcast-1):'—'}</td></tr>
+   <tr><th>Usable hosts</th><td>${usable}</td></tr>
+  </table>`;
+});
+
+/* ---------- Misconceptions ---------- */
+const mis=[
+ {claim:"UDP is just a worse, broken version of TCP.", truth:"False framing. UDP is a deliberate design trade-off — no handshake or retransmission overhead means lower latency, which is exactly right for real-time voice/video/DNS where a late retransmit is worse than a dropped packet."},
+ {claim:"A switch and a router do the same job, just at different sizes.", truth:"False. A switch forwards by MAC address inside one network (Layer 2); a router forwards by IP address between different networks (Layer 3) and is the actual boundary between networks."},
+ {claim:"HTTPS makes an application fully secure.", truth:"False. HTTPS secures data in transit only. Application-level flaws (SQL injection, weak auth, XSS) are untouched by HTTPS — a very common interviewer trap tying networking to security."},
+ {claim:"NAT is a firewall / provides real security.", truth:"False. NAT's job is address translation for IPv4 conservation. It incidentally hides internal IPs, but it is not an access-control mechanism — a dedicated firewall does that."},
+ {claim:"More bandwidth always means less latency.", truth:"False. Bandwidth is capacity (how much data per second); latency is delay (how long one bit takes to arrive). You can have a high-bandwidth, high-latency link (e.g., satellite)."},
+ {claim:"DNS always uses TCP because reliability matters for something this important.", truth:"False. DNS primarily uses UDP port 53 for speed on typical small queries, falling back to TCP only for large responses (e.g., zone transfers) or when DNSSEC/large answers exceed UDP size limits."}
+];
+$('#misList').innerHTML = mis.map(m=>`<div class="card"><p><strong>Claim:</strong> "${m.claim}"</p><p style="margin-bottom:0"><span class="badge b-must">FALSE</span> ${m.truth}</p></div>`).join('');
+
+/* ---------- Accenture Zone content ---------- */
+$('#mustQ').innerHTML = `<div class="card"><ul>
+ <li>What happens when you type a URL into the browser and press Enter? (DNS → TCP handshake → TLS if HTTPS → HTTP request/response → render)</li>
+ <li>Difference between TCP and UDP, with one real example each.</li>
+ <li>Explain the TCP three-way handshake.</li>
+ <li>Difference between a switch and a router.</li>
+ <li>What is subnetting and why do we need it? Solve a small example.</li>
+ <li>What is NAT and why is it needed?</li>
+ <li>Difference between HTTP and HTTPS.</li>
+</ul></div>`;
+
+$('#followQ').innerHTML = `<div class="card">
+ <p><strong>If you answer "TCP is reliable," expect:</strong> "How does it guarantee reliability?" → ACKs + sequence numbers + retransmission timers → "What if an ACK itself is lost?" → sender's retransmission timeout resends the segment, receiver just discards the duplicate if it already got it.</p>
+ <p><strong>If you answer "DNS resolves names to IPs," expect:</strong> "What if the same domain returns different IPs sometimes?" → DNS load balancing / round-robin / CDN edge servers via geo-aware DNS.</p>
+ <p><strong>If you answer "NAT lets many devices share one public IP," expect:</strong> "Then how does the router know which internal device a reply is meant for?" → it tracks a NAT table mapping (internal IP:port) ↔ (public IP:port) per connection.</p>
+</div>`;
+
+$('#scenQ').innerHTML = `<div class="card"><ul>
+ <li><strong>"A user can't access a website but can ping its IP address."</strong> Likely a DNS resolution failure — the network path works (ping succeeds by IP) but the name isn't resolving; check DNS server config/cache.</li>
+ <li><strong>"Two employees on the same office network suddenly can't reach each other, but both reach the internet fine."</strong> Suggests a switching/local-network issue (e.g., VLAN misconfig, ARP problem) rather than routing, since the shared uplink (internet) still works.</li>
+ <li><strong>"An HTTPS site shows a certificate warning."</strong> The TLS handshake's identity step failed — expired/self-signed/mismatched-domain certificate; explain you'd check the cert chain and expiry, not treat it as an encryption failure.</li>
+ <li><strong>"A web app works locally in Docker but the container can't reach the internet."</strong> Bridges to your Docker knowledge — check container network mode, DNS resolver inside the container, and NAT/port mapping.</li>
+</ul></div>`;
+
+$('#rapid').innerHTML = `<p>Answer in one line each, out loud, against a timer: Default port for HTTPS? · Layer of IP? · Full form of ARP? · TCP flag that starts a connection? · Private IP range starting with 10? · Protocol DNS mostly uses? · What DHCP automates? · Which is connectionless, TCP or UDP? · What does CIDR /24 mean in decimal mask? · Which device works at Layer 2?</p>`;
+
+const takeaways=["Encapsulation: each layer only needs to understand its own header/address.","MAC = local/physical addressing; IP = global/logical addressing; Port = which app on that host.","TCP trades speed for guaranteed, ordered delivery via handshake, ACKs, and windows; UDP trades reliability for speed.","DNS is a hierarchical, cached name→IP lookup service, mostly over UDP.","DHCP automates IP configuration via Discover-Offer-Request-Acknowledge.","ARP bridges IP (Layer 3) to MAC (Layer 2) on the local segment.","NAT conserves public IPv4 addresses by translating private↔public addresses; it is not a firewall.","Switching = within one network by MAC; routing = between networks by IP.","HTTPS = HTTP + TLS, adding encryption/authentication of the channel — not application-level security.","Flow control protects the receiver; congestion control protects the network."];
+$('#takeaways').innerHTML = takeaways.map(t=>`<li>${t}</li>`).join('');
+
+$('#checklist').innerHTML = `<label style="display:block;margin:6px 0;"><input type="checkbox"> Can explain OSI vs TCP/IP and place any protocol into a layer</label>
+<label style="display:block;margin:6px 0;"><input type="checkbox"> Can explain TCP vs UDP with a real use-case each</label>
+<label style="display:block;margin:6px 0;"><input type="checkbox"> Can draw/narrate the 3-way handshake and 4-step teardown</label>
+<label style="display:block;margin:6px 0;"><input type="checkbox"> Can subnet an IP address by hand (network, broadcast, usable range)</label>
+<label style="display:block;margin:6px 0;"><input type="checkbox"> Can explain DNS resolution order and why UDP is used mostly</label>
+<label style="display:block;margin:6px 0;"><input type="checkbox"> Can explain DHCP's DORA process</label>
+<label style="display:block;margin:6px 0;"><input type="checkbox"> Can explain ARP's role between IP and MAC</label>
+<label style="display:block;margin:6px 0;"><input type="checkbox"> Can explain NAT and why it is not a firewall</label>
+<label style="display:block;margin:6px 0;"><input type="checkbox"> Can explain switching vs routing clearly</label>
+<label style="display:block;margin:6px 0;"><input type="checkbox"> Can explain HTTPS/TLS at a conceptual level and link it to security</label>
+<label style="display:block;margin:6px 0;"><input type="checkbox"> Can connect at least 2 of these concepts to my own resume/project</label>`;
+
+/* ---------- Glossary ---------- */
+const gloss=[
+ ["Encapsulation","Wrapping data with a header at each layer as it moves down the stack for transmission."],
+ ["MAC address","A physical, hardware-burned address used for delivery within one local network (Layer 2)."],
+ ["IP address","A logical, assignable address used to route data between networks (Layer 3)."],
+ ["Port","A number identifying which application/process on a host a message is for (Layer 4)."],
+ ["Socket","The full endpoint tuple: protocol + source IP:port + destination IP:port."],
+ ["CIDR","Classless Inter-Domain Routing notation, e.g. /24, denoting how many bits are the network portion."],
+ ["Broadcast address","The last address in a subnet, reserved to address all hosts on that subnet at once."],
+ ["TTL (DNS)","Time-to-live: how long a DNS answer may be cached before it must be re-queried."],
+ ["Handshake","An initial exchange (e.g., TCP SYN/SYN-ACK/ACK or TLS handshake) to set up a connection before data flows."],
+ ["NAT table","The router's mapping of internal (IP:port) to external (IP:port) so return traffic reaches the right device."]
+];
+$('#glossList').innerHTML = gloss.map(g=>`<dt>${g[0]}</dt><dd>${g[1]}</dd>`).join('');
+
+/* ---------- Quiz ---------- */
+const quiz=[
+ {q:"Which layer does a switch primarily operate at?", opts:["Physical","Data Link","Network","Transport"], a:1,
+  ex:"Switches forward frames using MAC addresses, which is Data Link (Layer 2) work. Routers, by contrast, use IP addresses at the Network layer."},
+ {q:"You need to stream live video with minimal lag, and occasional dropped frames are acceptable. Which transport protocol fits better?", opts:["TCP","UDP","Both are identical here","Neither, use ARP"], a:1,
+  ex:"UDP skips handshake/retransmission overhead, minimizing latency — ideal when a late packet is worse than a lost one, which is exactly the live-video trade-off."},
+ {q:"A router receives a packet and knows the destination IP. What does it still need before it can deliver the frame on the final local network?", opts:["A new DNS lookup","The destination MAC address, via ARP","A new TCP handshake","A NAT table entry"], a:1,
+  ex:"IP gets the packet to the right network; ARP resolves the destination IP to a MAC address so the frame can actually be delivered on that local segment."},
+ {q:"Why is NAT not considered a firewall, even though it hides internal IP addresses?", opts:["NAT only works with UDP","NAT's purpose is address translation for IPv4 conservation, not access control","NAT encrypts traffic","NAT is only used inside Docker"], a:1,
+  ex:"NAT's job is translating private addresses to a shared public one. Hiding internal addressing is a side effect, not a designed security boundary — a firewall enforces actual access rules."},
+ {q:"During DNS resolution, which protocol is used for a typical short lookup?", opts:["TCP, always","UDP, typically (falling back to TCP for large responses)","HTTP","ARP"], a:1,
+  ex:"DNS defaults to UDP port 53 for speed on ordinary lookups, and only uses TCP when responses are too large or for zone transfers."},
+ {q:"What does HTTPS add on top of HTTP?", opts:["Faster page loads only","A TLS layer providing encryption and server authentication","A new set of HTTP methods","Automatic SQL-injection protection"], a:1,
+  ex:"HTTPS wraps HTTP traffic in TLS for confidentiality and to authenticate the server via certificates. It does not automatically secure the application logic itself."}
+];
+let qState = quiz.map(()=>null);
+function renderQuiz(){
+  $('#quiz').innerHTML = quiz.map((item,i)=>`
+   <div class="q" data-i="${i}">
+     <p><strong>Q${i+1}.</strong> ${item.q}</p>
+     ${item.opts.map((o,j)=>`<button class="opt" data-j="${j}">${o}</button>`).join('')}
+     <div class="explain" id="ex${i}"></div>
+   </div>`).join('');
+  $$('.q').forEach(qd=>{
+    const i=+qd.dataset.i;
+    $$('.opt',qd).forEach(btn=>btn.addEventListener('click',()=>{
+      if(qState[i]!==null) return;
+      const j=+btn.dataset.j; qState[i]=j;
+      $$('.opt',qd).forEach((b,k)=>{
+        if(k===quiz[i].a) b.classList.add('correct');
+        else if(k===j) b.classList.add('wrong');
+        b.disabled=true;
+      });
+      const ex=$('#ex'+i);
+      ex.innerHTML = (j===quiz[i].a? '<strong style="color:var(--good)">Correct.</strong> ' : '<strong style="color:var(--must)">Not quite.</strong> ') + quiz[i].ex;
+      ex.classList.add('show');
+    }));
+  });
+}
+renderQuiz();
+$('#quizFinish').addEventListener('click',()=>{
+  const answered = qState.filter(x=>x!==null).length;
+  const score = qState.filter((x,i)=>x===quiz[i].a).length;
+  $('#quizScore').textContent = answered<quiz.length
+    ? `Answer all ${quiz.length} questions to see your final score (answered ${answered}/${quiz.length}).`
+    : `Score: ${score}/${quiz.length} — ${score===quiz.length?'excellent, you\'re interview-ready on these points.':'review the explanations above for the ones you missed, then revisit that topic card.'}`;
+});
+
+/* init */
+showView('big');
+})();
+</script>
+</body>
+</html>
